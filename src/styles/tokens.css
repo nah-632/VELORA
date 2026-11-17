@@ -1,0 +1,70 @@
+# VELORA — brand tokens
+#
+# Source of truth for colour. Every value here is measured by scripts/check-contrast.py:
+# a token that cannot carry text is marked as decoration, and a token that carries text must
+# clear WCAG AA against the ground it is used on. Nothing in this file is chosen by eye.
+#
+# Direction note: this file contains no left/right values. All directional spacing,
+# borders and alignment live in logical properties (inline-start / inline-end).
+
+:root {
+  /* ---- Owner's palette, as proposed in the master prompt ------------------ */
+  --obsidian: #191a19; /* Obsidian Black  */
+  --ivory: #f5f0e8; /* Warm Ivory      */
+  --gold: #b99b6c; /* Champagne Gold  */
+  --taupe: #b9ada0; /* Soft Taupe      */
+  --emerald: #263e35; /* Deep Emerald    */
+
+  /* ---- Derived surfaces -------------------------------------------------- */
+  --paper: #ffffff; /* raised card on the ivory ground */
+  --ivory-deep: #ece5d9; /* recessed sections            */
+  --obsidian-soft: #232423;
+
+  /* ---- Ink --------------------------------------------------------------- */
+  --ink: var(--obsidian);
+  --ink-muted: #5b5f5c;
+  --ink-inverse: var(--ivory);
+
+  /* ---- Interactive ------------------------------------------------------- */
+  /* The proposed #B99B6C measures ~2.3:1 on ivory: it cannot carry text, and it cannot
+     be a focus ring (WCAG 1.4.11 needs 3:1). It stays as --gold, decoration and large
+     display only. Every interactive use draws from --gold-deep, which is measured. */
+  --gold-deep: #7a5f38;
+  --focus-ring: var(--gold-deep);
+
+  /* ---- Structure --------------------------------------------------------- */
+  --line: #ded6c8;
+  --emerald-deep: #1b2c26;
+
+  /* ---- Feedback ---------------------------------------------------------- */
+  --danger: #8f2f2a;
+  --danger-ground: #fdf1ef;
+  --success: #2f5d3a;
+  --success-ground: #f0f6f1;
+  --warning: #8a6320;
+  --warning-ground: #fdf7ea;
+
+  /* ---- Type -------------------------------------------------------------- */
+  /* Faces are self-hosted and subset; see docs/BRAND.md. Aref Ruqaa is a calligraphic
+     face and is restricted to display headings — never body copy, never UI chrome. */
+  --font-display-en: "Cormorant Garamond", "Times New Roman", serif;
+  --font-body-en: "Manrope", system-ui, sans-serif;
+  --font-display-ar: "Aref Ruqaa", "Noto Naskh Arabic", serif;
+  --font-body-ar: "IBM Plex Sans Arabic", "Geeza Pro", sans-serif;
+
+  /* ---- Space (8px scale) ------------------------------------------------- */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+  --s9: 6rem;
+
+  /* ---- Radius ------------------------------------------------------------ */
+  --r-sm: 2px;
+  --r-md: 4px;
+  --r-lg: 8px;
+}

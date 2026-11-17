@@ -1,0 +1,15 @@
+// Scoped type-check. The real tsconfig.json is the truth, but type-checking the whole
+// project exhausts this device's memory (~2.6 GB available). This config narrows the
+// same compiler options to the files that exist and are being worked on.
+//
+// The full-project check runs in CI. `npm run build` is CI-only.
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next"]
+}
