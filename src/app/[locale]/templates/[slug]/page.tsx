@@ -5,6 +5,7 @@ import { TemplateCanvas } from "@/components/invitation/TemplateCanvas";
 import { buttonClass } from "@/components/ui/Button";
 import { Card, SectionHeading } from "@/components/ui/Card";
 import { getCatalogue } from "@/features/catalogue/repository";
+import { blocksFromPreview, fallbackBlocks } from "@/features/studio/blocks";
 import { Link } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/routing";
 
@@ -59,7 +60,9 @@ export default async function TemplateDetailPage({
           ) : (
             <TemplateCanvas
               design={template.design}
-              content={template.preview}
+              blocks={
+                template.preview ? blocksFromPreview(template.preview, locale) : fallbackBlocks(locale)
+              }
               locale={locale}
               label={template.name}
             />

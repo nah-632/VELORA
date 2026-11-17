@@ -19,6 +19,7 @@
  * sets a role for every query. The dev transport is refused outright in production.
  */
 import { type Locale } from "@/i18n/routing";
+import { assertDataSourceAvailable, dataSourceKind } from "@/lib/data-source";
 
 import {
   type DesignConfig,
@@ -138,17 +139,11 @@ let cached: CatalogueSource | null = null;
 export async function getCatalogue(): Promise<CatalogueSource> {
   if (cached) return cached;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  assertDataSourceAvailable();
 
-  if (url && key) {
+  if (dataSourceKind() === "supabase") {
     const { createSupabaseCatalogue } = await import("./supabase-source");
-    cached = createSupabaseCatalogue(url, key);
-  } else if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "The catalogue has no data source: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY " +
-        "are not set, and the local development database is refused in production.",
-    );
+    cached = createSupabaseCatalogue();
   } else {
     const { createLocalCatalogue } = await import("./local-source");
     cached = await createLocalCatalogue();

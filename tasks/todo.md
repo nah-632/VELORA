@@ -87,14 +87,37 @@ implementation, not two that drift. The PGlite transport is refused in productio
 **not** exercise RLS — the test suites do, by setting a role for every query.
 
 ## Phase 4 — Wedding Studio (Milestone 4)
-- [ ] 4.1 versioned design-configuration schema
-- [ ] 4.2 invitation content model + validation
-- [ ] 4.3 three-panel layout
-- [ ] 4.4 content forms
-- [ ] 4.5 style controls (colour/type/layout/decoration/background)
-- [ ] 4.6 undo/redo history
-- [ ] 4.7 autosave + explicit save + save status
-- [ ] 4.8 destructive-action confirmation
+
+- [x] 4.1 versioned design-configuration schema — `DesignConfigSchema`, plus the snapshot column on
+      `invitations` so a template edited later cannot redraw an invitation already sold
+- [x] 4.2 invitation content model + validation — storage shape and order readiness are
+      **two different questions** (see the defect below), with a real calendar check for dates
+- [x] 4.3 three-panel layout — design controls, canvas, properties. Mirrored in RTL, as it should be
+- [x] 4.4 content forms — names, date/time, venue, map, message, verse; per-field errors
+- [x] 4.5 style controls — palette, typography, ornament, layout
+- [x] 4.6 undo/redo — history in the reducer, coalescing a run of typing into one step, with
+      keyboard shortcuts
+- [x] 4.7 autosave + explicit save + visible save status — autosave debounces; only the explicit
+      save writes a version
+- [x] 4.8 destructive-action confirmation — resetting the design is confirmed and still undoable
+
+### Defects found by using it, not by reading it
+1. **A half-filled draft could not be saved at all.** Validation of *format* ran on save, so a
+   customer who had typed two names and not yet chosen a date got `expected a date` — and autosave
+   failed exactly when it mattered most. Split into a permissive storage schema and a strict
+   readiness check.
+2. **`Date.parse("2027-02-31")` does not fail** — it rolls over to 3 March and returns a valid
+   timestamp, so a mistyped day would have been shown as a different date, silently. Dates are now
+   checked by comparing the parsed components back.
+3. **Four PostgreSQL instances against one data directory.** Module-level caches are new caches on
+   every hot reload; each instance re-ran all migrations and contended for the same files. A save
+   took **276 seconds**. Moved to `globalThis`: one process, one database, ~10s.
+
+### Checkpoint
+- [x] `npm run verify` green — 23 unit · 27 isolation · 57 catalogue · 26 draft · 7 fonts ·
+      35 brand · 21/21 contrast · RTL · CSS · canary
+- [x] round trip verified in a browser: type → live preview → autosave → reload → restored
+- [ ] mobile editing has not been exercised below `lg` yet
 
 ## Phase 5 — Live preview (Milestone 5)
 - [ ] 5.1 renderer component (single source of truth)

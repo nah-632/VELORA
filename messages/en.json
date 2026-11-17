@@ -86,21 +86,75 @@
     "customisationNote": "The exact controls arrive with the Studio. The list above is what this design declares as adaptable.",
     "invalid": "This design configuration could not be read."
   },
-  "studio": {
+  "editor": {
     "eyebrow": "Studio",
     "title": "Your invitation",
-    "intro": "The design you selected is loaded below. The editor that changes its wording, colours and type is the next piece of work.",
-    "notYet": "The editor is not built yet. Your selection is real and was resolved from the catalogue — nothing on this page is a mock-up.",
-    "selected": "Selected design",
-    "selectionTitle": "What was selected",
-    "selectionDesign": "Design",
-    "selectionCanvas": "Canvas",
-    "selectionLayout": "Layout",
-    "selectionVersion": "Config version",
-    "sameRendererTitle": "One renderer, not two",
-    "sameRendererBody": "This canvas is the same component the catalogue uses, and the same one the finished invitation will use. There is no separate preview that merely resembles the real thing.",
-    "otherLanguage": "The same design in the other language",
-    "back": "Back to the design",
-    "browseAll": "Browse all designs"
+    "backToDesign": "Back to the design",
+    "canvasLabel": "Invitation preview",
+    "undo": "Undo",
+    "redo": "Redo",
+    "zoom": "Zoom",
+    "cancel": "Cancel",
+    "pickSection": "Choose a part of the invitation to edit it.",
+    "incomplete": "{count, plural, =0 {Everything needed is filled in} one {One field still needs filling in} other {{countText} fields still need filling in}}",
+    "panels": {
+      "controls": "Design",
+      "canvas": "Invitation",
+      "properties": "Properties"
+    },
+    "sections": {
+      "couple": "Names",
+      "when": "Date and time",
+      "where": "Venue",
+      "message": "Message",
+      "verse": "Verse"
+    },
+    "fields": {
+      "brideName": "Bride's name",
+      "groomName": "Groom's name",
+      "weddingDate": "Wedding date",
+      "hijriDate": "Hijri date (optional)",
+      "weddingTime": "Wedding time",
+      "venueName": "Venue name",
+      "venueAddress": "Venue address",
+      "mapUrl": "Map link",
+      "message": "Invitation message",
+      "verse": "Quranic verse or poetry",
+      "notes": "Additional notes"
+    },
+    "issues": {
+      "required": "This field is needed.",
+      "date": "Enter a valid date.",
+      "time": "Enter a valid time.",
+      "url": "Enter a valid link.",
+      "tooLong": "This is too long."
+    },
+    "design": {
+      "palette": "Colours",
+      "ground": "Ground",
+      "ink": "Ink",
+      "accent": "Accent",
+      "typography": "Typography",
+      "ornament": "Ornament",
+      "layout": "Layout",
+      "reset": "Reset the design",
+      "resetTitle": "Reset the design?",
+      "resetBody": "Your words are kept. The colours, type, frame and layout go back to the original design, and you can undo this.",
+      "resetConfirm": "Reset the design"
+    },
+    "layouts": {
+      "classic": "Classic",
+      "editorial": "Editorial",
+      "stacked": "Stacked"
+    },
+    "save": {
+      "saving": "Saving…",
+      "unsaved": "Unsaved changes",
+      "failed": "Could not save",
+      "savedAt": "Saved at {time}",
+      "notYetSaved": "Not saved yet",
+      "saveNow": "Save",
+      "retry": "Try again"
+    }
   }
 }

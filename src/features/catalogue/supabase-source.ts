@@ -1,6 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { type Locale } from "@/i18n/routing";
+import { getSupabaseClient } from "@/lib/data-source";
 
 import {
   type CataloguePage,
@@ -15,15 +14,11 @@ import {
 /**
  * Production transport: the same SQL functions, reached through PostgREST.
  *
- * The client is created with the **anon key**, never the service role. Every call therefore runs
- * as `anon` and passes through row-level security — which is the whole reason drafts stay
- * invisible without the application having to remember to filter them out.
+ * The shared client uses the **anon key**, never the service role. Every call therefore runs as
+ * `anon` and passes through row-level security — which is the whole reason drafts stay invisible
+ * without the application having to remember to filter them out.
  */
-export function createSupabaseCatalogue(url: string, anonKey: string): CatalogueSource {
-  const client = createClient(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
+export function createSupabaseCatalogue(): CatalogueSource {
   function fail(operation: string, message: string): never {
     throw new Error(`catalogue ${operation} failed: ${message}`);
   }
@@ -32,6 +27,7 @@ export function createSupabaseCatalogue(url: string, anonKey: string): Catalogue
     name: "supabase",
 
     async list(query: CatalogueQuery): Promise<CataloguePage> {
+      const client = await getSupabaseClient();
       const { data, error } = await client.rpc("catalogue_list", {
         p_locale: query.locale,
         p_category: query.category ?? null,
@@ -47,10 +43,8 @@ export function createSupabaseCatalogue(url: string, anonKey: string): Catalogue
     },
 
     async get(slug: string, locale: Locale): Promise<TemplateDetail | null> {
-      const { data, error } = await client.rpc("catalogue_get", {
-        p_slug: slug,
-        p_locale: locale,
-      });
+      const client = await getSupabaseClient();
+      const { data, error } = await client.rpc("catalogue_get", { p_slug: slug, p_locale: locale });
       if (error) fail("get", error.message);
 
       const row = ((data ?? []) as CatalogueRow[])[0];
@@ -64,6 +58,7 @@ export function createSupabaseCatalogue(url: string, anonKey: string): Catalogue
     },
 
     async categories(locale: Locale): Promise<CategorySummary[]> {
+      const client = await getSupabaseClient();
       const { data, error } = await client.rpc("catalogue_categories", { p_locale: locale });
       if (error) fail("categories", error.message);
 
