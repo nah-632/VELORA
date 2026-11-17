@@ -30,7 +30,8 @@ Convention: a task is done only when its verification evidence exists. No claim 
 ### Checkpoint A
 - [x] `npm run verify` green — type-check clean, 9/9 unit, 27/27 isolation, replay idempotent,
       21/21 contrast pairs, RTL guard PASS, CSS guard PASS
-- [ ] fresh clone installs and runs — **not performed**
+- [x] fresh clone installs and runs — cloned, `npm ci` (425 packages), `npm run verify` **PASS**
+      end to end: 9/9 unit, 27/27 isolation, 21/21 contrast, RTL and CSS guards
 - [x] AR + EN rendered in a real browser at 390×844 and 1280×800
 - [x] report to owner
 
