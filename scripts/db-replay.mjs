@@ -1,35 +1,18 @@
 /**
- * Local database harness.
+ * Migration replay proof.
  *
- * Applies every migration in `supabase/migrations` in filename order to an empty database,
- * then applies the entire set a **second time** to prove the migrations are re-runnable, then
- * reports what exists. Runs on PGlite — real PostgreSQL compiled to WASM — which is the only
- * way to get a genuine PostgreSQL on this device (initdb needs shared memory, which the sandbox
- * does not provide).
+ * Applies every migration to an empty database, then applies the entire set a second time.
+ * A migration that cannot be re-applied is a deployment hazard: any partially-applied or
+ * re-run deployment becomes unrecoverable, and this device cannot run a real `initdb`.
  *
- * Usage: npm run test:db
+ * Usage: npm run test:db:migrations
  */
-import { PGlite } from "@electric-sql/pglite";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createTestDatabase, migrationFiles, readMigration } from "../tests/db/setup.mjs";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const MIGRATIONS_DIR = join(ROOT, "supabase/migrations");
-const STUB = join(ROOT, "tests/db/supabase-stub.sql");
-
-function migrationFiles() {
-  if (!existsSync(MIGRATIONS_DIR)) return [];
-  return readdirSync(MIGRATIONS_DIR)
-    .filter((name) => name.endsWith(".sql"))
-    .sort(); // filename order is the migration order: NNNN_description.sql
-}
-
-async function applySet(db, files, { label }) {
+async function applySet(db, files, label) {
   for (const name of files) {
-    const sql = readFileSync(join(MIGRATIONS_DIR, name), "utf8");
     try {
-      await db.exec(sql);
+      await db.exec(readMigration(name));
     } catch (error) {
       console.error(`\n✗ migration ${name} failed during ${label}\n`);
       console.error(error.message);
@@ -38,71 +21,55 @@ async function applySet(db, files, { label }) {
   }
 }
 
-async function count(db, sql) {
-  const result = await db.query(sql);
-  const row = result.rows[0] ?? {};
-  return Number(Object.values(row)[0] ?? 0);
-}
+const files = migrationFiles();
+console.log("VELORA — migration replay (real PostgreSQL 17 via PGlite/WASM)");
+console.log(`migrations found: ${files.length}${files.length ? ` (${files.join(", ")})` : ""}\n`);
 
-async function main() {
-  const files = migrationFiles();
-  console.log("VELORA — database harness (real PostgreSQL 17 via PGlite/WASM)");
-  console.log(`migrations found: ${files.length}${files.length ? ` (${files.join(", ")})` : ""}\n`);
+const db = await createTestDatabase({ applyMigrations: false });
 
-  const db = await PGlite.create();
+await applySet(db, files, "first pass");
+console.log(`✓ applied ${files.length} migration(s) from empty`);
 
-  if (!existsSync(STUB)) {
-    console.error(`✗ missing ${STUB}`);
-    process.exit(1);
-  }
-  await db.exec(readFileSync(STUB, "utf8"));
+await applySet(db, files, "second pass");
+console.log("✓ re-applied the same set (idempotent)");
 
-  // Pass 1 — from an empty database.
-  await applySet(db, files, { label: "first pass" });
-  console.log(`✓ applied ${files.length} migration(s) from empty`);
+const tables = await db.query(
+  `select count(*)::int as n from information_schema.tables
+    where table_schema not in ('pg_catalog', 'information_schema')`,
+);
+const functions = await db.query(
+  `select count(*)::int as n from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname in ('public', 'app_private')`,
+);
+const policies = await db.query(
+  `select count(*)::int as n from pg_policies where schemaname = 'public'`,
+);
 
-  // Pass 2 — every migration must be safe to re-apply. A migration that is not is a
-  // deployment hazard: any partially-applied run becomes unrecoverable.
-  await applySet(db, files, { label: "second pass" });
-  console.log("✓ re-applied the same set (idempotent)");
+console.log(`\ntables:    ${tables.rows[0].n}`);
+console.log(`functions: ${functions.rows[0].n}`);
+console.log(`policies:  ${policies.rows[0].n}`);
 
-  const tables = await count(
-    db,
-    `select count(*)::int from information_schema.tables
-      where table_schema not in ('pg_catalog', 'information_schema')`,
-  );
-  const functions = await count(
-    db,
-    `select count(*)::int from pg_proc p
-       join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname in ('public', 'app_private', 'auth')`,
-  );
-
-  console.log(`\ntables:    ${tables}`);
-  console.log(`functions: ${functions}`);
-
-  // The helpers the whole schema leans on must exist and be callable.
-  const helpers = ["uid", "role_name", "bahrain_today"];
-  const rows = await db.query(
-    `select p.proname from pg_proc p
-       join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname = 'app_private' and p.proname = any($1::text[])`,
-    [helpers],
-  );
-  const found = rows.rows.map((r) => r.proname).sort();
-  const missing = helpers.filter((h) => !found.includes(h));
-  if (missing.length) {
-    console.error(`✗ missing helper function(s): ${missing.join(", ")}`);
-    process.exit(1);
-  }
-  console.log(`helpers present: ${found.join(", ")}`);
-
-  await db.close();
-  console.log("\nRESULT: PASS");
-}
-
-main().catch((error) => {
-  console.error("\n✗ harness crashed\n");
-  console.error(error);
+const helpers = ["uid", "role_name", "bahrain_today", "is_admin", "log_admin_action", "handle_new_user"];
+const found = await db.query(
+  `select p.proname from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'app_private' and p.proname = any($1::text[])`,
+  [helpers],
+);
+const present = found.rows.map((r) => r.proname).sort();
+const missing = helpers.filter((h) => !present.includes(h));
+if (missing.length) {
+  console.error(`✗ missing helper function(s): ${missing.join(", ")}`);
   process.exit(1);
-});
+}
+console.log(`helpers:   ${present.join(", ")}`);
+
+// The policies must exist as real rows, not merely as intent in a file.
+if (policies.rows[0].n < 7) {
+  console.error(`✗ expected at least 7 policies on public, found ${policies.rows[0].n}`);
+  process.exit(1);
+}
+
+await db.close();
+console.log("\nRESULT: PASS");
