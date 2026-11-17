@@ -56,17 +56,45 @@ the mark.
 
 ## 4. Type
 
-| Role | Family | Note |
-|---|---|---|
-| Arabic display | Aref Ruqaa | Calligraphic. **Display headings only** — never body copy, never interface chrome. |
-| Arabic body | IBM Plex Sans Arabic | |
-| English display | Cormorant Garamond | |
-| English body | Manrope | |
+| Role | Family | Weight | Note |
+|---|---|---|---|
+| Arabic display | Aref Ruqaa | 400, 700 | Calligraphic Ruqaa. **Minimum 24px**, and never body copy or interface chrome. |
+| Arabic body | IBM Plex Sans Arabic | 400, 500, 600 | |
+| English display | Cormorant Garamond | variable 300–700 | |
+| English body | Manrope | variable 200–800 | |
 
-**Not yet shipped.** No font files are loaded: the stacks end at `Times New Roman` and `system-ui`,
-so every render to date is a fallback. Faces will be self-hosted and subset, and Arabic subsets
-must be verified for shaping — a subset that drops a GSUB joining feature produces disconnected
-letters, which is a total failure for an Arabic interface and is invisible unless looked for.
+All four are self-hosted, OFL-1.1, and subset to the characters this product uses — 341 KB across
+seven faces. Licences are in `public/fonts/licenses/`. Rebuild with `npm run fonts:build`; the
+subsets are verified by `npm run test:fonts`, which runs in `verify`.
+
+### Legibility test — the result
+
+The brief makes Aref Ruqaa "subject to legibility testing", so it was tested rather than trusted.
+`public/brand/preview.html` carries a specimen on the real subsets: the abjad, then the sizes the
+interface actually uses.
+
+**Result: legible from about 24px upward; below that it becomes ornament.** At 44px "دعوة زفاف"
+is confident and unmistakably Ruqaa. At 18px the same face is genuinely hard to read — the
+stacked, interlocking letterforms that give it character at display size collapse into texture.
+
+Consequence, now enforced in CSS: the display face is attached to `h1` and `h2` **only**, plus an
+explicit `.font-display` class. **`h3` is deliberately excluded**, because h3 is often set small
+and nothing would have caught it drifting below the floor.
+
+### Arabic shaping
+
+The gate asserts three things per face, and the first two caught errors in the gate itself:
+
+1. **Nothing requested was lost** — measured against the ranges actually requested. (An earlier
+   version compared against a numeric span and "found" 758 drops in Cormorant that were
+   deliberate exclusions.)
+2. **Joining features survived** — init, medi, fina, isol, rlig. Only the Arabic faces are held to
+   this: a Latin subset legitimately loses `mark`/`mkmk` because it requests no combining marks.
+3. **No dangling references** — every glyph the retained layout tables still mention exists. This
+   is the failure that produces disconnected letters while the font looks perfectly healthy.
+
+Verified intact: **Aref Ruqaa** `init, medi, fina, isol`; **IBM Plex Sans Arabic**
+`init, medi, fina, rlig`.
 
 ## 5. Colour
 

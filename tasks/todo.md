@@ -141,10 +141,16 @@ subset Arabic subsets with shaping verification are `brand` work.
   - ✅ six SVG variants + app icon, deterministic build; rendered 16→160px on ivory and obsidian
 - [x] **2.2 Brand guidelines** — `docs/BRAND.md`
   - ✅ including the record of the first attempt that failed on render
-- [ ] **2.3 Fonts** — self-hosted, subset, Arabic shaping verified
-  - blocks the wordmark, and every screenshot so far is a fallback render
+- [x] **2.3 Fonts** — self-hosted, subset, Arabic shaping verified
+  - ✅ four families, 7 faces, **341 KB total**, OFL licences bundled, rebuilt by `npm run fonts:build`
+  - ✅ verified by `npm run test:fonts`: nothing requested lost, joining features intact,
+    no dangling glyph references. Aref Ruqaa `init/medi/fina/isol`; Plex Arabic `init/medi/fina/rlig`
+  - ✅ **legibility test done, and it changed the CSS**: Aref Ruqaa is legible from ~24px up and
+    turns into ornament below it, so `h3` was removed from the automatic display-face rule
 - [ ] **2.4 Outlined wordmark** — must come from the final subset, not a system serif
 - [ ] **2.5 Favicon and app icon verified in a browser tab**
+- [x] **2.6 Direction-aware eyebrow** — `uppercase` and `letter-spacing` are Latin devices; attaching
+  them to Arabic breaks the joins. Fixed with a `.eyebrow` class scoped to `[dir="ltr"]`
 
 ## Blockers
 

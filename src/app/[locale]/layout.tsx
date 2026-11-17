@@ -8,11 +8,25 @@ import { SiteFooter } from "@/components/shell/SiteFooter";
 import { SiteHeader } from "@/components/shell/SiteHeader";
 import { direction, isLocale, locales, type Locale } from "@/i18n/routing";
 
+// fonts first: @font-face declarations have to exist before anything references the families.
+import "@/styles/fonts.css";
 // tokens before tailwind so the utilities can reference the custom properties, and base last so
 // it can override preflight.
 import "@/styles/tokens.css";
 import "@/styles/tailwind.css";
 import "@/styles/base.css";
+
+/**
+ * Faces used above the fold, per locale.
+ *
+ * Declaring `unicode-range` means one page can pull four families; preloading the two that paint
+ * the first screen avoids a swap on the headline, which is the most visible shift on a slow
+ * connection.
+ */
+const PRELOAD: Record<Locale, string[]> = {
+  ar: ["/fonts/plexsansarabic-arabic-400.woff2", "/fonts/arefruqaa-arabic-400.woff2"],
+  en: ["/fonts/manrope-latin-var.woff2", "/fonts/cormorantgaramond-latin-var.woff2"],
+};
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -53,6 +67,17 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={direction[typedLocale]}>
+      {/* React hoists these into the document head. */}
+      {PRELOAD[typedLocale].map((href) => (
+        <link
+          key={href}
+          rel="preload"
+          href={href}
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+      ))}
       <body className="min-h-dvh bg-ground text-ink antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="flex min-h-dvh flex-col">

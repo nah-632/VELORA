@@ -29,10 +29,16 @@ html[lang="en"] body {
   line-height: 1.65;
 }
 
-/* Headings take the display face of the active direction context. */
+/*
+ * Headings take the display face of the active direction context.
+ *
+ * h3 is deliberately excluded. Aref Ruqaa is a calligraphic Ruqaa face, and the type specimen
+ * in public/brand/preview.html shows it is legible from about 24px up and turns into ornament
+ * below that — so the display face is attached to h1 and h2, which are never smaller than that,
+ * and to an explicit `.font-display` class. Nothing gets it automatically at body sizes.
+ */
 [dir="rtl"] h1,
 [dir="rtl"] h2,
-[dir="rtl"] h3,
 [dir="rtl"] .font-display {
   font-family: var(--font-display-ar);
   line-height: 1.4;
@@ -42,7 +48,6 @@ html[lang="en"] body {
 
 [dir="ltr"] h1,
 [dir="ltr"] h2,
-[dir="ltr"] h3,
 [dir="ltr"] .font-display {
   font-family: var(--font-display-en);
   line-height: 1.15;
@@ -80,6 +85,25 @@ html[lang="en"] body {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
   border-radius: var(--r-sm);
+}
+
+/*
+ * Eyebrow / small caps label.
+ *
+ * `uppercase` and `letter-spacing` are Latin typographic devices. Applied to Arabic they do
+ * nothing useful — Arabic has no case — and letter-spacing actively breaks the cursive
+ * joins, which is why every Arabic word in a tracked label looks wrong rather than spaced.
+ * The property is therefore attached to the direction, not to the component.
+ */
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+[dir="ltr"] .eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
 }
 
 /* A reduced-motion preference is honoured globally; no component opts out. */

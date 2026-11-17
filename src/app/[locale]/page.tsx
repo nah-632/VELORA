@@ -45,9 +45,7 @@ export default async function FoundationPage({
   return (
     <div className="mx-auto flex max-w-shell flex-col gap-16 px-6 py-16">
       <section className="flex flex-col gap-3">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-ink-muted">
-          {t("eyebrow")}
-        </p>
+        <p className="eyebrow">{t("eyebrow")}</p>
         <h1 className="font-display text-4xl text-ink md:text-5xl">{t("title")}</h1>
         <p className="max-w-prose text-ink-muted">{t("intro")}</p>
         <p className="text-sm text-ink-muted">
@@ -82,15 +80,13 @@ export default async function FoundationPage({
         <SectionHeading title={t("sections.typography")} />
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
-            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-ink-muted">display</p>
+            <p className="eyebrow mb-2">display</p>
             <p className="font-display text-3xl text-ink">{brand("tagline")}</p>
-            <p className="mt-4 text-xs uppercase tracking-[0.16em] text-ink-muted">body</p>
+            <p className="eyebrow mt-4">body</p>
             <p className="text-ink">{t("intro")}</p>
           </Card>
           <Card tone="recipe">
-            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-ink-muted">
-              direction context
-            </p>
+            <p className="eyebrow mb-2">direction context</p>
             <p dir="auto" className="bidi-content text-lg text-ink">
               {otherDirectionSample}
             </p>

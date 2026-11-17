@@ -20,6 +20,10 @@ next-env.d.ts
 /verify-report.json
 *.log
 
+# Font sources — inputs to scripts/fonts.py, not artefacts. The subsets that ship are committed
+# in public/fonts/, along with the OFL licences.
+/vendor/
+
 # Editor / OS
 .DS_Store
 .idea/
