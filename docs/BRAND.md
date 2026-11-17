@@ -35,16 +35,31 @@ correctly and behaves incorrectly.
 
 ## 2. Assets
 
-All variants are generated from one source — `brand/monogram.mjs` — by `npm run brand:build`.
-They cannot drift apart, and the build is deterministic, so a diff of `public/brand/` is a diff of
-the mark.
+All variants are generated from one source — `brand/monogram.mjs` for the mark,
+`scripts/build-wordmark.py` for the wordmark — by `npm run brand:build`, which runs the wordmark
+first because the lockup composes both. They cannot drift apart, and the build is deterministic,
+so a diff of `public/brand/` is a diff of the mark.
 
 | File | Use |
 |---|---|
-| `public/brand/monogram.svg` | `currentColor`; inherits the surrounding text colour. The site's default. |
-| `monogram-obsidian.svg` / `-ivory.svg` / `-gold.svg` | Fixed colour, for exports, documents and print. |
+| `monogram.svg` | `currentColor`; inherits the surrounding text colour. The site's default. |
+| `monogram-obsidian/-ivory/-gold.svg` | Fixed colour, for exports, documents and print. |
 | `monogram-mono.svg` | Single tone: foiling, embroidery, one-colour print. |
+| `wordmark.svg`, `wordmark-obsidian/-ivory.svg` | The wordmark as outlines. |
+| `lockup.svg`, `lockup-obsidian/-ivory/-mono.svg` | Mark + wordmark at the sanctioned relationship. |
 | `src/app/icon.svg` | Application icon and favicon, served at `/icon.svg`. |
+| `preview.html` | The construction, size ladder, specimen and lockup, on the real subsets. |
+
+### The wordmark is outlines, and here is why that is checked
+
+The letters V E L O R A are converted to paths from **the shipped Cormorant Garamond subset**,
+instanced at weight 400 — not from a system serif, and not from a `<text>` element. A wordmark is
+artwork: set as live text it renders differently on every machine that opens it, reflows when a
+webfont fails, and cannot be handed to a printer or an embroiderer.
+
+`npm run test:brand` enforces that: no `<text>`, no `font-family`, no `<tspan>`, no linked
+webfont in any generated SVG. It also checks that the lockup carries the mark's **exact** path data
+and the wordmark's **exact** outlines, so a composed file cannot silently drift from its parts.
 
 ## 3. Size and clear space
 
@@ -128,7 +143,7 @@ carry every interactive use.
 
 ## 7. Still outstanding
 
-- The outlined, distribution-ready **wordmark**. It must be converted from the final font subset,
-  never from a system serif.
-- Font subsets, with Arabic shaping verification.
-- Light and dark **lockup** files (mark plus wordmark), once the wordmark exists.
+- The favicon and application icon have not been opened in a real browser tab.
+- The tagline ("The Art of Inviting") is set as live text beside the lockup; if it becomes part of
+  a printed asset it needs the same outline treatment as the wordmark.
+- Light and dark **social/OG images** are not produced.

@@ -147,8 +147,14 @@ subset Arabic subsets with shaping verification are `brand` work.
     no dangling glyph references. Aref Ruqaa `init/medi/fina/isol`; Plex Arabic `init/medi/fina/rlig`
   - ✅ **legibility test done, and it changed the CSS**: Aref Ruqaa is legible from ~24px up and
     turns into ornament below it, so `h3` was removed from the automatic display-face rule
-- [ ] **2.4 Outlined wordmark** — must come from the final subset, not a system serif
-- [ ] **2.5 Favicon and app icon verified in a browser tab**
+- [x] **2.4 Outlined wordmark** — converted from the shipped Cormorant subset at weight 400
+  - ✅ `scripts/build-wordmark.py` outlines V E L O R A via fontTools; no `<text>`, no font family
+  - ✅ lockup + 3 lockup variants composed in `scripts/build-brand.mjs`
+  - ✅ `npm run test:brand` (35 expectations) asserts no font dependency and that the lockup
+    reuses the mark's and wordmark's **exact** path data
+- [x] **2.5 Favicon and app icon** — verified
+  - ✅ served at `/icon.svg` (`image/svg+xml`, 200); Next emits `<link rel="icon">` automatically
+  - ✅ rendered and inspected: the ivory tile with the folded mark, fold visible at icon scale
 - [x] **2.6 Direction-aware eyebrow** — `uppercase` and `letter-spacing` are Latin devices; attaching
   them to Arabic breaks the joins. Fixed with a `.eyebrow` class scoped to `[dir="ltr"]`
 

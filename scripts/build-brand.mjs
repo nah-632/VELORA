@@ -109,9 +109,71 @@ write(
 );
 
 // ---------------------------------------------------------------------------
+// Wordmark and lockup
+// ---------------------------------------------------------------------------
+// The wordmark is generated separately (scripts/build-wordmark.py) because it needs the font
+// subset. Read back rather than duplicated, so the lockup can never disagree with it.
+const WORDMARK_FILE = join(ROOT, "public", "brand", "wordmark.svg");
+const wordmarkSource = existsSync(WORDMARK_FILE) ? readFileSync(WORDMARK_FILE, "utf8") : null;
+const WORDMARK_PATHS = wordmarkSource
+  ? [...wordmarkSource.matchAll(/<path d="([^"]+)"\s*\/>/g)].map((match) => match[1])
+  : [];
+const WORDMARK_BOX = (
+  (wordmarkSource && /viewBox="([^"]+)"/.exec(wordmarkSource)?.[1]) || "0 0 1 1"
+)
+  .split(/\s+/)
+  .map(Number);
+
+const LOCKUP = {
+  markBox: 64, // the monogram sits in a 64×64 box
+  markScale: 2, // its own grid is 32
+  markTop: 18,
+  gap: 20,
+  wordmarkCap: 34, // the wordmark's own cap height is 64 units
+  canvasHeight: 100,
+};
+
+const LOCKUP_WIDTH =
+  LOCKUP.markBox + LOCKUP.gap + WORDMARK_BOX[2] * (LOCKUP.wordmarkCap / 64);
+
+function wordmarkGroup(scale) {
+  return WORDMARK_PATHS.map((d) => `<path d="${d}"/>`).join("");
+}
+
+function lockupSvg(fill, { facet = true, attrs = "" } = {}) {
+  const wordmarkScale = LOCKUP.wordmarkCap / 64;
+  const wordmarkHeight = WORDMARK_BOX[3] * wordmarkScale;
+  const wordmarkY = LOCKUP.canvasHeight / 2 - wordmarkHeight / 2;
+  const mark = facet
+    ? `<path d="${SILHOUETTE}" fill="${fill}" fill-opacity="${PLANE_OPACITY}"/><path d="${LIT_FACE}" fill="${fill}"/>`
+    : `<path d="${SILHOUETTE}" fill="${fill}"/>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOCKUP_WIDTH.toFixed(2)} ${LOCKUP.canvasHeight}" role="img" aria-label="VELORA" ${attrs}>
+  <title>VELORA</title>
+  <g fill="${fill}" transform="translate(0 ${LOCKUP.markTop}) scale(${LOCKUP.markScale})">${mark}</g>
+  <g fill="${fill}" transform="translate(${(LOCKUP.markBox + LOCKUP.gap).toFixed(2)} ${wordmarkY.toFixed(2)}) scale(${wordmarkScale})">${wordmarkGroup()}</g>
+</svg>
+`;
+}
+
+if (WORDMARK_PATHS.length) {
+  console.log("\nWordmark and lockup");
+  write("public/brand/lockup.svg", lockupSvg("currentColor"));
+  write("public/brand/lockup-obsidian.svg", lockupSvg(PALETTE.obsidian));
+  write("public/brand/lockup-ivory.svg", lockupSvg(PALETTE.ivory));
+  write("public/brand/lockup-mono.svg", lockupSvg(PALETTE.obsidian, { facet: false }));
+} else {
+  console.log("\n! public/brand/wordmark.svg not found — no lockup emitted.");
+  console.log("  Run `npm run wordmark:build` first (needs the font subsets).");
+}
+
+// ---------------------------------------------------------------------------
 // Construction and size preview
 // ---------------------------------------------------------------------------
 const SIZES = [16, 20, 24, 32, 40, 48, 64, 96, 160];
+const WORDMARK_SIZES = [14, 18, 24, 32, 48, 64];
+// Kept in step with WEIGHT in scripts/build-wordmark.py by the label below, not by a second copy.
+const WEIGHT_NOTE = "400";
 
 const GRID_LINES = Array.from({ length: 33 }, (_, i) =>
   i % 4 === 0 ? `M${i} 0V${GRID}M0 ${i}H${GRID}` : "",
@@ -193,7 +255,7 @@ ${fontsCss ?? "/* fonts.css missing — fallbacks only */"}
                 border: 1px dashed var(--gold); }
   .clearspace::after { content: ""; position: absolute; inset: 0;
     background: repeating-linear-gradient(45deg, rgba(185,155,108,.18) 0 6px, transparent 6px 12px); }
-  .clearspace .mark { position: relative; z-index: 1; }
+  .clearspace .mark { position: relative; z-index: 1; background: #fff; }
 </style>
 </head>
 <body>
@@ -241,6 +303,22 @@ ${fontsCss ?? "/* fonts.css missing — fallbacks only */"}
     </div>
   </div>
 
+  <h2>Wordmark</h2>
+  <p class="note">Outlines, not live text: converted from the shipped Cormorant Garamond subset at
+  weight ${WEIGHT_NOTE}, letterspaced. A wordmark set as live text changes with whatever font the
+  viewer happens to have, reflows when a webfont fails to load, and cannot be handed to a printer.</p>
+  <div class="row">
+    ${WORDMARK_PATHS.length
+      ? WORDMARK_SIZES.map(
+          (h) => `<figure class="cell">
+      <svg viewBox="0 0 ${WORDMARK_BOX[2]} ${WORDMARK_BOX[3]}" fill="currentColor"
+           style="block-size:${h}px;inline-size:auto;display:block">${wordmarkGroup()}</svg>
+      <figcaption>${h}px</figcaption>
+    </figure>`,
+        ).join("\n    ")
+      : `<p class="note">public/brand/wordmark.svg not found — run <code>npm run wordmark:build</code>.</p>`}
+  </div>
+
   <h2>Clear space and lockup</h2>
   <div class="grid2">
     <div class="panel">
@@ -252,18 +330,14 @@ ${fontsCss ?? "/* fonts.css missing — fallbacks only */"}
       <p class="note">Half the mark's width on every side. The hatched ring is the exclusion zone.</p>
     </div>
     <div class="panel">
-      <div class="lockup">
-        <div class="mark" style="inline-size:52px;block-size:52px;color:${PALETTE.obsidian}">
-          <svg viewBox="0 0 ${GRID} ${GRID}">${paths("currentColor")}</svg>
-        </div>
-        <div>
-          <div class="wordmark">VELORA</div>
-          <div class="tagline">The Art of Inviting</div>
-        </div>
+      <div style="color:${PALETTE.obsidian}">
+        ${lockupSvg("currentColor", {
+          attrs: 'style="inline-size:100%;max-inline-size:340px;block-size:auto;display:block"',
+        })}
       </div>
-      <p class="note pending">The wordmark above is live text in the display face. The outlined,
-      distribution-ready wordmark is <strong>not built yet</strong>: it has to be converted from the
-      final font subset, not from whatever serif happens to be installed on the machine.</p>
+      <p class="note">The lockup: outlines converted from the shipped Cormorant Garamond subset,
+      set beside the mark with ${LOCKUP.gap} units of clear space. No live text, no font dependency —
+      this file can go to a printer or an embroiderer as it stands.</p>
     </div>
   </div>
 
