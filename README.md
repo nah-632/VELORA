@@ -42,6 +42,10 @@ npm run test:ui      # contrast gate + RTL logical-property guard
 npm run verify       # type-check + test + test:db + test:ui
 ```
 
+Tests import TypeScript directly, so they run through the `tsx` loader: this device's Node
+build reports `ERR_NO_TYPESCRIPT` (no built-in type stripping compiled in). `--experimental-strip-types`
+will not work here.
+
 `npm run build` is **CI-only**. A production build exhausts this device's memory; the local
 gate is a scoped type-check plus the test suites. Any report of "build verified" will say
 which of the two actually ran.
