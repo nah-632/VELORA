@@ -1,0 +1,95 @@
+/*
+ * Base layer.
+ *
+ * Loaded after tailwind.css (so preflight is already in place) and after tokens.css (so every
+ * custom property exists).
+ *
+ * The typeface is chosen per locale here, in one place, rather than by a component. Both
+ * families must be reachable from both directions: an Arabic invitation rendered inside the
+ * English interface still needs the Arabic face, and that is decided by the direction context
+ * of the *content*, not of the page. See docs/BRAND.md.
+ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body-ar);
+  color: var(--ink);
+  background-color: var(--ivory);
+  /* Arabic sits on a shorter x-height than Latin: it needs the extra leading. */
+  line-height: 1.75;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html[lang="en"] body {
+  font-family: var(--font-body-en);
+  line-height: 1.65;
+}
+
+/* Headings take the display face of the active direction context. */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] .font-display {
+  font-family: var(--font-display-ar);
+  line-height: 1.4;
+  /* Letter-spacing breaks Arabic joining: it is never applied to an RTL context. */
+  letter-spacing: normal;
+}
+
+[dir="ltr"] h1,
+[dir="ltr"] h2,
+[dir="ltr"] h3,
+[dir="ltr"] .font-display {
+  font-family: var(--font-display-en);
+  line-height: 1.15;
+}
+
+/*
+ * Content that carries its own direction.
+ *
+ * A customer's Arabic invitation inside an English interface, or a Latin venue name inside an
+ * Arabic one. `isolate` keeps the two from reordering each other at their boundaries, and the
+ * family follows the content's own direction.
+ */
+[dir="rtl"] .bidi-content {
+  font-family: var(--font-body-ar);
+}
+[dir="ltr"] .bidi-content {
+  font-family: var(--font-body-en);
+}
+
+/*
+ * A Latin identifier inside an RTL line.
+ *
+ * Not cosmetic. `--obsidian` in an Arabic paragraph renders as `obsidian--`, because the two
+ * leading hyphens are direction-neutral and the bidi algorithm moves them to the end of the
+ * run. `#F5F0E8 · ground` loses its `#` the same way. The same thing happens to version
+ * strings, CSS classes, file paths, SKUs and API keys — anywhere technical text is shown
+ * inside Arabic. Isolating the run is the fix; changing the font is not.
+ */
+.ltr-token {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* A reduced-motion preference is honoured globally; no component opts out. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

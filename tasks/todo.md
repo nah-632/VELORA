@@ -12,21 +12,47 @@ Convention: a task is done only when its verification evidence exists. No claim 
   - ⏳ the deliberate-missing-variable test is not written yet
 - [x] **1.3 Migration harness** — PGlite replay from zero, then a second time
   - ✅ `npm run test:db` → 1 migration applied twice, 4 functions, helpers present, PASS
-- [ ] **1.4 RLS harness with role discipline** — `set role authenticated` + reset in `finally`
-  - Verify: harness proves it can detect a deliberately broken policy
+- [x] **1.4 RLS harness with role discipline** — `set role` inside a transaction, committed variants for writes
+  - ✅ 27/27 isolation assertions, ending in a **negative control** that disables RLS and requires
+    the same query to return 3 rows instead of 1 — so the suite proves it can fail
 - [x] **1.5 Brand tokens + contrast gate** — owner palette, measured WCAG report
   - ✅ 21 pairs measured, 0 required failures. Champagne gold `#B99B6C` = **2.32:1 on ivory**
     → decoration-only; every interactive use draws from a measured `--gold-deep` (5.26:1)
-- [ ] **1.6 Locale routing + RTL guard** — next-intl, `dir`/`lang`/font per locale
-  - Verify: `/ar` and `/en` rendered; guard fails on a planted physical utility
-- [ ] **1.7a Form primitives** — button, input, select, textarea, field error, card
-- [ ] **1.7b Shell + overlays** — header/nav/footer, language switch, dialog, toast, states
+- [x] **1.6 Locale routing + RTL guard** — next-intl, `dir`/`lang`/font per locale
+  - ✅ `/` → 307 → `/ar`; `/ar` renders `lang="ar" dir="rtl"` in the Arabic face, `/en` renders
+    `lang="en" dir="ltr"` in the Latin face; no cross-locale string leakage; guard PASS
+  - ⏳ the guard has **not** yet been proven to fail on a planted physical utility
+- [x] **1.7a Form primitives** — button, input, textarea, field error, card, state panel
+  - ✅ rendered in both directions; error announced via `aria-describedby` + `role="alert"`
+- [x] **1.7b Shell** — header, nav, footer, language switch
+  - ⏳ dialog and toast are not built yet; nav destinations render disabled until their pages exist
 
 ### Checkpoint A
-- [ ] `npm run verify` green
-- [ ] fresh clone installs and runs
-- [ ] AR + EN rendered in a real browser
-- [ ] report to owner
+- [x] `npm run verify` green — type-check clean, 9/9 unit, 27/27 isolation, replay idempotent,
+      21/21 contrast pairs, RTL guard PASS, CSS guard PASS
+- [ ] fresh clone installs and runs — **not performed**
+- [x] AR + EN rendered in a real browser at 390×844 and 1280×800
+- [x] report to owner
+
+## Defects found by rendering (none of these were visible in the source)
+
+1. **`tokens.css` opened with `#`-prefixed comment lines.** `#` is not a CSS comment; the parser's
+   error recovery swallowed the entire `:root` block. Every `var()` then resolved to nothing while
+   the utilities further down still worked — so the page looked "mostly styled" with no colour and
+   fallback fonts. Silent, total, and invisible to grep. Now guarded by `scripts/check-css.mjs`.
+2. **`--obsidian` rendered as `obsidian--`.** Inside an RTL line the bidi algorithm moves the
+   leading direction-neutral hyphens to the end of the run. Fixed with `.ltr-token`
+   (`direction: ltr; unicode-bidi: isolate`) — the identical fix will be needed for order
+   references, version numbers, file paths and API keys shown in Arabic.
+3. **`.As it should appear`** — a trailing neutral character landing at the wrong end, because
+   demo strings were hardcoded English inside the Arabic page. Fixed at the source: every
+   user-facing string now comes from the catalogue.
+4. **`/` returned 404.** With a `src/` directory, Next looks for middleware at `src/middleware.ts`,
+   not at the project root.
+
+Deferred to Milestone 2 and stated plainly: **no font files are loaded yet**. The token stacks end
+at `Times New Roman` / `system-ui`, so every screenshot above is a fallback render. Self-hosted,
+subset Arabic subsets with shaping verification are `brand` work.
 
 ## Phase 2 — Database & Identity (Milestone 1)
 

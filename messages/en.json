@@ -1,0 +1,57 @@
+{
+  "brand": {
+    "name": "VELORA",
+    "positioning": "The Art of Inviting",
+    "tagline": "An Invitation to Remember"
+  },
+  "nav": {
+    "templates": "Templates",
+    "pricing": "Pricing",
+    "about": "About VELORA",
+    "contact": "Contact",
+    "studio": "Create Your Invitation",
+    "soon": "Coming soon"
+  },
+  "language": {
+    "label": "Language",
+    "switchTo": "العربية"
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "legalPending": "Privacy and terms are still being prepared"
+  },
+  "foundation": {
+    "eyebrow": "Phase 1 — Foundation",
+    "title": "Foundation",
+    "intro": "This is an internal verification page, not the homepage. It renders the brand tokens and the base components in both directions and both languages so they can be measured before the public site is built on top of them.",
+    "sections": {
+      "colors": "Colour tokens",
+      "typography": "Typography",
+      "components": "Components",
+      "fields": "Fields and validation",
+      "states": "States",
+      "measure": "Measurement"
+    },
+    "colorNotes": {
+      "gold": "Champagne gold (#B99B6C) measures 2.32:1 on warm ivory — decoration only, never text, and not even a focus ring.",
+      "goldDeep": "The interactive gold (#7A5F38) is the approved colour for anything a person operates.",
+      "measured": "Every ratio is measured by <code>scripts/check-contrast.py</code>, not estimated by eye."
+    },
+    "typeSample": "Arabic sample inside the same context",
+    "typeSampleLatin": "Latin text in the same context",
+    "demo": {
+      "fullName": "Full name",
+      "fullNameHint": "As it should appear on the invitation.",
+      "email": "Email",
+      "emailError": "Enter a valid email address.",
+      "phone": "Phone",
+      "message": "Invitation message"
+    },
+    "states": {
+      "loading": "Loading…",
+      "empty": "Nothing here yet",
+      "error": "Something went wrong. Try again.",
+      "success": "Saved"
+    }
+  }
+}
