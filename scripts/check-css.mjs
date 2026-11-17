@@ -11,11 +11,22 @@
  * Usage: node scripts/check-css.mjs
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, extname, join, relative } from "node:path";
+import { dirname, extname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SCAN_DIRS = ["src/styles"];
+
+// `--dir <path>` exists so the canary test can point this guard at a planted violation.
+const dirArg = (() => {
+  const index = process.argv.indexOf("--dir");
+  return index > -1 ? process.argv[index + 1] : null;
+})();
+const SCAN_DIRS = dirArg ? [dirArg] : ["src/styles"];
+
+/** An absolute `--dir` is used as given; a relative one is resolved against the project root. */
+function resolveScanDir(dir) {
+  return isAbsolute(dir) ? dir : join(ROOT, dir);
+}
 
 function* walk(dir) {
   let entries;
@@ -39,7 +50,7 @@ const findings = [];
 let scanned = 0;
 
 for (const dir of SCAN_DIRS) {
-  for (const file of walk(join(ROOT, dir))) {
+  for (const file of walk(resolveScanDir(dir))) {
     scanned += 1;
     const lines = readFileSync(file, "utf8").split("\n");
     let inComment = false;
@@ -83,6 +94,13 @@ for (const dir of SCAN_DIRS) {
 }
 
 console.log(`VELORA CSS guard — scanned ${scanned} file(s) under ${SCAN_DIRS.join(", ")}\n`);
+
+// A guard that examined nothing must never report success.
+if (scanned === 0) {
+  console.log("✗ no files were scanned — a guard that examines nothing cannot pass");
+  console.log("\nRESULT: FAIL");
+  process.exit(1);
+}
 
 if (findings.length === 0) {
   console.log("no malformed comments, no suspicious tokens");

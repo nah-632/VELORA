@@ -21,7 +21,19 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TOKENS = ROOT / "src" / "styles" / "tokens.css"
+
+
+def _tokens_path() -> Path:
+    """`--tokens <path>` lets the canary test point this gate at a stylesheet with a failing pair."""
+    argv = sys.argv[1:]
+    if "--tokens" in argv:
+        index = argv.index("--tokens")
+        if index + 1 < len(argv):
+            return Path(argv[index + 1])
+    return ROOT / "src" / "styles" / "tokens.css"
+
+
+TOKENS = _tokens_path()
 
 AA_TEXT = 4.5      # normal-size text
 AA_LARGE = 3.0     # large text

@@ -11,12 +11,24 @@
  * Usage: node scripts/check-rtl.mjs
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, extname, join, relative } from "node:path";
+import { dirname, extname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SCAN_DIRS = ["src"];
+
+// `--dir <path>` lets the canary test point this guard at a directory containing a deliberate
+// violation. Without it, "the guard passes" is an untested claim.
+const dirArg = (() => {
+  const index = process.argv.indexOf("--dir");
+  return index > -1 ? process.argv[index + 1] : null;
+})();
+const SCAN_DIRS = dirArg ? [dirArg] : ["src"];
 const EXTENSIONS = new Set([".ts", ".tsx", ".css", ".jsx", ".js"]);
+
+/** An absolute `--dir` is used as given; a relative one is resolved against the project root. */
+function resolveScanDir(dir) {
+  return isAbsolute(dir) ? dir : join(ROOT, dir);
+}
 
 // Tailwind utilities with a physical axis. `ps-`/`pe-`/`ms-`/`me-` are the logical forms.
 const UTILITY_PATTERNS = [
@@ -65,7 +77,7 @@ const findings = [];
 let scanned = 0;
 
 for (const scanDir of SCAN_DIRS) {
-  for (const file of walk(join(ROOT, scanDir))) {
+  for (const file of walk(resolveScanDir(scanDir))) {
     scanned += 1;
     const lines = readFileSync(file, "utf8").split("\n");
     for (const [index, rawLine] of lines.entries()) {
@@ -91,6 +103,14 @@ for (const scanDir of SCAN_DIRS) {
 }
 
 console.log(`VELORA RTL guard — scanned ${scanned} file(s) under ${SCAN_DIRS.join(", ")}\n`);
+
+// A guard that examined nothing must never report success: a missing or renamed directory would
+// otherwise turn this gate into a rubber stamp.
+if (scanned === 0) {
+  console.log("✗ no files were scanned — a guard that examines nothing cannot pass");
+  console.log("\nRESULT: FAIL");
+  process.exit(1);
+}
 
 if (findings.length === 0) {
   console.log("no physical direction utilities found");
