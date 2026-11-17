@@ -53,5 +53,54 @@
       "error": "Something went wrong. Try again.",
       "success": "Saved"
     }
+  },
+  "catalogue": {
+    "eyebrow": "The collection",
+    "title": "Invitation designs",
+    "intro": "Each design is a starting point: wording, colours and type all remain adaptable.",
+    "search": "Search designs",
+    "searchPlaceholder": "Name or style",
+    "searchAction": "Search",
+    "clear": "Clear filters",
+    "allCategories": "All styles",
+    "count": "{total, plural, =0 {No designs in {category}} one {{totalText} design in {category}} other {{totalText} designs in {category}}}",
+    "empty": "No designs match that search.",
+    "invalidDesign": "This design configuration could not be read.",
+    "featured": "Featured",
+    "priceTbc": "Price to be confirmed",
+    "priceTbcNote": "Pricing has not been set yet. Designs are shown so they can be reviewed — no price is invented on your behalf."
+  },
+  "template": {
+    "back": "Back to designs",
+    "style": "Style",
+    "languages": "Languages",
+    "arabicOnly": "Arabic only",
+    "bothLanguages": "Arabic and English",
+    "price": "Price",
+    "priceTbc": "Price to be confirmed",
+    "priceTbcNote": "This design has no price yet, so nothing can be ordered from this page.",
+    "canvas": "Canvas",
+    "create": "Create your invitation with this design",
+    "browse": "Browse other designs",
+    "customisation": "What can be changed",
+    "customisationNote": "The exact controls arrive with the Studio. The list above is what this design declares as adaptable.",
+    "invalid": "This design configuration could not be read."
+  },
+  "studio": {
+    "eyebrow": "Studio",
+    "title": "Your invitation",
+    "intro": "The design you selected is loaded below. The editor that changes its wording, colours and type is the next piece of work.",
+    "notYet": "The editor is not built yet. Your selection is real and was resolved from the catalogue — nothing on this page is a mock-up.",
+    "selected": "Selected design",
+    "selectionTitle": "What was selected",
+    "selectionDesign": "Design",
+    "selectionCanvas": "Canvas",
+    "selectionLayout": "Layout",
+    "selectionVersion": "Config version",
+    "sameRendererTitle": "One renderer, not two",
+    "sameRendererBody": "This canvas is the same component the catalogue uses, and the same one the finished invitation will use. There is no separate preview that merely resembles the real thing.",
+    "otherLanguage": "The same design in the other language",
+    "back": "Back to the design",
+    "browseAll": "Browse all designs"
   }
 }

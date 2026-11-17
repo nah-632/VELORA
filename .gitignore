@@ -24,6 +24,9 @@ next-env.d.ts
 # in public/fonts/, along with the OFL licences.
 /vendor/
 
+# The local development database (real PostgreSQL, in process). Never shipped, never committed.
+/.local-db/
+
 # Editor / OS
 .DS_Store
 .idea/

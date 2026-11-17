@@ -69,12 +69,22 @@ subset Arabic subsets with shaping verification are `brand` work.
 - [ ] report to owner
 
 ## Phase 3 — Template system (Milestone 3)
-- [ ] 3.1 categories + templates + assets schema
-- [ ] 3.2 catalogue queries (filter, search, featured)
-- [ ] 3.3 library grid + filters + search
-- [ ] 3.4 template detail
-- [ ] 3.5 select → studio handoff
-- [ ] 3.6 admin template CRUD
+
+- [x] 3.1 categories + templates + assets schema — versioned `design_config` with the version
+      lifted into a generated column; content in a separate `preview_content`; **prices nullable**
+- [x] 3.2 catalogue queries — in SQL functions, so the public site, the admin screens and the test
+      suite run the same query and RLS applies to all of them
+- [x] 3.3 library grid + category filter + search + paging (plain GET, works without JavaScript)
+- [x] 3.4 template detail — canvas, metadata, honest unpriced state
+- [x] 3.5 select → studio handoff — the design resolves from the database by slug
+- [ ] 3.6 admin template CRUD — belongs with Milestone 7, where the admin surface lives
+
+### Architecture decision taken in this milestone
+**L1 — catalogue queries live in SQL functions, with two transports.** This device cannot run a
+PostgreSQL server (`shmget` is unimplemented), so development uses PGlite in-process while
+production uses Supabase over PostgREST. Putting the query in the database means there is one
+implementation, not two that drift. The PGlite transport is refused in production, and it does
+**not** exercise RLS — the test suites do, by setting a role for every query.
 
 ## Phase 4 — Wedding Studio (Milestone 4)
 - [ ] 4.1 versioned design-configuration schema

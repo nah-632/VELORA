@@ -16,7 +16,8 @@ const catalogues: Record<Locale, () => Promise<{ default: AbstractIntlMessages }
   en: () => import("../../messages/en.json"),
 };
 
-export default getRequestConfig(async ({ locale }) => {
+export default getRequestConfig(async ({ requestLocale }) => {
+  const locale = await requestLocale;
   if (!isLocale(locale)) notFound();
 
   return {

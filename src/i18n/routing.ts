@@ -27,8 +27,15 @@ export const localeName: Record<Locale, string> = {
   en: "English",
 };
 
-export function isLocale(value: string): value is Locale {
-  return (locales as readonly string[]).includes(value);
+/**
+ * Narrows a value to a known locale.
+ *
+ * Takes `unknown` rather than `string` on purpose: the value usually arrives from a route
+ * parameter or a request header, either of which can be absent, and a narrowing function that
+ * cannot be called with a possibly-undefined value forces a cast at every call site.
+ */
+export function isLocale(value: unknown): value is Locale {
+  return typeof value === "string" && (locales as readonly string[]).includes(value);
 }
 
 export function otherLocale(locale: Locale): Locale {

@@ -11,7 +11,7 @@ import { LanguageSwitch } from "./LanguageSwitch";
  * of each destination is part of the interface until its page exists.
  */
 const NAV = [
-  { key: "templates", href: "/templates", ready: false },
+  { key: "templates", href: "/templates", ready: true },
   { key: "pricing", href: "/pricing", ready: false },
   { key: "about", href: "/about", ready: false },
   { key: "contact", href: "/contact", ready: false },

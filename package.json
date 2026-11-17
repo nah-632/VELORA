@@ -12,7 +12,7 @@
     "lint": "next lint",
     "type-check": "tsc -p tsconfig.check.json --noEmit",
     "test": "node --import tsx --test \"tests/unit/**/*.test.mjs\" \"tests/integration/**/*.test.mjs\"",
-    "test:db": "node scripts/db-replay.mjs && node tests/db/isolation.mjs",
+    "test:db": "node scripts/db-replay.mjs && node tests/db/isolation.mjs && node tests/db/catalogue.mjs",
     "test:fonts": "python3 scripts/check-fonts.py",
     "test:brand": "node tests/ui/check-brand.mjs",
     "fonts:build": "python3 scripts/fonts.py",

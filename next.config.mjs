@@ -15,6 +15,12 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    // The local development database is a real PostgreSQL compiled to WebAssembly. It is imported
+    // only on a non-production branch, so it must stay external to the server bundle rather than
+    // being traced into a deployment that will never load it.
+    serverComponentsExternalPackages: ["@electric-sql/pglite"],
+  },
   images: {
     // Template artwork is served from Supabase Storage; no wildcard remote hosts.
     remotePatterns: [

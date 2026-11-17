@@ -139,6 +139,15 @@ export function reporter(title) {
   const results = [];
   return {
     check(name, passed, detail = "") {
+      // A guard on the reporter itself. Twice now an assertion has compared a Promise to a value
+      // and quietly produced `false`, so a missing `await` looked like a failing feature rather
+      // than a broken test. A non-boolean here is a bug in the assertion, never a result.
+      if (typeof passed !== "boolean") {
+        throw new TypeError(
+          `assertion "${name}" produced ${Object.prototype.toString.call(passed)} instead of a ` +
+            "boolean — a missing `await` in the assertion, most likely",
+        );
+      }
       results.push({ name, passed, detail });
       console.log(`${passed ? "  ✓" : "  ✗"} ${name}${detail ? `  — ${detail}` : ""}`);
     },
