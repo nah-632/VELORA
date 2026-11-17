@@ -1,0 +1,256 @@
+/**
+ * VELORA — brand asset build.
+ *
+ * One source of truth for the mark (brand/monogram.mjs) emits every variant, so a change to the
+ * geometry cannot leave several SVG files disagreeing with each other. Deterministic: running it
+ * twice produces byte-identical output, which is what makes it safe to check in and diff.
+ *
+ * Usage: npm run brand:build
+ */
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import {
+  CLEAR_SPACE,
+  GRID,
+  LIT_FACE,
+  MINIMUM_SIZES,
+  PLANE_OPACITY,
+  SILHOUETTE,
+  VERTICES,
+} from "../brand/monogram.mjs";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+const PALETTE = {
+  obsidian: "#191a19",
+  ivory: "#f5f0e8",
+  gold: "#b99b6c",
+  goldDeep: "#7a5f38",
+  emerald: "#263e35",
+};
+
+/**
+ * The mark's two paths, in draw order.
+ * @param {string} fill  a colour, or `currentColor` for the themable asset
+ * @param {boolean} twoTones  false collapses the mark to a single tone
+ */
+function paths(fill, twoTones = true) {
+  const base = twoTones
+    ? `<path d="${SILHOUETTE}" fill="${fill}" fill-opacity="${PLANE_OPACITY}"/>
+  <path d="${LIT_FACE}" fill="${fill}"/>`
+    : `<path d="${SILHOUETTE}" fill="${fill}"/>`;
+  return base;
+}
+
+function svg({ fill = "currentColor", twoTones = true, title = "VELORA monogram" } = {}) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${GRID} ${GRID}" role="img" aria-label="${title}">
+  <title>${title}</title>
+  ${paths(fill, twoTones)}
+</svg>
+`;
+}
+
+function inlineSvg({ size, colour, twoTones = true, label = null, className = "mark" }) {
+  return `<figure class="cell">
+  <div class="${className}" style="inline-size:${size}px;block-size:${size}px;color:${colour}">
+    <svg viewBox="0 0 ${GRID} ${GRID}">${paths("currentColor", twoTones)}</svg>
+  </div>
+  <figcaption>${label ?? `${size}px`}</figcaption>
+</figure>`;
+}
+
+function write(relativePath, contents) {
+  const full = join(ROOT, relativePath);
+  mkdirSync(dirname(full), { recursive: true });
+  writeFileSync(full, contents, "utf8");
+  console.log(`  → ${relativePath}  (${contents.length} bytes)`);
+}
+
+// ---------------------------------------------------------------------------
+// Asset variants
+// ---------------------------------------------------------------------------
+console.log("VELORA brand build\n\nSVG assets");
+
+// Themable: inherits the surrounding text colour when inlined, which is how the site uses it.
+write("public/brand/monogram.svg", svg());
+
+// Fixed-colour files, for contexts that cannot inherit a colour (documents, exports, print).
+write("public/brand/monogram-obsidian.svg", svg({ fill: PALETTE.obsidian }));
+write("public/brand/monogram-ivory.svg", svg({ fill: PALETTE.ivory }));
+write("public/brand/monogram-gold.svg", svg({ fill: PALETTE.gold }));
+
+// Single tone: for foiling, embroidery, one-colour print, and anywhere two tones are unavailable.
+write("public/brand/monogram-mono.svg", svg({ twoTones: false }));
+
+// The application icon. Next serves app/icon.svg as the favicon automatically.
+write(
+  "src/app/icon.svg",
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${GRID} ${GRID}">
+  <rect width="${GRID}" height="${GRID}" rx="6" fill="${PALETTE.ivory}"/>
+  <g transform="translate(${GRID * 0.1} ${GRID * 0.1}) scale(0.8)">${paths(PALETTE.obsidian)}</g>
+</svg>
+`,
+);
+
+// ---------------------------------------------------------------------------
+// Construction and size preview
+// ---------------------------------------------------------------------------
+const SIZES = [16, 20, 24, 32, 40, 48, 64, 96, 160];
+
+const GRID_LINES = Array.from({ length: 33 }, (_, i) =>
+  i % 4 === 0 ? `M${i} 0V${GRID}M0 ${i}H${GRID}` : "",
+)
+  .filter(Boolean)
+  .join(" ");
+
+const dots = Object.values(VERTICES)
+  .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.7"/>`)
+  .join("\n    ");
+
+const construction = `<svg viewBox="-2 -2 ${GRID + 4} ${GRID + 4}" class="construction">
+  <g fill="none" stroke="${PALETTE.gold}" stroke-width="0.25" opacity="0.5">
+    <path d="${GRID_LINES}"/>
+  </g>
+  <g fill="none" stroke="${PALETTE.goldDeep}" stroke-width="0.4" stroke-dasharray="1.5 1.5">
+    <rect x="0" y="0" width="${GRID}" height="${GRID}"/>
+    <path d="M16 4V29"/>
+  </g>
+  <g color="${PALETTE.obsidian}">${paths("currentColor")}</g>
+  <g fill="${PALETTE.gold}">
+    ${dots}
+  </g>
+</svg>`;
+
+const sizeRow = (colour, twoTones = true) =>
+  SIZES.map((size) => inlineSvg({ size, colour, twoTones })).join("\n    ");
+
+const preview = `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VELORA — monogram</title>
+<style>
+  :root {
+    --obsidian: ${PALETTE.obsidian};
+    --ivory: ${PALETTE.ivory};
+    --gold: ${PALETTE.gold};
+    --gold-deep: ${PALETTE.goldDeep};
+    --emerald: ${PALETTE.emerald};
+    --ink-muted: #5b5f5c;
+    --line: ${"#ded6c8"};
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px; background: #fff; color: var(--obsidian);
+         font: 14px/1.6 system-ui, sans-serif; }
+  h1 { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-muted);
+       font-weight: 600; margin: 0 0 6px; }
+  h2 { font-size: 19px; margin: 40px 0 4px; font-weight: 600; }
+  p.note { color: var(--ink-muted); max-width: 64ch; margin: 0 0 16px; }
+  .row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 26px; padding: 26px;
+         border-radius: 8px; border: 1px solid var(--line); background: var(--ivory); }
+  .row.dark { background: var(--obsidian); border-color: var(--obsidian); }
+  .row.dark figcaption { color: #a8a49c; }
+  .cell { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .mark { display: block; }
+  .mark svg { inline-size: 100%; block-size: 100%; display: block; }
+  figcaption { font-size: 11px; color: var(--ink-muted); letter-spacing: .04em; }
+  .grid2 { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .panel { border: 1px solid var(--line); border-radius: 8px; padding: 22px; background: #fff; }
+  .panel .row { padding: 0; border: 0; background: transparent; }
+  .construction { inline-size: 250px; block-size: 250px; display: block; margin: 0 auto; }
+  .lockup { display: flex; align-items: center; gap: 20px; }
+  .lockup .mark { inline-size: 52px; block-size: 52px; }
+  .wordmark { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 40px;
+              letter-spacing: .18em; line-height: 1; }
+  .tagline { font-size: 10px; letter-spacing: .32em; text-transform: uppercase;
+             color: var(--ink-muted); margin-top: 10px; }
+  .pending { border-inline-start: 3px solid var(--gold-deep); padding-inline-start: 12px; }
+  code { font-size: 12px; background: #f2ece2; padding: 1px 5px; border-radius: 3px;
+         direction: ltr; unicode-bidi: isolate; }
+  ul { color: var(--ink-muted); max-width: 66ch; padding-inline-start: 18px; }
+  .clearspace { position: relative; display: inline-block; padding: ${CLEAR_SPACE}px; background: #fff;
+                border: 1px dashed var(--gold); }
+  .clearspace::after { content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(45deg, rgba(185,155,108,.18) 0 6px, transparent 6px 12px); }
+  .clearspace .mark { position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+  <h1>VELORA — brand asset</h1>
+  <h2>Monogram</h2>
+  <p class="note">A strip of card, folded once, read as the letter V. The fold is carried by tone rather
+  than by a drawn line, so the mark holds at every size and collapses cleanly into a single-colour V.</p>
+
+  <div class="row">
+    ${sizeRow(PALETTE.obsidian)}
+  </div>
+
+  <h2>On the dark surface</h2>
+  <div class="row dark">
+    ${sizeRow(PALETTE.ivory)}
+  </div>
+
+  <h2>Two tones, and one</h2>
+  <div class="grid2">
+    <div class="panel">
+      <p class="note"><strong>Two tones</strong> — the default. The turned-away plane is held at
+      ${PLANE_OPACITY}.</p>
+      <div class="row">${[48, 64, 96].map((s) => inlineSvg({ size: s, colour: PALETTE.obsidian })).join(" ")}</div>
+    </div>
+    <div class="panel">
+      <p class="note"><strong>One tone</strong> — foiling, embroidery, one-colour print, and anywhere a
+      second tone is unavailable.</p>
+      <div class="row">${[48, 64, 96].map((s) => inlineSvg({ size: s, colour: PALETTE.obsidian, twoTones: false })).join(" ")}</div>
+    </div>
+  </div>
+
+  <h2>Construction</h2>
+  <div class="grid2">
+    <div class="panel">${construction}</div>
+    <div class="panel">
+      <p class="note">A ${GRID}×${GRID} grid. Seven points, one crease, no feature below 1 unit —
+      nothing depends on a fine detail to stay recognisable.</p>
+      <ul>
+        <li>Cut ends <code>4.16, 7.21</code> → <code>9.04, 4.67</code>, perpendicular to the strip</li>
+        <li>Crease <code>x = 16</code>, from the notch <code>18</code> to the foot <code>27.34</code></li>
+        <li>Foot <code>14.67 → 17.33</code> — the folded edge seen edge-on</li>
+        <li>Minimum size <code>${MINIMUM_SIZES.favicon}px</code> on screen, <code>${MINIMUM_SIZES.print}mm</code> in print</li>
+        <li>Clear space <code>${CLEAR_SPACE}</code> units on every side</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Clear space and lockup</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="clearspace">
+        <div class="mark" style="inline-size:96px;block-size:96px;color:${PALETTE.obsidian}">
+          <svg viewBox="0 0 ${GRID} ${GRID}">${paths("currentColor")}</svg>
+        </div>
+      </div>
+      <p class="note">Half the mark's width on every side. The hatched ring is the exclusion zone.</p>
+    </div>
+    <div class="panel">
+      <div class="lockup">
+        <div class="mark" style="inline-size:52px;block-size:52px;color:${PALETTE.obsidian}">
+          <svg viewBox="0 0 ${GRID} ${GRID}">${paths("currentColor")}</svg>
+        </div>
+        <div>
+          <div class="wordmark">VELORA</div>
+          <div class="tagline">The Art of Inviting</div>
+        </div>
+      </div>
+      <p class="note pending">The wordmark above is live text in the display face. The outlined,
+      distribution-ready wordmark is <strong>not built yet</strong>: it has to be converted from the
+      final font subset, not from whatever serif happens to be installed on the machine.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+write("public/brand/preview.html", preview);
+console.log("\nRESULT: written");

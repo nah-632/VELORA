@@ -128,6 +128,24 @@ subset Arabic subsets with shaping verification are `brand` work.
 - [ ] 9.5 production configuration
 - [ ] 9.6 deployment documentation
 
+## Phase 1 — remaining gaps (closed)
+
+- [x] **1.2b Environment failure test** — child process with a closed environment
+  - ✅ 13/13 unit tests: missing variable fails naming itself, public-only still fails, secret never echoed
+- [x] **1.6b Guard negative control** — `tests/ui/guard-canary.mjs`
+  - ✅ 11/11: each of the three UI gates is pointed at a planted violation and must exit non-zero
+
+## Milestone 2 — Brand (in progress)
+
+- [x] **2.1 Monogram** — folded-strip V, generated from one source by `npm run brand:build`
+  - ✅ six SVG variants + app icon, deterministic build; rendered 16→160px on ivory and obsidian
+- [x] **2.2 Brand guidelines** — `docs/BRAND.md`
+  - ✅ including the record of the first attempt that failed on render
+- [ ] **2.3 Fonts** — self-hosted, subset, Arabic shaping verified
+  - blocks the wordmark, and every screenshot so far is a fallback render
+- [ ] **2.4 Outlined wordmark** — must come from the final subset, not a system serif
+- [ ] **2.5 Favicon and app icon verified in a browser tab**
+
 ## Blockers
 
 - **B1 — Supabase project not provisioned.** The configured access token is scoped and lacks

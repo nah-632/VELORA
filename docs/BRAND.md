@@ -1,0 +1,106 @@
+# VELORA — brand guidelines
+
+Status: **living document, Milestone 2 in progress.** Everything here is derived from something
+that was measured or rendered, not chosen by eye.
+
+## 1. The mark
+
+**One strip of card, folded once, read as the letter V.**
+
+The brief asks the monogram to explore the letter V through "a folded invitation or refined paper
+geometry", and explicitly rules out crowns, hearts, rings and flourishes. The mark contains no
+borrowed wedding symbol: it is a single strip, folded at its middle, with a paper cut at each end
+and the folded edge squared off where it faces the viewer.
+
+### Why it is built this way
+
+| Decision | Reason |
+|---|---|
+| The fold is shown by **tone**, not by a drawn line | A crease drawn as a hairline disappears at 24px and turns to grey mush at 16px. A tonal difference between two planes survives to the smallest size. |
+| The silhouette is drawn under the lit plane | Painting the union first prevents an antialiasing hairline along the crease — exactly where a two-shape construction shows a seam. |
+| The ends are cut **perpendicular to the strip** | What a cut strip actually looks like; it is what separates the mark from a generic chevron. |
+| The point is **squared into a flat foot** | A true miter spikes to y≈31 on a 32 grid, past the artwork, and reads as a blade. |
+| **Nothing finer than 1 unit** on a 32 grid | In one colour the planes merge into a clean solid V. Nothing breaks; nothing degrades badly. |
+
+### The first attempt failed, and why it is recorded here
+
+The mark was first built as **two separate arm triangles with one tonally lighter**. Every
+argument above still applied on paper. Rendered at 160px it read as **two blades, or a pair of
+misplaced highlights** — because the tone break sat between two *disjoint* shapes instead of
+across a fold. A single-band construction fixed exactly that.
+
+**A design that has not been rendered has not been designed.** This is the same failure mode that
+produced the `#`-comment catastrophe in `tokens.css` in the same week: a document that reads
+correctly and behaves incorrectly.
+
+## 2. Assets
+
+All variants are generated from one source — `brand/monogram.mjs` — by `npm run brand:build`.
+They cannot drift apart, and the build is deterministic, so a diff of `public/brand/` is a diff of
+the mark.
+
+| File | Use |
+|---|---|
+| `public/brand/monogram.svg` | `currentColor`; inherits the surrounding text colour. The site's default. |
+| `monogram-obsidian.svg` / `-ivory.svg` / `-gold.svg` | Fixed colour, for exports, documents and print. |
+| `monogram-mono.svg` | Single tone: foiling, embroidery, one-colour print. |
+| `src/app/icon.svg` | Application icon and favicon, served at `/icon.svg`. |
+
+## 3. Size and clear space
+
+- **Minimum** 16px on screen, 12mm in print. Below that it is a coloured square; use the wordmark.
+- **Clear space** half the mark's width on every side. Measured from the mark's own bounding box,
+  not from the artwork file.
+- The mark is **never mirrored** for Arabic. A monogram is a mark, not a text run; mirroring would
+  make one product look like two.
+
+## 4. Type
+
+| Role | Family | Note |
+|---|---|---|
+| Arabic display | Aref Ruqaa | Calligraphic. **Display headings only** — never body copy, never interface chrome. |
+| Arabic body | IBM Plex Sans Arabic | |
+| English display | Cormorant Garamond | |
+| English body | Manrope | |
+
+**Not yet shipped.** No font files are loaded: the stacks end at `Times New Roman` and `system-ui`,
+so every render to date is a fallback. Faces will be self-hosted and subset, and Arabic subsets
+must be verified for shaping — a subset that drops a GSUB joining feature produces disconnected
+letters, which is a total failure for an Arabic interface and is invisible unless looked for.
+
+## 5. Colour
+
+Measured by `scripts/check-contrast.py` on every run. The gate reports **21 pairs, 0 required
+failures**.
+
+| Token | Value | Role |
+|---|---|---|
+| `--obsidian` | `#191A19` | Ink, primary action ground. 15.39:1 on ivory. |
+| `--ivory` | `#F5F0E8` | Page ground. |
+| `--gold` | `#B99B6C` | **Decoration only.** 2.32:1 on ivory — it fails even the 3:1 that WCAG 1.4.11 requires for a focus ring. |
+| `--gold-deep` | `#7A5F38` | Every interactive use. 5.26:1 on ivory, 5.96:1 on white. |
+| `--taupe` | `#B9ADA0` | Decoration only. 1.94:1 on ivory. |
+| `--emerald` | `#263E35` | Secondary action ground. 10.16:1 on ivory. |
+
+A brand colour named in a specification for a UI affordance **must be measured before it ships**.
+This is the fourth project in a row where the named gold failed and a darkened variant had to
+carry every interactive use.
+
+## 6. Direction
+
+- The interface's direction comes from the locale, set once on `<html>`.
+- **User-authored content carries its own direction** (`dir="auto"`): an Arabic invitation inside
+  the English interface, a Latin venue name inside an Arabic one.
+- **Latin identifiers inside Arabic need isolation**, not a font change. `--obsidian` renders as
+  `obsidian--` without it, because the leading hyphens are direction-neutral and the bidi
+  algorithm moves them to the end of the run. The same applies to order references, file paths,
+  version numbers and API keys. Class: `.ltr-token`.
+- Physical CSS direction is **enforced against** by `scripts/check-rtl.mjs`, which refuses to pass
+  when it has scanned no files.
+
+## 7. Still outstanding
+
+- The outlined, distribution-ready **wordmark**. It must be converted from the final font subset,
+  never from a system serif.
+- Font subsets, with Arabic shaping verification.
+- Light and dark **lockup** files (mark plus wordmark), once the wordmark exists.
