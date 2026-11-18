@@ -42,8 +42,17 @@ interface Props {
   };
 }
 
+/**
+ * `%count%`, not `{count}`.
+ *
+ * These labels are handed to this component as finished strings, so nothing is going to supply a
+ * value for an ICU placeholder at translation time — and next-intl answers a `{count}` message
+ * asked for without values by rendering the message *key*. That is exactly what happened: the panel
+ * read "admin.guests.readyRows" on a live page. A placeholder that is not ICU text has no such
+ * expectation to fail.
+ */
 function fill(template: string, count: number): string {
-  return template.replaceAll("{count}", String(count));
+  return template.replaceAll("%count%", String(count));
 }
 
 /** A submit button that knows whether the form is in flight. `useFormStatus` must be inside it. */
