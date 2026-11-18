@@ -197,12 +197,14 @@ export default async function EventPage({
           placeholder: g("importPlaceholder"),
           preview: g("preview"),
           commit: g("commit"),
-          imported: (n) => g("imported", { count: n }),
+          // Strings with `{count}` in them, not functions: a function prop cannot cross into a
+          // client component. See the note in ImportForm.
+          imported: g("imported"),
           rejected: g("rejected"),
           duplicates: g("duplicates"),
           line: g("line"),
-          ready: (n) => g("readyRows", { count: n }),
-          willSkip: (n) => g("willSkip", { count: n }),
+          ready: g("readyRows"),
+          willSkip: g("willSkip"),
         }}
       />
 

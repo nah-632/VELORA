@@ -14,6 +14,16 @@ import { type ImportDone, type ImportPreview, previewGuestImport } from "./actio
  * state would mean either writing rows before the operator has seen them, or round-tripping the
  * pasted text through a URL.
  */
+/**
+ * Every label is a plain string, and the three that need a number carry a `{count}` placeholder
+ * that this component fills in.
+ *
+ * The first version passed ready-made functions (`(n) => t("imported", { count: n })`). React
+ * cannot serialise a function across the server/client boundary, so the whole event page threw
+ * — "Functions cannot be passed directly to Client Components" — and the console showed a server
+ * error. Translating on the server and filling in the number here keeps the strings in the message
+ * catalogues and the boundary serialisable.
+ */
 interface Props {
   eventId: string;
   locale: string;
@@ -23,13 +33,17 @@ interface Props {
     placeholder: string;
     preview: string;
     commit: string;
-    imported: (n: number) => string;
+    imported: string;
     rejected: string;
     duplicates: string;
     line: string;
-    ready: (n: number) => string;
-    willSkip: (n: number) => string;
+    ready: string;
+    willSkip: string;
   };
+}
+
+function fill(template: string, count: number): string {
+  return template.replaceAll("{count}", String(count));
 }
 
 /** A submit button that knows whether the form is in flight. `useFormStatus` must be inside it. */
@@ -79,15 +93,15 @@ export function ImportForm({ eventId, locale, labels }: Props) {
 
       {state?.status === "done" ? (
         <div className="mt-3">
-          <StatePanel kind="success" message={labels.imported(state.inserted)} />
+          <StatePanel kind="success" message={fill(labels.imported, state.inserted)} />
         </div>
       ) : null}
 
       {state?.status === "preview" ? (
         <div className="mt-4 flex flex-col gap-2 text-sm">
           <p className="text-ink">
-            {labels.ready(state.guests.length)}
-            {state.rejected.length > 0 ? ` · ${labels.willSkip(state.rejected.length)}` : ""}
+            {fill(labels.ready, state.guests.length)}
+            {state.rejected.length > 0 ? ` · ${fill(labels.willSkip, state.rejected.length)}` : ""}
           </p>
 
           {state.rejected.length > 0 ? (
