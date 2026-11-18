@@ -30,6 +30,7 @@ export async function GET() {
     applied: null,
     pendingCheck: "not_checked",
   };
+  let adminAccounts: number | null = null;
 
   if (database.ok) {
     try {
@@ -40,6 +41,13 @@ export async function GET() {
       // The table not existing yet is a normal state for a fresh database, not a failure of the
       // service. Saying so beats reporting the application as broken.
       migrations = { applied: null, pendingCheck: "no_migration_table" };
+    }
+
+    try {
+      const rows = await getSql()<{ n: number }[]>`select count(*)::int as n from public.admin_users`;
+      adminAccounts = rows[0]?.n ?? 0;
+    } catch {
+      adminAccounts = null;
     }
   }
 
@@ -52,6 +60,9 @@ export async function GET() {
         ...(database.latencyMs !== undefined ? { latencyMs: database.latencyMs } : {}),
       },
       migrations,
+      // Tells an operator whether this installation has been seeded yet. A number, not a name:
+      // a health endpoint should never become a way to enumerate accounts.
+      admin: { accounts: adminAccounts },
     },
     checkedInMs: Date.now() - started,
   };
