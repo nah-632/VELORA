@@ -20,9 +20,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DIR = join(ROOT, "db/migrations");
 
 const { authenticate, POLICY, recentAttempts } = await import("../../src/features/admin/login.ts");
-const { hashPassword, hashSessionToken, newSessionToken, newGuestToken } = await import(
-  "../../src/features/admin/credentials.ts"
-);
+const seedPassword = await import("../../scripts/lib/password.mjs");
+const { hashPassword, hashSessionToken, newSessionToken, newGuestToken, verifyPassword, passwordPolicyError } =
+  await import("../../src/features/admin/credentials.ts");
 
 const files = existsSync(DIR)
   ? readdirSync(DIR)
@@ -209,6 +209,22 @@ t.check("a revoked session no longer matches an active lookup", stillThere.rows[
 await db.query(`delete from public.admin_users where id = $1`, [adminId]);
 const orphans = await db.query(`select count(*)::int as n from public.admin_sessions`);
 t.check("deleting the administrator removes their sessions", orphans.rows[0].n === 0);
+
+// ---------------------------------------------------------------------------------------------
+t.section("the seed script and the application agree");
+// scripts/lib/password.mjs is plain JavaScript because the container runs it with plain node, so
+// the argon parameters and the policy exist twice. This is what keeps them the same.
+const seedHash = await seedPassword.hashPassword(PASSWORD);
+t.check("a hash written by the seed verifies under the application's verifier", await verifyPassword(seedHash, PASSWORD));
+t.check("...and rejects a wrong password there too", (await verifyPassword(seedHash, "nope")) === false);
+t.check(
+  "the two password policies agree on the same inputs",
+  ["short", "123456789012", `${EMAIL.split("@")[0]}-is-my-password`].every(
+    (sample) =>
+      Boolean(seedPassword.passwordPolicyError(sample, EMAIL)) ===
+      Boolean(passwordPolicyError(sample, EMAIL)),
+  ),
+);
 
 // ---------------------------------------------------------------------------------------------
 t.section("guest invitation tokens");

@@ -22,7 +22,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { hashPassword, passwordPolicyError } from "../src/features/admin/credentials.ts";
+import { hashPassword, passwordPolicyError } from "./lib/password.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
