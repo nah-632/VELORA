@@ -4,10 +4,13 @@ import { notFound } from "next/navigation";
 import { TemplateCanvas } from "@/components/invitation/TemplateCanvas";
 import { buttonClass } from "@/components/ui/Button";
 import { Card, SectionHeading } from "@/components/ui/Card";
-import { getCatalogue } from "@/features/catalogue/repository";
+import { NotConfigured } from "@/components/shell/NotConfigured";
+import { tryGetCatalogue } from "@/features/catalogue/repository";
 import { blocksFromPreview, fallbackBlocks } from "@/features/studio/blocks";
 import { Link } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/routing";
+
+export const dynamic = "force-dynamic";
 
 /**
  * A single design.
@@ -22,7 +25,9 @@ export async function generateMetadata({
   params: { locale: string; slug: string };
 }) {
   if (!isLocale(locale)) return {};
-  const template = await (await getCatalogue()).get(slug, locale);
+  const catalogue = await tryGetCatalogue();
+  if (!catalogue) return {};
+  const template = await catalogue.get(slug, locale);
   if (!template) return {};
   return { title: template.name, description: template.description ?? undefined };
 }
@@ -35,7 +40,8 @@ export default async function TemplateDetailPage({
   if (!isLocale(locale)) notFound();
 
   const t = await getTranslations({ locale, namespace: "template" });
-  const catalogue = await getCatalogue();
+  const catalogue = await tryGetCatalogue();
+  if (!catalogue) return <NotConfigured locale={locale} />;
   const template = await catalogue.get(slug, locale);
 
   if (!template) notFound();

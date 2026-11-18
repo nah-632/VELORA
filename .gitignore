@@ -32,3 +32,8 @@ next-env.d.ts
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Vercel CLI link state (local only, never deployed)
+.vercel/
+.vercel
+.env*

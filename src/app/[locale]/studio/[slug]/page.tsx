@@ -2,7 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { DesignConfigSchema } from "@/features/catalogue/design-config";
-import { getCatalogue } from "@/features/catalogue/repository";
+import { NotConfigured } from "@/components/shell/NotConfigured";
+import { tryGetCatalogue } from "@/features/catalogue/repository";
 import { loadCurrentDraft } from "@/features/studio/actions";
 import { EMPTY_CONTENT, parseContent, type InvitationContent } from "@/features/studio/content";
 import { Studio } from "@/features/studio/Studio";
@@ -27,7 +28,8 @@ export default async function StudioPage({
   if (!isLocale(locale)) notFound();
 
   const t = await getTranslations({ locale, namespace: "editor" });
-  const catalogue = await getCatalogue();
+  const catalogue = await tryGetCatalogue();
+  if (!catalogue) return <NotConfigured locale={locale} />;
   const template = await catalogue.get(slug, locale);
 
   if (!template) notFound();

@@ -19,7 +19,11 @@
  * sets a role for every query. The dev transport is refused outright in production.
  */
 import { type Locale } from "@/i18n/routing";
-import { assertDataSourceAvailable, dataSourceKind } from "@/lib/data-source";
+import {
+  ConfigurationError,
+  assertDataSourceAvailable,
+  dataSourceKind,
+} from "@/lib/data-source";
 
 import {
   type DesignConfig,
@@ -150,4 +154,19 @@ export async function getCatalogue(): Promise<CatalogueSource> {
   }
 
   return cached;
+}
+
+/**
+ * The catalogue, or `null` when this deployment has no data source at all.
+ *
+ * Only a *configuration* problem returns null. A database that is unreachable, slow or erroring
+ * still throws, so an outage is never reported to a reader as a setup step.
+ */
+export async function tryGetCatalogue(): Promise<CatalogueSource | null> {
+  try {
+    return await getCatalogue();
+  } catch (error) {
+    if (error instanceof ConfigurationError) return null;
+    throw error;
+  }
 }

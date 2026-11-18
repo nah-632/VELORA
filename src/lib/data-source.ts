@@ -17,6 +17,21 @@ import { join } from "node:path";
 
 export type DataSourceKind = "supabase" | "local";
 
+/**
+ * Thrown when the deployment has no data source at all — a configuration problem, as distinct
+ * from a database being unreachable or a query failing.
+ *
+ * The distinction matters: a page can tell the reader "this deployment is not connected to a
+ * database yet", but it must not say that when the real problem is a timeout, because then a
+ * genuine outage would be reported as a setup step.
+ */
+export class ConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConfigurationError";
+  }
+}
+
 export function dataSourceKind(): DataSourceKind {
   const configured =
     Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -25,7 +40,7 @@ export function dataSourceKind(): DataSourceKind {
 
 export function assertDataSourceAvailable(): void {
   if (dataSourceKind() === "local" && process.env.NODE_ENV === "production") {
-    throw new Error(
+    throw new ConfigurationError(
       "No data source is configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
         "The local development database is deliberately refused in production.",
     );

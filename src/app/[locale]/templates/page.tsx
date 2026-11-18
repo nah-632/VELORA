@@ -3,11 +3,22 @@ import { getTranslations } from "next-intl/server";
 import { TemplateCanvas } from "@/components/invitation/TemplateCanvas";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, StatePanel } from "@/components/ui/Card";
-import { getCatalogue } from "@/features/catalogue/repository";
+import { NotConfigured } from "@/components/shell/NotConfigured";
+import { tryGetCatalogue } from "@/features/catalogue/repository";
 import { blocksFromPreview, fallbackBlocks } from "@/features/studio/blocks";
 import { Link } from "@/i18n/navigation";
 import { isLocale, locales } from "@/i18n/routing";
 import { notFound } from "next/navigation";
+
+/**
+ * Rendered per request, not pre-built.
+ *
+ * The catalogue comes from a database that lives elsewhere, so prerendering it would make every
+ * deployment depend on the database being reachable *at build time* — and would bake one day's
+ * catalogue into the build. It is also the honest model: a template published an hour ago must
+ * appear without a redeploy.
+ */
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -30,7 +41,8 @@ export default async function TemplateLibraryPage({
   if (!isLocale(locale)) notFound();
 
   const t = await getTranslations({ locale, namespace: "catalogue" });
-  const catalogue = await getCatalogue();
+  const catalogue = await tryGetCatalogue();
+  if (!catalogue) return <NotConfigured locale={locale} />;
 
   const category = searchParams.category?.trim() || null;
   const search = searchParams.q?.trim() || null;

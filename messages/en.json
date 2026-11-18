@@ -169,6 +169,14 @@
       "openFinal": "Open the finished invitation"
     }
   },
+  "unconfigured": {
+    "eyebrow": "Preview deployment",
+    "title": "The catalogue is not connected yet",
+    "body": "This deployment has no database configured, so there are no designs to show. Everything else in the build is real: the brand, the type system, the layout and the direction handling all render from the same code that will ship.",
+    "detail": "One step remains: create the database project and set its URL and anon key as deployment variables. See docs/DEPLOYMENT.md.",
+    "home": "Home",
+    "brand": "Brand assets"
+  },
   "invitation": {
     "eyebrow": "Your invitation",
     "title": "Ready to send",
