@@ -25,6 +25,13 @@ order, one vertical slice at a time. Every milestone ends at a gate with evidenc
 | AD-9 | Aref Ruqaa restricted to display headings; Naskh companion for body | Calligraphic face; legibility is a risk, not a preference |
 | AD-10 | Payment provider abstraction + manual recording; nothing simulated | No gateway selected; the brief forbids pretending one exists |
 | AD-11 | Scoped `tsc` locally, `next build` in CI | This device OOMs on whole-project builds — stated, not hidden |
+| AD-12 | **CranL** hosts the application and the data (one Next.js app from GitHub; managed PostgreSQL in `riyadh-1`, MENA) | **ADDENDUM E**, supersedes AD-2. Riyadh is the closest CranL region to Bahrain; `netherlands-1` is the only region on the free plan, so MENA requires Pro. `docs/CRANL.md` holds the verified capability map |
+| AD-13 | **Authorization lives in the application layer**, not in RLS — supersedes AD-4 | ADDENDUM E removes Supabase, so there is no second enforcement point. Every admin route and server action verifies the admin session itself, and the only public surface is the token route that returns the minimum. This is a *weaker* architecture than RLS and the cost is accepted explicitly: isolation is now a test obligation, not a database guarantee |
+| AD-14 | **Drizzle** as the typed access layer; the committed SQL migrations remain the source of truth — amends AD-3 | ADDENDUM E names Prisma or Drizzle. Rewriting nine migrations and the SECURITY DEFINER functions into a schema DSL would discard the 57 catalogue and 26 draft assertions for no gain. Drizzle reads the same tables and calls the same SQL functions; versioned SQL still describes the schema |
+| AD-15 | Single-admin credentials auth: **argon2id**, httpOnly `SameSite` session cookies, login rate limiting + lockout, optional TOTP, password change in Settings | ADDENDUM E. No public sign-up. Initial credentials come from environment variables at seed time and are never in the repo |
+| AD-16 | Object storage behind an interface — CranL S3 in production, the filesystem locally; signed URLs for anything private | Keeps local development and tests free of network credentials while production serves images through the CDN |
+| AD-17 | Scheduled work runs as a **CranL Schedule command inside the container**, not as a public HTTP endpoint | CranL Schedules execute a shell command (`bash`, TZ UTC); the addendum's "cron endpoint protected by a secret token" assumed an HTTP callback. A container command is strictly safer — there is no public endpoint to protect. An HTTP route stays available for providers that require one |
+| AD-18 | Production app and database are **protected** (`configure_app {protect:true}`, `protect_database`) once they exist | CranL: a protected resource cannot be deleted or reconfigured by any agent — only a person in the dashboard can lift it. Cheap, and it removes the worst failure mode of an agent-driven deployment |
 
 ## Task List
 
@@ -116,7 +123,26 @@ asserted to be non-deletable by ordinary roles.
 | 8 WhatsApp & payments | `payments` | provider abstraction interface · transaction records · manual recording · refunds/adjustments · reconciliation view · activation requirements doc |
 | 9 Testing & release | `quality` | functional suite · security suite · RTL/a11y/responsive pass · bug fixes · production configuration · deployment documentation |
 
-## Risks and Mitigations
+## Phase 10 — Hosting migration to CranL (ADDENDUM E)
+
+Not a milestone in the product's dependency order: it replaces the platform beneath the existing
+milestones. It is ordered so that nothing is thrown away.
+
+| id | Task | Gate |
+|---|---|---|
+| C0 | Owner: upgrade CranL to Pro · connect GitHub · name the custom domain | `get_account` shows the plan and limits the addendum needs; `list_github_repos` shows the repo |
+| C1 | Provision: database (`riyadh-1`, `DATABASE_URL` injected), app (GitHub, `main`, region `riyadh-1`, port 3000, environment set **before** the first build), bucket + key, cron jobs, domain | `preflight_deploy` clean; first build log green; app reachable on its `cranl.net` host |
+| C2 | One Postgres transport: replace the Supabase/PostgREST + PGlite split with a single Drizzle client over `postgres` (PGlite stays as the local test database) | migrations replay from zero against a real CranL database; `npm run test:db` green |
+| C3 | Authorization moves into the application layer: an admin-session guard on every admin route and server action; the token route is the only public read, returns the minimum, and records opens/RSVPs with `no-store` | a test per admin route asserting a session-less caller is refused; the token route returns no phone numbers and no other guest's data |
+| C4 | Single-admin credentials auth (argon2id, session cookies, rate limiting + lockout, optional TOTP, password change), seeded from environment variables | login/logout/lockout/TOTP tests; no credential material in the repo or the build log |
+| C5 | Storage interface + CranL S3 driver (signed URLs, image optimisation, CDN); filesystem driver for local dev | round-trip test: upload, signed read, private object refused unsigned |
+| C6 | Cron jobs as container commands; health endpoint; structured logging; error reporting; snapshot/restore documented | `run_cron_job` succeeds for each job; `/api/health` reports dependency state; a snapshot is taken and a restore is rehearsed |
+| C7 | README: CranL setup, migrations, admin-password rotation, backup restore, enabling WhatsApp Business API later | a reader who has never seen the repo can follow it end to end |
+
+**C0 is a hard prerequisite for C1** — the plan limits are a fact returned by the API, not a
+preference (`docs/CRANL.md` §1).
+
+
 
 | Risk | Impact | Mitigation |
 |---|---|---|

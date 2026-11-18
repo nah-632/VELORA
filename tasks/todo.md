@@ -212,12 +212,41 @@ colours rather than *painting* an invitation — so it now checks the act of pai
 - [x] **2.6 Direction-aware eyebrow** — `uppercase` and `letter-spacing` are Latin devices; attaching
   them to Arabic breaks the joins. Fixed with a `.eyebrow` class scoped to `[dir="ltr"]`
 
+## Phase 10 — Hosting migration to CranL (ADDENDUM E) — **blocked on C0**
+
+Source: reverse-engineered from the pasted ADDENDUM E only — no CranL docs were read when it was
+written. Everything below is now verified against the live API; see `docs/CRANL.md`.
+
+- [x] **C-1 Read the CranL docs** — quickstart, platform, applications, databases, storage,
+      schedules, domains & SSL, environment variables, deployments, GitHub integration, monitoring,
+      analytics, volumes, billing, CLI, regions, MCP, safety controls
+  - ✅ pages fetched and read (a Sphinx site; text extracted, not skimmed)
+- [x] **C-2 Verify capability against the live account, not the docs**
+  - ✅ `get_account` → plan **free**: 1 project, **2 apps+databases**, **0 custom domains**,
+    **0 buckets**, `mena_regions: false`, only `netherlands-1` available
+  - ✅ `preflight_deploy` on this working tree → `ready: true`, **Next.js**, `npm start`,
+    port 3000 detected, 123 files/3.4 MB — the production build finally has a real target
+  - ✅ `cranl` CLI **cannot run here** (glibc ARM64 binary vs musl+PRoot). Replaced by
+    `/usr/local/bin/cranl-api`, a REST client over the same operations. Nothing is blocked by it
+- [ ] **C0 Owner: upgrade to Pro · connect GitHub · name the domain** — hard prerequisite
+  - Pro is the **minimum** plan that satisfies the addendum (`riyadh-1` MENA + 1 bucket + custom
+    domains). `Basic` does not; `Free` cannot
+- [ ] C1 Provision database, app, bucket, cron jobs, domain — CLI-free, via `cranl-api`
+- [ ] C2 One Postgres transport (Drizzle over `postgres`; PGlite stays for local tests)
+- [ ] C3 Authorization into the application layer; the token route is the only public read
+- [ ] C4 Single-admin credentials auth (argon2id, sessions, rate limiting, optional TOTP)
+- [ ] C5 Storage interface + CranL S3 driver (signed URLs)
+- [ ] C6 Cron as container commands · health endpoint · logging · documented snapshot/restore
+- [ ] C7 README: setup, migrations, password rotation, backup restore, WhatsApp API later
+
 ## Blockers
 
-- **B1 — Supabase project not provisioned.** The configured access token is scoped and lacks
-  `organizations_read`, so `supabase projects create` returns `Forbidden`. Work around: the owner
-  creates the project in the dashboard (Mumbai / `ap-south-1`), or issues a token with org scope.
-  Does **not** block Phase 1 or Phase 2 — the schema and isolation tests run on local Postgres.
-
+- **B1 — Supabase project not provisioned.** ~~The configured access token is scoped and lacks
+  `organizations_read`...~~ **Superseded 2026-11-18 by ADDENDUM E**: Supabase is no longer part of
+  the architecture and this blocker is closed with it. Kept as a record.
+- **B3 — CranL plan limits (new).** The account is on the **free** plan, which cannot provide the
+  MENA database region, object storage or a custom domain that ADDENDUM E requires. Waiting on the
+  owner to upgrade to Pro. This is the only thing standing between the current code and a live
+  deployment on CranL.
 - **B2 — Payment provider not selected** (by design). Phase 1 ships the abstraction and manual
   recording; activation requirements are documented.

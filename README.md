@@ -14,21 +14,26 @@ Launching in Bahrain; architected for later GCC expansion.
 | `CAPABILITY-MAP.md` | The twelve modules, their dependency order, and the interfaces between them |
 | `tasks/plan.md` | Architecture decisions, task breakdown, risks |
 | `tasks/todo.md` | The live checklist, plus current blockers |
+| `docs/CRANL.md` | **Hosting.** Verified CranL capability map, plan requirements, and the deployment path — supersedes `docs/DEPLOYMENT.md` (Vercel + Supabase) |
 
 ## Owner decisions already locked
 
 | Decision | Answer |
 |---|---|
 | Repository | Public, `nah-632/VELORA` |
-| Supabase region | Mumbai `ap-south-1` (no Middle East region exists) |
+| Supabase region | ~~Mumbai `ap-south-1`~~ **superseded** — data moves to CranL managed PostgreSQL, region **`riyadh-1`** (MENA, closest to Bahrain). Needs the Pro plan: `netherlands-1` is the only region the account can use today |
 | Customer accounts | Full accounts — saved drafts, order history |
 | Monogram direction | Folded-invitation / paper geometry (the brief's direction, not the attached botanical concept) |
 
 ## Stack
 
-Next.js 14.2 (App Router) · TypeScript strict · Supabase (Postgres 17, Auth, Storage, RLS) ·
-next-intl · Tailwind with CSS custom-property tokens · zod · **no ORM** (versioned SQL migrations
-are the schema source of truth) · money as integer fils.
+Next.js 14.2 (App Router) · TypeScript strict · **CranL** (application + managed PostgreSQL
+`riyadh-1` + S3-compatible object storage) · **authorization in the application layer** ·
+next-intl · Tailwind with CSS custom-property tokens · zod · **Drizzle** as the typed access layer
+over versioned SQL migrations · money as integer fils.
+
+> Supabase, Vercel and Postgres RLS are **out** — ADDENDUM E replaced them on 2026-11-18. See
+> `docs/CRANL.md` for what CranL actually provides, what it does not, and what the plan requires.
 
 ## Commands
 

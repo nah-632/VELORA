@@ -75,9 +75,20 @@ Proposed. Every choice here is reversible except `database` + `identity`, which 
 | Deploy | **Vercel** (app) + **Supabase** (data/storage) | Documented in `docs/DEPLOYMENT.md`; no local production build required. |
 | Tests | **`node --test`** (unit/integration) + **PGlite** (real Postgres, in-process) + **Playwright** (browser) | PGlite runs the real migrations and real RLS policies on this device — the strongest verification available without a server. |
 
-**Deliberately not used:** an ORM, a component library (`shadcn`/MUI — the brief forbids
-"generic dashboard templates" and the design is the product), a state-management library,
-a CSS-in-JS runtime, any "AI" feature (out of scope, §9).
+> **ADDENDUM E (2026-11-18) supersedes four rows of this table.** Hosting and backend move to
+> **CranL**: one Next.js app deployed from GitHub, **CranL managed PostgreSQL in `riyadh-1` (MENA)**,
+> **S3-compatible object storage** for assets, **application-layer authorization instead of Postgres
+> RLS**, a single-admin credentials login (argon2/bcrypt, httpOnly session cookies, rate limiting,
+> optional TOTP), and a **Drizzle/Prisma** data layer with versioned migrations. Supabase and Vercel
+> are out; `docs/DEPLOYMENT.md` is superseded by `docs/CRANL.md`. The deployment path was verified
+> against this repository (`preflight_deploy` → `ready: true`, framework Next.js, `next start`,
+> port 3000), and the plan requirement it exposes — MENA regions, object storage and custom domains
+> are all paid features — is recorded there.
+
+**Deliberately not used:** a component library (`shadcn`/MUI — the brief forbids "generic dashboard
+templates" and the design is the product), a state-management library, a CSS-in-JS runtime, any "AI"
+feature (out of scope, §9). An ORM was on this list until ADDENDUM E; it is now **Drizzle** as a
+typed access layer over the same committed SQL migrations (AD-14 in `tasks/plan.md`).
 
 ### 2.1 Brand tokens (proposed by the owner, pending measured validation)
 
