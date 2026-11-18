@@ -43,10 +43,14 @@ export function getSql(): Sql {
       max: 5,
       idle_timeout: 20,
       connect_timeout: 10,
-      // The managed database is reachable only inside the platform network, and the connection
-      // string it hands out carries no sslmode. Enabling TLS unconditionally is the safe default:
-      // it costs nothing when the server does not offer it, and it is required when it does.
-      ssl: url.includes("sslmode=disable") ? false : { rejectUnauthorized: false },
+      // TLS only when the connection string asks for it. The managed database's URL carries no
+      // sslmode, and forcing a TLS handshake onto a socket that does not speak it fails with
+      // "socket disconnected before secure TLS connection was established" — which is exactly what
+      // the first health check reported from inside the container.
+      ssl:
+        /sslmode=(require|verify-ca|verify-full)/.test(url)
+          ? { rejectUnauthorized: /sslmode=verify-(ca|full)/.test(url) }
+          : false,
       onnotice: () => {},
     });
   }
