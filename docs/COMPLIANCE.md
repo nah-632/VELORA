@@ -16,7 +16,10 @@ the pasted brief (and not the self-service product built over the previous five 
 spec. This audit is the starting line for that pivot, itemised.
 
 **Live now, verified:** `https://velora-lnurqz.cranl.net` (app) and a managed PostgreSQL carrying the
-operator schema. `GET /api/health` returns `{"status":"ok","checks":{"database":{"ok":true,"latencyMs":69},
+operator schema and the admin tables. The operator console exists: `/ar/admin` redirects to a
+sign-in form, and submitting it exercises the whole path — server action, argon2id verification,
+attempt log, redirect, rendered Arabic error. Verified in a real browser against production, not
+inferred. `GET /api/health` returns `{"status":"ok","checks":{"database":{"ok":true,"latencyMs":69},
 "migrations":{"applied":"0001_operator_baseline.sql","pendingCheck":"ok"}}}`. The tables, the trigger
 set and the seeded `+97366661238` were read back out of the production database, not inferred.
 
@@ -101,7 +104,7 @@ There are **no admin routes at all** (`rg --files src/app | rg admin` → empty)
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| G1 | Admin authentication · input sanitisation · rate limiting on public endpoints · CSRF-safe mutations · secure headers | 🟡 | Secure headers ✅ (`next.config.mjs`: HSTS, nosniff, DENY frame, referrer policy, permissions policy). Sanitisation ✅ via zod schemas. **Admin auth, rate limiting, CSRF: absent** — and ADDENDUM E specifies exactly how they must be built |
+| G1 | Admin authentication · input sanitisation · rate limiting on public endpoints · CSRF-safe mutations · secure headers | 🟡 | Secure headers ✅. Sanitisation ✅ (zod on every input). **Admin auth ✅ built** — argon2id, DB-backed sessions, lockout after 5 failures, address limiting after 20 in 15 minutes, timing-equalised unknown emails, 33/33 behavioural assertions. CSRF: `sameSite: strict` plus an origin check on every state-changing action. Still missing: TOTP enrolment, a public-endpoint rate limit (the token route does not exist yet), and CSP |
 | G2 | Short AR/EN privacy notice on the public page | ❌ | Absent |
 | G3 | Ability to permanently delete an event and all its guest data | ❌ | Absent |
 | G4 | Backup guidance in the README | ❌ | CranL exposes `snapshot_database` / `restore_database_snapshot`; nothing is documented yet |
@@ -164,7 +167,7 @@ guest, length limits enforced on both sides) are **entirely absent**.
 | J5 | Managed PostgreSQL in MENA, same region as the app, private connection string | 🔒 | **Deviation, owner-chosen:** the account is on the free plan, which cannot use `riyadh-1`. Database `velora` (`10ca540d`) runs in `netherlands-1`, same region as the app, internal host `velora-q2hbtb`, `DATABASE_URL` injected; the app reaches it in **69 ms** (`/api/health`). Riyadh needs Pro |
 | J6 | Prisma or Drizzle + versioned migrations applied on deploy + seed script | 🟡 | Versioned migrations **exist and have run in production**: `db/migrations/0001_operator_baseline.sql`, applied 13:51:31Z, checksum `3b3e42d444d319c3`, driven by `scripts/db-migrate.mjs` (transactional, refuses a changed applied migration) and verified by `tests/db/operator-schema.mjs` — 32/32 on real PostgreSQL. **Drizzle is not installed yet** (AD-14's access layer), and seeding stops at the settings row |
 | J7 | Application-layer authorization; the only public surface is a token route returning the minimum | ❌ | Not started |
-| J8 | Single-admin credentials login (argon2/bcrypt, httpOnly session cookies, rate limiting + lockout, optional TOTP, password change); initial credentials from environment variables | ❌ | Not started |
+| J8 | Single-admin credentials login (argon2/bcrypt, httpOnly session cookies, rate limiting + lockout, optional TOTP, password change); initial credentials from environment variables | 🟡 | **Built and live**: argon2id (19 MiB, t=2), sessions in the database with **hashed** tokens, `httpOnly` + `SameSite=strict` + `secure` cookie, lockout and address limits, `scripts/seed-admin.mjs` as the only way an account is created and `--reset` as the rotation path. Still missing: TOTP enrolment (columns exist, unwired) and the password-change screen in Settings |
 | J9 | S3-compatible object storage with signed URLs, CDN-served images | 🔒 | Storage buckets are a **Pro** feature; the free plan allows 0. Until then, assets live in the repo/container and the gap is documented |
 | J10 | Cron jobs for mark-ended, reminder lists, temp-file cleanup, protected by a secret token | ❌ | No jobs created and no code to run. Recorded deviation: CranL Schedules execute a shell command **inside the container** (UTC), so the command is `node scripts/cron.mjs <job>` and no public endpoint or shared secret is needed |
 | J11 | Custom domain + automatic SSL, HTTPS, HSTS, secure headers, CSP | 🔒 | HSTS and the other security headers are in `next.config.mjs` ✅; **CSP is not** defined yet; a custom domain is a Pro feature (0 allowed on free) and no domain has been chosen |
@@ -173,3 +176,20 @@ guest, length limits enforced on both sides) are **entirely absent**.
 | J14 | Performance: cached static assets, never-cached per-guest data | 🟡 | The private invitation page is correctly non-public; explicit cache policy per route is not written |
 | J15 | Git workflow: `main` auto-deploys; staging if the plan allows; Dockerfile only if needed | 🟡 | Auto-deploy 🔒 (waits on GitHub). Staging 🔒 — the free plan allows **2 resources total** and both are now used (1 app + 1 database). **No Dockerfile is needed**: `preflight_deploy` detected Next.js, `npm start`, port 3000 without one |
 | J16 | README additions: CranL setup, migrations, admin-password rotation, backup restore, enabling WhatsApp Business API later | ❌ | Not written — deliberately, because it would document commands that do not exist yet |
+
+---
+
+## K. Where the console stands (end of this session)
+
+What a reader can do today on the live deployment:
+
+| Route | Behaviour | Verified |
+|---|---|---|
+| `/ar/admin`, `/en/admin` | 307 → the sign-in form (middleware; no session cookie) | `curl`, both locales |
+| `/ar/admin/login` | 200, renders in RTL in the display face | screenshot |
+| submit the form | server action → argon2id verification → attempt recorded → redirect with `?error=` → Arabic message rendered | screenshot, in a real browser against production |
+| `/api/health` | `{"status":"ok","database":{"ok":true,"latencyMs":53},"migrations":{"applied":"0002_admin_auth.sql"}}` | `curl` |
+
+What is **not** there yet: an account. `scripts/seed-admin.mjs` is written, tested and refuses a weak
+password — but the first password is the owner's to choose, and it is not one this agent will invent
+and then print into a chat log.
