@@ -228,11 +228,26 @@ written. Everything below is now verified against the live API; see `docs/CRANL.
     port 3000 detected, 123 files/3.4 MB — the production build finally has a real target
   - ✅ `cranl` CLI **cannot run here** (glibc ARM64 binary vs musl+PRoot). Replaced by
     `/usr/local/bin/cranl-api`, a REST client over the same operations. Nothing is blocked by it
-- [ ] **C0 Owner: upgrade to Pro · connect GitHub · name the domain** — hard prerequisite
+- [x] **C1 Provision what the free plan allows** — done: database `velora` (`10ca540d`,
+      `netherlands-1`) + app `velora` (`b579fd2e`, `https://velora-lnurqz.cranl.net`), `DATABASE_URL`
+      injected, `NEXT_PUBLIC_SITE_URL` set, four green builds
+  - ✅ deferred: bucket, cron jobs, custom domain — all need Pro (see the blocker below)
+- [ ] **C0 Owner: upgrade to Pro · connect GitHub · name the domain** — hard prerequisite for the rest
   - Pro is the **minimum** plan that satisfies the addendum (`riyadh-1` MENA + 1 bucket + custom
     domains). `Basic` does not; `Free` cannot
-- [ ] C1 Provision database, app, bucket, cron jobs, domain — CLI-free, via `cranl-api`
-- [ ] C2 One Postgres transport (Drizzle over `postgres`; PGlite stays for local tests)
+- [x] **C2a The operator schema, in production** — `db/migrations/0001_operator_baseline.sql`
+  - ✅ applied 2026-11-18 13:51:31Z (checksum `3b3e42d444d319c3`); tables, 5 `updated_at` triggers
+    and the seeded `+97366661238` **read back out of the live database**
+  - ✅ `tests/db/operator-schema.mjs` → **32/32** on real PostgreSQL (PGlite/WASM): structure, the
+    seeded row, the round trip, 11 named constraint refusals, cascade delete
+  - ✅ `scripts/db-migrate.mjs` — transactional, refuses a changed applied migration, run inside the
+    container via `run_command` (no port opened to migrate)
+- [x] **C6a Health endpoint** — `/api/health` live; reports failure *class*, latency and the applied
+      migration, and never the driver's message unless `HEALTH_VERBOSE=1`
+  - ✅ it found the first real deployment bug in 66 ms: TLS was being forced on a socket that does
+    not speak it. `ssl` is now enabled only when the connection string asks for it
+- [ ] C2b Drizzle as the typed access layer (AD-14) · carry the 6 designs into `templates` · seed
+- [ ] C3 Authorization into the application layer; the token route is the only public read
 - [ ] C3 Authorization into the application layer; the token route is the only public read
 - [ ] C4 Single-admin credentials auth (argon2id, sessions, rate limiting, optional TOTP)
 - [ ] C5 Storage interface + CranL S3 driver (signed URLs)

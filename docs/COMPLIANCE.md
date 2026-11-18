@@ -8,11 +8,17 @@ status says so instead of guessing.
 Status key: ✅ done and verified · 🟡 partial · ❌ not started · 🔒 blocked on the owner or the plan ·
 ⤵️ superseded by ADDENDUM E
 
-**Headline: the brief is not complete, and most of it is not started.** What exists is the
-*brand, type, catalogue and rendering* half of a different product shape. The operator workflow the
-brief describes — events, guests, per-guest links, RSVP — does not exist yet. That is not a surprise:
-the owner ruled on 2026-11-18 that the pasted brief (and not the self-service product built over the
-previous five milestones) is the spec. This audit is the starting line for that pivot, itemised.
+**Headline: the brief is not complete.** What exists is the *brand, type, catalogue and rendering*
+half of the product, plus a live deployment and, as of this session, the operator database. The
+operator workflow the brief describes — events, guests, per-guest links, RSVP — has a **schema in
+production and no application behind it**. That is not a surprise: the owner ruled on 2026-11-18 that
+the pasted brief (and not the self-service product built over the previous five milestones) is the
+spec. This audit is the starting line for that pivot, itemised.
+
+**Live now, verified:** `https://velora-lnurqz.cranl.net` (app) and a managed PostgreSQL carrying the
+operator schema. `GET /api/health` returns `{"status":"ok","checks":{"database":{"ok":true,"latencyMs":69},
+"migrations":{"applied":"0001_operator_baseline.sql","pendingCheck":"ok"}}}`. The tables, the trigger
+set and the seeded `+97366661238` were read back out of the production database, not inferred.
 
 ---
 
@@ -50,11 +56,11 @@ previous five milestones) is the spec. This audit is the starting line for that 
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| D1 | `events` (all fields incl. Hijri text, template, theme overrides, status) | ❌ | Absent |
-| D2 | `guests` (E.164 phone, category, max companions, unguessable unique token, send/open tracking) | ❌ | Absent |
-| D3 | `rsvps` (response, companions, `responded_at`, `updated_at`) | ❌ | Absent |
-| D4 | `templates` (preview image, palette, fonts, opening animation, layout config) | 🟡 | A `templates` table exists with palette/typography/ornament/layout config and 6 seeded designs (Ivory Classic, Emerald Royal, Sand Editorial, … 6 rows). **Not** the brief's named six (classic gold, marble, floral, desert/palm, minimal, royal dark), and there is no `opening_animation_type` column |
-| D5 | `settings` (whatsapp_number default `+97366661238`, AR/EN message templates, logo_url) | ❌ | Absent |
+| D1 | `events` (all fields incl. Hijri text, template, theme overrides, status) | 🟡 | **Table is live in production** (verified by query): every field in the brief, bilingual names/venue/quote/notes/thank-yous/dress code, `features` for the per-event switches, plus constraints. **No application code reads or writes it yet** |
+| D2 | `guests` (E.164 phone, category, max companions, unguessable unique token, send/open tracking) | 🟡 | Table live in production with all of the above plus `language` and the ADDENDUM D2 personal line. The E.164 check refuses a phone with Arabic-Indic digits; the token check refuses anything under 22 characters. **No token generation code yet** |
+| D3 | `rsvps` (response, companions, `responded_at`, `updated_at`) | 🟡 | Table live in production, one row per guest (`unique(guest_id)`), so changing an answer updates rather than duplicates. A decline that still claims companions is refused by constraint. **No code yet** |
+| D4 | `templates` (preview image, palette, fonts, opening animation, layout config) | 🟡 | The **new** `templates` table is live with `palette`, `fonts`, `opening_animation_type` and `layout_config`, and is **empty** — the 6 designs that exist in `supabase/migrations` are the *other* product's seeds (Ivory Classic, Emerald Royal, Sand Editorial, …) and have not been carried across. The brief names six themes (classic gold, marble, floral, desert/palm, minimal, royal dark); reconciling names and designs is a design decision, not a mechanical one |
+| D5 | `settings` (whatsapp_number default `+97366661238`, AR/EN message templates, logo_url) | 🟡 | Table live in production as a **single row enforced by a check constraint**, already carrying `+97366661238` and `Asia/Bahrain` — read back out of the database. The AR/EN message bodies and `logo_url` are still empty |
 | D6 | All admin tables private; public access only through a token route returning the minimum; phone numbers never public | ❌ | The RLS-based design was the answer to this; ADDENDUM E removes RLS, so it must be rebuilt in the application layer. Neither version exists on CranL |
 
 ## E. ADMIN DASHBOARD (private)
@@ -153,17 +159,17 @@ guest, length limits enforced on both sides) are **entirely absent**.
 |---|---|---|---|
 | J1 | Read the CranL docs before building (quickstart, platform, databases, storage, cron, domains, CLI) | ✅ | 28 pages fetched and read; recorded in `docs/CRANL.md`. Four deviations found and documented rather than guessed |
 | J2 | Use the CranL MCP/CLI to provision | 🟡 | The CLI **cannot run here** — glibc ARM64 binary under musl+PRoot (`Not a valid dynamic program`). Replaced by `/usr/local/bin/cranl-api`, a REST client over the same 289 documented operations. Everything below was provisioned with it |
-| J3 | One Next.js app deployed from a GitHub repository, automatic build on push | 🟡 | App **created and running**: `velora` (`b579fd2e`), https://velora-lnurqz.cranl.net — first build **succeeded**, `/`, `/ar`, `/en`, `/templates` all return 200 with correct `dir="rtl"`. It is created from the public clone URL, so pushes do not yet deploy; `update_app_source` switches it to the GitHub integration once the owner connects GitHub 🔒 |
+| J3 | One Next.js app deployed from a GitHub repository, automatic build on push | 🟡 | App **created and running**: `velora` (`b579fd2e`), https://velora-lnurqz.cranl.net. Four deployments have built successfully on CranL's builders (the first production builds this project has ever had — this device cannot run `next build`), `/ar` serving `<html lang="ar" dir="rtl">`. It is created from the public clone URL, so pushes do not yet deploy: deploys are triggered through the API until the owner connects GitHub 🔒, after which `update_app_source` switches it |
 | J4 | Backend logic inside Next.js — no separate service | ✅ | Only one application exists |
-| J5 | Managed PostgreSQL in MENA, same region as the app, private connection string | 🔒 | **Deviation, owner-chosen:** the account is on the free plan, which cannot use `riyadh-1`. Database `velora` (`10ca540d`) runs in `netherlands-1` with the app in the same region, internal host `velora-q2hbtb`, and `DATABASE_URL` injected into the app. Riyadh needs Pro |
-| J6 | Prisma or Drizzle + versioned migrations applied on deploy + seed script | ❌ | Not started. The 9 existing migrations are the *other* product's schema and cannot run here — they depend on Supabase's `auth` schema. New migrations are the next slice |
+| J5 | Managed PostgreSQL in MENA, same region as the app, private connection string | 🔒 | **Deviation, owner-chosen:** the account is on the free plan, which cannot use `riyadh-1`. Database `velora` (`10ca540d`) runs in `netherlands-1`, same region as the app, internal host `velora-q2hbtb`, `DATABASE_URL` injected; the app reaches it in **69 ms** (`/api/health`). Riyadh needs Pro |
+| J6 | Prisma or Drizzle + versioned migrations applied on deploy + seed script | 🟡 | Versioned migrations **exist and have run in production**: `db/migrations/0001_operator_baseline.sql`, applied 13:51:31Z, checksum `3b3e42d444d319c3`, driven by `scripts/db-migrate.mjs` (transactional, refuses a changed applied migration) and verified by `tests/db/operator-schema.mjs` — 32/32 on real PostgreSQL. **Drizzle is not installed yet** (AD-14's access layer), and seeding stops at the settings row |
 | J7 | Application-layer authorization; the only public surface is a token route returning the minimum | ❌ | Not started |
 | J8 | Single-admin credentials login (argon2/bcrypt, httpOnly session cookies, rate limiting + lockout, optional TOTP, password change); initial credentials from environment variables | ❌ | Not started |
 | J9 | S3-compatible object storage with signed URLs, CDN-served images | 🔒 | Storage buckets are a **Pro** feature; the free plan allows 0. Until then, assets live in the repo/container and the gap is documented |
 | J10 | Cron jobs for mark-ended, reminder lists, temp-file cleanup, protected by a secret token | ❌ | No jobs created and no code to run. Recorded deviation: CranL Schedules execute a shell command **inside the container** (UTC), so the command is `node scripts/cron.mjs <job>` and no public endpoint or shared secret is needed |
 | J11 | Custom domain + automatic SSL, HTTPS, HSTS, secure headers, CSP | 🔒 | HSTS and the other security headers are in `next.config.mjs` ✅; **CSP is not** defined yet; a custom domain is a Pro feature (0 allowed on free) and no domain has been chosen |
 | J12 | All secrets in CranL environment variables, never in the repo; `.env.example` | 🟡 | `DATABASE_URL` is injected by CranL and `NEXT_PUBLIC_SITE_URL` is set (masked in the API). The connection string is stored **0600 outside the repository**. `.env.example` still describes Supabase |
-| J13 | Reliability: health-check endpoint, structured logging, error reporting, analytics; automated backups and a documented restore | ❌ | `/api/health` does not exist; no structured logging; no error reporting; no snapshot taken; no restore documented |
+| J13 | Reliability: health-check endpoint, structured logging, error reporting, analytics; automated backups and a documented restore | 🟡 | **`/api/health` exists, is live, and earned its keep immediately** — it returned `"Client network socket disconnected before secure TLS connection was established"` from inside the container and turned a 21-second mystery into a one-line fix. It reports the class of failure, never the driver's message, unless `HEALTH_VERBOSE=1`. Still missing: structured logging, error reporting, a snapshot, and a rehearsed restore |
 | J14 | Performance: cached static assets, never-cached per-guest data | 🟡 | The private invitation page is correctly non-public; explicit cache policy per route is not written |
 | J15 | Git workflow: `main` auto-deploys; staging if the plan allows; Dockerfile only if needed | 🟡 | Auto-deploy 🔒 (waits on GitHub). Staging 🔒 — the free plan allows **2 resources total** and both are now used (1 app + 1 database). **No Dockerfile is needed**: `preflight_deploy` detected Next.js, `npm start`, port 3000 without one |
 | J16 | README additions: CranL setup, migrations, admin-password rotation, backup restore, enabling WhatsApp Business API later | ❌ | Not written — deliberately, because it would document commands that do not exist yet |
