@@ -4,6 +4,10 @@
  * Run in a child process with a controlled environment: env.ts parses at module load, which is
  * the behaviour under test, and module caching would hide it inside this process.
  *
+ * Rewritten for ADDENDUM E. It used to check that Supabase's keys were required; what a CranL
+ * deployment actually needs is a database and a secret to pepper hashes with. The four ideas are
+ * unchanged — fail loudly, name the variable, fail early, and never print a value.
+ *
  * Run: npm test
  */
 import test from "node:test";
@@ -20,9 +24,10 @@ import('./src/lib/env.ts')
   .catch((e) => { console.log('BOOT_FAIL: ' + e.message); process.exit(1); });
 `;
 
-const PUBLIC_ONLY = {
-  NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key-that-is-long-enough-x",
+const PUBLIC_ONLY = { NEXT_PUBLIC_SITE_URL: "https://velora.example" };
+const SERVER_COMPLETE = {
+  DATABASE_URL: "postgresql://user:pass@host:5432/db",
+  SESSION_SECRET: "a-session-secret-that-is-long-enough-to-pass",
 };
 
 function boot(env) {
@@ -36,35 +41,52 @@ function boot(env) {
   return { code: result.status, out: `${result.stdout ?? ""}${result.stderr ?? ""}` };
 }
 
-test("with no environment at all, boot fails and names the missing variable", () => {
-  const { code, out } = boot({});
+test("in production, a missing site URL fails by name instead of defaulting to localhost", () => {
+  // Without this, a deployment that forgot the variable boots and then sends every guest a
+  // `http://localhost:3000/i/<token>` link. That was the behaviour before this test existed.
+  const { code, out } = boot({ NODE_ENV: "production" });
   assert.equal(code, 1, `expected a failure, got: ${out}`);
   assert.match(out, /Invalid public environment/);
-  assert.match(out, /NEXT_PUBLIC_SUPABASE_URL/);
+  assert.match(out, /NEXT_PUBLIC_SITE_URL/);
   assert.match(out, /\.env\.example/);
+});
+
+test("in development the site URL falls back, and the server variables are still required", () => {
+  const { code, out } = boot({ NODE_ENV: "development" });
+  assert.equal(code, 1, `expected a failure, got: ${out}`);
+  assert.match(out, /Invalid server environment/);
+  assert.match(out, /DATABASE_URL/);
 });
 
 test("public variables alone are not enough — the server secret is required too", () => {
   const { code, out } = boot(PUBLIC_ONLY);
   assert.equal(code, 1, `expected a failure, got: ${out}`);
   assert.match(out, /Invalid server environment/);
-  assert.match(out, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(out, /DATABASE_URL/);
 });
 
-test("a complete environment boots, and PAYMENT_PROVIDER defaults to none", () => {
-  const { code, out } = boot({ ...PUBLIC_ONLY, SUPABASE_SERVICE_ROLE_KEY: "service-role-key-long-enough" });
+test("a database without a session secret is still refused", () => {
+  const { code, out } = boot({ ...PUBLIC_ONLY, DATABASE_URL: SERVER_COMPLETE.DATABASE_URL });
+  assert.equal(code, 1, `expected a failure, got: ${out}`);
+  assert.match(out, /SESSION_SECRET/);
+});
+
+test("a complete environment boots", () => {
+  const { code, out } = boot({ ...PUBLIC_ONLY, ...SERVER_COMPLETE });
   assert.equal(code, 0, `expected success, got: ${out}`);
   assert.match(out, /BOOT_OK/);
 });
 
 test("the failure message never echoes a value, only the name of what is wrong", () => {
-  const secret = "super-secret-value-that-must-not-be-printed";
+  const connectionString = "postgresql://operator:a-real-password@db.internal:5432/velora";
   const { code, out } = boot({
     ...PUBLIC_ONLY,
-    SUPABASE_SERVICE_ROLE_KEY: secret,
-    PAYMENT_PROVIDER: "stripe-but-not-really-a-valid-option",
+    DATABASE_URL: connectionString,
+    // Too short: the failure names the variable, and must say nothing about the others.
+    SESSION_SECRET: "short",
   });
   assert.equal(code, 1, `expected a failure, got: ${out}`);
-  assert.match(out, /PAYMENT_PROVIDER/);
-  assert.equal(out.includes(secret), false, "a configured value leaked into the error output");
+  assert.match(out, /SESSION_SECRET/);
+  assert.equal(out.includes(connectionString), false, "a configured connection string leaked into the error output");
+  assert.equal(out.includes("a-real-password"), false, "a password leaked into the error output");
 });

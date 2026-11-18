@@ -43,6 +43,9 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except API routes, Next internals, and files with an extension.
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  // Everything except API routes, Next internals, files with an extension, and **/i/** — a guest's
+  // invitation is deliberately outside the locale tree: the link the operator pastes into WhatsApp
+  // is /i/<token>, with no /ar/ or /en/ in it, and the language comes from the guest's own row.
+  // Letting the locale middleware see /i/ would rewrite it to /ar/i/<token> and 404.
+  matcher: ["/((?!api|i/|_next|_vercel|.*\\..*).*)"],
 };

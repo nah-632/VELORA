@@ -59,11 +59,11 @@ set and the seeded `+97366661238` were read back out of the production database,
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| D1 | `events` (all fields incl. Hijri text, template, theme overrides, status) | 🟡 | **Table is live in production** (verified by query): every field in the brief, bilingual names/venue/quote/notes/thank-yous/dress code, `features` for the per-event switches, plus constraints. **No application code reads or writes it yet** |
-| D2 | `guests` (E.164 phone, category, max companions, unguessable unique token, send/open tracking) | 🟡 | Table live in production with all of the above plus `language` and the ADDENDUM D2 personal line. The E.164 check refuses a phone with Arabic-Indic digits; the token check refuses anything under 22 characters. **No token generation code yet** |
-| D3 | `rsvps` (response, companions, `responded_at`, `updated_at`) | 🟡 | Table live in production, one row per guest (`unique(guest_id)`), so changing an answer updates rather than duplicates. A decline that still claims companions is refused by constraint. **No code yet** |
-| D4 | `templates` (preview image, palette, fonts, opening animation, layout config) | 🟡 | The **new** `templates` table is live with `palette`, `fonts`, `opening_animation_type` and `layout_config`, and is **empty** — the 6 designs that exist in `supabase/migrations` are the *other* product's seeds (Ivory Classic, Emerald Royal, Sand Editorial, …) and have not been carried across. The brief names six themes (classic gold, marble, floral, desert/palm, minimal, royal dark); reconciling names and designs is a design decision, not a mechanical one |
-| D5 | `settings` (whatsapp_number default `+97366661238`, AR/EN message templates, logo_url) | 🟡 | Table live in production as a **single row enforced by a check constraint**, already carrying `+97366661238` and `Asia/Bahrain` — read back out of the database. The AR/EN message bodies and `logo_url` are still empty |
+| D1 | `events` (all fields incl. Hijri text, template, theme overrides, status) | ✅ | Table in production, and now **written by the console**: create, list, edit, every bilingual field the brief names, a design per event, and a status. Saving is separate from being ready — `eventReadiness()` names exactly what is missing before a send |
+| D2 | `guests` (E.164 phone, category, max companions, unguessable unique token, send/open tracking) | ✅ | Add one at a time or paste a list: 160-bit tokens generated server-side, Gulf phone normalisation (every written form, `+`/`00`/trunk, spaces, dashes, Arabic-Indic digits, RTL marks), category, companion limits, the per-guest personal line in both languages, and send / first-open / open-count tracking. 14 unit tests plus a live round trip |
+| D3 | `rsvps` (response, companions, `responded_at`, `updated_at`) | 🟡 | Table in production, one row per guest, a decline with companions refused by constraint. **Still no RSVP surface** — that is Phase 2, and the token route currently renders the invitation without one |
+| D4 | `templates` (preview image, palette, fonts, opening animation, layout config) | ✅ | **8 designs** seeded from the collection built earlier (Ivory Classic, Emerald Royal, Sand Editorial, Paper Minimal, Rose Letterpress, Sage Botanical, Naskh Heritage, Ink Noir), each with a full `design_config`, selectable per event, plus `opening_animation_type`. The three columns that config replaced (`palette`, `fonts`, `layout_config`) were **dropped**, because two descriptions of one design drift apart. The brief's six theme names are not the built set: renaming designs is the owner's decision, not a mechanical one |
+| D5 | `settings` (whatsapp_number default `+97366661238`, AR/EN message templates, logo_url) | 🟡 | Single row in production carrying `+97366661238` and `Asia/Bahrain`; the per-guest WhatsApp deep link is built from it, and the AR/EN message templates exist as code defaults with `{guest_name}`/`{link}`. They are **not yet editable in the console**, and `logo_url` is unused |
 | D6 | All admin tables private; public access only through a token route returning the minimum; phone numbers never public | ❌ | The RLS-based design was the answer to this; ADDENDUM E removes RLS, so it must be rebuilt in the application layer. Neither version exists on CranL |
 
 ## E. ADMIN DASHBOARD (private)
@@ -76,8 +76,9 @@ settings (number, message templates, logo, timezone) — are **❌ not started**
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| E2 (part) | Live preview inside a phone frame | 🟡 | The Wedding Studio built in Milestone 4 **does** render through the same renderer as the final invitation, in a device frame, with viewport modes (390px / 720px / full). It has no event editor, no "copy preview link" |
-| E7 (part) | At least 6 luxury templates, reusable presets | 🟡 | 6 template rows exist with distinct palettes and layouts; they are **read-only seeds** — there is no create/edit UI |
+| E1 | Events list with guest count and confirmation rate | ✅ | The console lists events with guests, confirmed, declined and no-response counts — each a real query |
+| E2 | Event editor with a live preview and a "preview link" | ✅ | Every field the brief lists, bilingual, with a design per event; saving reports readiness by field name. "Preview as guest" renders what one guest sees **without counting an open** — a preview that inflated `open_count` would make the RSVP dashboard lie |
+| E7 (part) | At least 6 luxury templates, reusable presets | 🟡 | **8 designs are seeded and selectable per event**, so the "reusable presets" half is done. Creating or editing a design from the console is not built |
 
 There are **no admin routes at all** (`rg --files src/app | rg admin` → empty).
 
@@ -86,19 +87,19 @@ There are **no admin routes at all** (`rg --files src/app | rg admin` → empty)
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
 | F1 | Elegant opening animation with `prefers-reduced-motion` handling and a skip control | ❌ | Absent (and the wax-seal entrance of ADDENDUM D is the specified form of it) |
-| F2 | Personalised greeting with the guest's name | ❌ | The private preview page renders "Bride and Groom" sample content, not a guest |
-| F3 | Couple's names in Arabic calligraphic face | 🟡 | The renderer draws names in the display face; the page itself is a *private draft preview* keyed to an httpOnly draft cookie, not a public per-guest route |
-| F4 | Verse / quote · notes · venue + "Open in Maps" | 🟡 | Verse, venue and notes are supported by the template content model and rendered; no Maps action, no public route |
+| F2 | Personalised greeting with the guest's name | ✅ | `/i/<token>` greets the guest by name, in the language on their row, and shows their personal line under it |
+| F3 | Couple's names in Arabic calligraphic face | ✅ | The public page renders through `TemplateCanvas` — the same component the catalogue and the Studio use, so the brief's "same rendering logic" requirement holds with no second renderer to drift from it |
+| F4 | Verse / quote · notes · venue + "Open in Maps" | ✅ | All four on the public page, in the guest's language, with the map button appearing only when the operator stored a link |
 | F5 | Live countdown in the event's timezone, graceful after the event | ❌ | No countdown code anywhere |
-| F6 | Hijri **and** Gregorian dates | ❌ | Absent (`Intl` is used for money and dates in the catalogue only) |
+| F6 | Hijri **and** Gregorian dates | 🟡 | The Gregorian date is formatted per guest language and in the **event's** timezone, and a Hijri line shows when the operator typed one. Auto-computation is not there: it needs a conversion library, and the brief's own wording is "auto-computed, manually editable" |
 | F7 | RSVP confirm/decline with a companion cap, answers changeable | ❌ | Absent |
 | F8 | Different thank-you message for confirm vs decline | ❌ | Absent |
 | F9 | Correct `.ics` (+ timezone) and a Google Calendar link | ❌ | Absent |
-| F10 | Record first open and open count only | ❌ | Absent |
+| F10 | Record first open and open count only | ✅ | Recorded in the same statement that reads the row, so a double open counts twice without a read-modify-write race, and `first_opened_at` never moves. Asserted: three opens → count 3, timestamp unchanged; the operator's preview counts zero |
 | F11 | 100% mobile-first, fast (Lighthouse 90+), accessible, RTL-correct | 🟡 | RTL-correct ✅ (guarded). Mobile behaviour verified at 390px for the Studio ✅. **Lighthouse has never been run** — no performance number exists |
-| F12 | Hidden from search: noindex/nofollow, `X-Robots-Tag`, robots.txt, unguessable tokens | 🟡 | The invitation preview already sets `robots: noindex` (verified in Milestone 5) and the app returns security headers. No `X-Robots-Tag` header, no `robots.txt`, no tokens yet |
-| F13 | Tasteful Open Graph preview that leaks nothing | ❌ | No `og:image` or OG tags in the codebase |
-| F14 | Discreet footer with the Velora mark and a WhatsApp link to `+97366661238` | ❌ | A footer exists; the number is nowhere in the repository |
+| F12 | Hidden from search: noindex/nofollow, `X-Robots-Tag`, robots.txt, unguessable tokens | ✅ | Four controls on one page: `robots` metadata, an `X-Robots-Tag` header, `robots.txt` disallowing `/i/` and the console, and `Cache-Control: no-store, private`. Tokens are 160 random bits, and a malformed token is rejected before it reaches SQL |
+| F13 | Tasteful Open Graph preview that leaks nothing | 🟡 | A generic title and description in the guest's language ("A wedding invitation") say nothing about the couple, the date or the guest. No `og:image` yet |
+| F14 | Discreet footer with the Velora mark and a WhatsApp link to `+97366661238` | 🟡 | The public page carries a discreet Velora footer. The **guest's** message goes out from `+97366661238` (it is the `wa.me` sender for every guest), but the footer itself has no contact link to it yet |
 
 ## G. SECURITY & PRIVACY
 
@@ -193,3 +194,28 @@ What a reader can do today on the live deployment:
 What is **not** there yet: an account. `scripts/seed-admin.mjs` is written, tested and refuses a weak
 password — but the first password is the owner's to choose, and it is not one this agent will invent
 and then print into a chat log.
+
+---
+
+## L. Phase 1 — what landed after this audit was written
+
+The rows above were written when the operator product did not exist. This is the current state of
+the ones that moved, and it supersedes them where they disagree.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Events: create, list, edit, every bilingual field | ✅ | `src/features/events/*`; the DB suite drives it against real PostgreSQL |
+| Guests: add, paste, import with a preview, phone normalisation, categories, companion limits, personal lines, tokens | ✅ | `src/features/guests/*`; **14 unit tests** — every written form of a Bahraini number, Arabic-Indic digits, RTL marks, a 50-row paste, duplicates reported not merged, and one bad row never destroying an import |
+| Token generation, and the per-guest link | ✅ | `newGuestToken()` — 160 bits, generated server-side; 200 tokens asserted distinct |
+| `/i/<token>` | ✅ | Public route outside the locale tree; `noindex` + `no-store` + `X-Robots-Tag` + `robots.txt`; first open recorded; the minimum-data property asserted by loading two guests into one event and checking one page contains nothing about the other |
+| Operator preview that does not count as an open | ✅ | `/admin/events/<id>/preview/<guestId>`; asserted that `open_count` does not move |
+| Migration path | ✅ | `scripts/db-migrate.mjs` — transactional, checksum-guarded, run inside the container |
+
+Not built, and not claimed:
+
+| Item | Why it is where it is |
+|---|---|
+| Excel/CSV **file upload** | Pasted text is supported — which is what a spreadsheet produces: tab- or comma-separated, header optional, Arabic or English, quoted fields handled. Uploading a `.xlsx` file is a separate slice |
+| Sequential send mode and the WhatsApp Business provider interface | Per-guest `wa.me` links and "mark sent" exist; the sequential walk-through and the provider seam belong to the sending slice |
+| RSVP, the RSVP dashboard, the Excel export | Phase 2 |
+| Change-password screen, TOTP, strict CSP | **Next, and before any real guest data** — an operator who cannot rotate their own password should not be putting 50 people into this |

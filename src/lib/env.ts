@@ -49,7 +49,17 @@ function formatIssues(scope: string, error: z.ZodError): string {
 
 function parsePublic(): PublicEnv {
   const result = publicSchema.safeParse({
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    /**
+     * The localhost fallback is for development only.
+     *
+     * It used to apply in production too, which meant a deployment that forgot this variable would
+     * boot happily and then put `http://localhost:3000/i/<token>` in every WhatsApp message it sent.
+     * A wrong link in 50 messages is not a configuration detail; it is the product failing quietly.
+     * In production the variable is now required, and the failure names it.
+     */
+    NEXT_PUBLIC_SITE_URL:
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (process.env.NODE_ENV === "production" ? undefined : "http://localhost:3000"),
   });
   if (!result.success) throw new Error(formatIssues("public", result.error));
   return result.data;

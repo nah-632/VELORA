@@ -34,7 +34,20 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
   },
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      {
+        // A guest's invitation is private and personal: it must never sit in a shared cache, and it
+        // must never be indexed. The page also sets `robots` in its metadata and robots.txt
+        // disallows the path — three doors, because one of them gets forgotten one day.
+        source: "/i/:path*",
+        headers: [
+          ...securityHeaders,
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, private" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
+        ],
+      },
+      { source: "/(.*)", headers: securityHeaders },
+    ];
   },
 };
 
