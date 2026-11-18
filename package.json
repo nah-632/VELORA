@@ -21,10 +21,11 @@
     "brand:build": "python3 scripts/build-wordmark.py && node scripts/build-brand.mjs",
     "wordmark:build": "python3 scripts/build-wordmark.py",
     "test:ui": "python3 scripts/check-contrast.py && node scripts/check-rtl.mjs && node scripts/check-css.mjs && node tests/ui/check-renderer.mjs && node tests/ui/guard-canary.mjs",
-    "verify": "npm run type-check && npm run test && npm run test:db && npm run test:fonts && npm run test:brand && npm run test:ui",
+    "verify": "npm run check:native && npm run type-check && npm run test && npm run test:db:operator && npm run test:db:auth && npm run test:fonts && npm run test:brand && npm run test:ui",
     "db:status": "node scripts/db-migrate.mjs --status",
     "test:db:auth": "node --import tsx tests/db/admin-auth.mjs",
-    "seed:admin": "node scripts/seed-admin.mjs"
+    "seed:admin": "node scripts/seed-admin.mjs",
+    "check:native": "node scripts/check-native-deps.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",

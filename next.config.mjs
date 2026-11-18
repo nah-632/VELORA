@@ -19,9 +19,12 @@ const nextConfig = {
     // The local development database is a real PostgreSQL compiled to WebAssembly. It is imported
     // only on a non-production branch, so it must stay external to the server bundle rather than
     // being traced into a deployment that will never load it.
-    // `postgres` is a Node driver: it must stay out of the bundle for the same reason — it has a
-    // native-free but Node-only implementation, and the Edge runtime cannot use it.
-    serverComponentsExternalPackages: ["@electric-sql/pglite", "postgres"],
+    // `postgres` is a Node driver, and `@node-rs/argon2` ships a native `.node` binary per
+    // platform: both must be left out of the bundle. Webpack has no loader for a binary and the
+    // build fails with "Module parse failed: Unexpected character" — which is exactly what the
+    // first deploy of the auth slice did. `npm run check:native` now fails locally if a dependency
+    // like this is ever added without being listed here.
+    serverComponentsExternalPackages: ["@electric-sql/pglite", "postgres", "@node-rs/argon2"],
   },
   images: {
     // Template artwork is served from Supabase Storage; no wildcard remote hosts.
