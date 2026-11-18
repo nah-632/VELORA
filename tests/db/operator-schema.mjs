@@ -77,7 +77,15 @@ for (const expected of ["settings", "templates", "events", "guests", "rsvps"]) {
 const triggers = await db.query(
   `select count(*)::int as n from pg_trigger where not tgisinternal and tgname like '%_touch'`,
 );
-t.check("every mutable table maintains updated_at in the database", triggers.rows[0].n === 5, `${triggers.rows[0].n}/5 triggers`);
+// One trigger per mutable table. 0002 adds admin_users, so this number moves whenever a migration
+// adds a table with an updated_at column — and the assertion is here to make that a decision rather
+// than a drift.
+const EXPECTED_TOUCH_TRIGGERS = 6;
+t.check(
+  "every mutable table maintains updated_at in the database",
+  triggers.rows[0].n === EXPECTED_TOUCH_TRIGGERS,
+  `${triggers.rows[0].n}/${EXPECTED_TOUCH_TRIGGERS} triggers`,
+);
 
 const indexes = await db.query(
   `select indexname from pg_indexes where schemaname = 'public'`,

@@ -22,9 +22,12 @@
     "wordmark:build": "python3 scripts/build-wordmark.py",
     "test:ui": "python3 scripts/check-contrast.py && node scripts/check-rtl.mjs && node scripts/check-css.mjs && node tests/ui/check-renderer.mjs && node tests/ui/guard-canary.mjs",
     "verify": "npm run type-check && npm run test && npm run test:db && npm run test:fonts && npm run test:brand && npm run test:ui",
-    "db:status": "node scripts/db-migrate.mjs --status"
+    "db:status": "node scripts/db-migrate.mjs --status",
+    "test:db:auth": "node --import tsx tests/db/admin-auth.mjs",
+    "seed:admin": "node scripts/seed-admin.mjs"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
     "@supabase/ssr": "0.5.2",
     "@supabase/supabase-js": "2.47.10",
     "next": "14.2.35",

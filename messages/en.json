@@ -188,5 +188,43 @@
     "nothingBody": "Choose a design and start filling in your details; it will appear here.",
     "brokenTitle": "This invitation cannot be displayed",
     "brokenBody": "Its design configuration could not be read, so it has not been drawn. Nothing has been changed or lost."
+  },
+  "admin": {
+    "meta": {
+      "title": "Operator console"
+    },
+    "login": {
+      "eyebrow": "Private access",
+      "title": "Operator console",
+      "intro": "One operator only. No public sign-up, no customer accounts.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "errorInvalid": "Email or password is incorrect.",
+      "errorLocked": "Too many attempts. Try again in {minutes} minutes.",
+      "errorRateLimited": "Too many attempts from this device. Try again later.",
+      "noIndex": "Private page, not indexed."
+    },
+    "dashboard": {
+      "eyebrow": "Private",
+      "title": "Operator console",
+      "signedInAs": "Signed in as",
+      "signOut": "Sign out",
+      "whatsappSender": "WhatsApp sending number",
+      "senderNote": "Used as the sender identity everywhere: message templates, the footer link, and wa.me links.",
+      "counts": {
+        "events": "Events",
+        "guests": "Guests",
+        "confirmed": "Confirmed",
+        "declined": "Declined",
+        "noResponse": "No response"
+      },
+      "recentAttempts": "Recent sign-in attempts",
+      "attemptsEmpty": "No attempts recorded yet.",
+      "succeeded": "succeeded",
+      "failed": "failed",
+      "sessionNote": "The session is stored in the database as a hash, the cookie is httpOnly and SameSite=strict, and signing out revokes it immediately.",
+      "nextStep": "Next in the build: create an event, add its guests, and generate their links."
+    }
   }
 }
