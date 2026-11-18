@@ -224,7 +224,9 @@
       "succeeded": "succeeded",
       "failed": "failed",
       "sessionNote": "The session is stored in the database as a hash, the cookie is httpOnly and SameSite=strict, and signing out revokes it immediately.",
-      "nextStep": "Next in the build: create an event, add its guests, and generate their links."
+      "nextStep": "Next in the build: create an event, add its guests, and generate their links.",
+      "events": "Events",
+      "settings": "Settings"
     },
     "events": {
       "eyebrow": "Operator",
@@ -305,6 +307,47 @@
       "hasPersonalLine": "has a personal line",
       "noPersonalLine": "no personal line",
       "backToEvent": "Back to the event"
+    },
+    "totp": {
+      "eyebrow": "Second step",
+      "title": "Verification code",
+      "intro": "Enter the 6-digit code from your authenticator app.",
+      "code": "Code",
+      "submit": "Verify",
+      "badCode": "That code is not correct.",
+      "lostDevice": "Lost the device? There is no shortcut: use scripts/seed-admin.mjs --reset to recover the account, then enrol again. That is deliberate — any other shortcut becomes the way in."
+    },
+    "settings": {
+      "eyebrow": "Private",
+      "title": "Settings",
+      "passwordTitle": "Password",
+      "passwordHint": "At least 12 characters. Changing it revokes every other session.",
+      "current": "Current password",
+      "next": "New password",
+      "confirm": "Confirm the new one",
+      "changePassword": "Change password",
+      "passwordChanged": "Changed. The other sessions were revoked.",
+      "revokes": "%count% other session(s) will be revoked.",
+      "wrongPassword": "The current password is not correct.",
+      "errors": {
+        "invalid": "Missing fields.",
+        "mismatch": "The two new passwords do not match.",
+        "origin": "Request refused.",
+        "totp": "That code is not correct."
+      },
+      "totpTitle": "Two-factor authentication",
+      "totpHint": "A 6-digit code from an authenticator app (Google Authenticator, 1Password, Authy).",
+      "totpOn": "Two-factor authentication is on.",
+      "totpEnabled": "Two-factor authentication enabled.",
+      "totpDisabled": "Two-factor authentication disabled.",
+      "start": "Start enrolment",
+      "enable": "Enable",
+      "disable": "Disable",
+      "enrolStep": "Add this key to your authenticator app, then enter the code it shows to confirm:",
+      "enrolManual": "Or enter it by hand in the app. There is no QR code yet.",
+      "enrolCode": "Code from the app",
+      "passwordToDisable": "Password, to disable it",
+      "lostDevice": "Recovering a lost device: scripts/seed-admin.mjs --reset --disable-totp"
     }
   }
 }

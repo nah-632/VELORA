@@ -39,6 +39,7 @@ function loadLocalEnv() {
 loadLocalEnv();
 
 const reset = process.argv.includes("--reset");
+const disableTotp = process.argv.includes("--disable-totp");
 const email = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
 const password = process.env.ADMIN_PASSWORD ?? "";
 
@@ -68,7 +69,7 @@ try {
   if (existing.length > 0 && !reset) {
     console.log(
       `An administrator already exists (${existing[0].email}). Nothing was created.\n` +
-        "To rotate the password: re-run with --reset.",
+        "To rotate the password: re-run with --reset (add --disable-totp to also clear the second factor).",
     );
     process.exit(0);
   }
@@ -82,13 +83,20 @@ try {
              password_hash = ${hash},
              password_changed_at = now(),
              failed_attempts = 0,
-             locked_until = null
+             locked_until = null,
+             -- The documented way back in when the phone with the authenticator is gone. It is
+             -- deliberately here, behind a shell on the container, and not a route or a recovery
+             -- code: a shortcut reachable from the internet is the way in.
+             totp_secret = case when ${disableTotp} then null else totp_secret end,
+             totp_confirmed_at = case when ${disableTotp} then null else totp_confirmed_at end,
+             totp_last_counter = case when ${disableTotp} then null else totp_last_counter end
        where id = ${existing[0].id}`;
     const revoked = await sql`
       update public.admin_sessions set revoked_at = now()
        where user_id = ${existing[0].id} and revoked_at is null returning id`;
     console.log(
-      `Password rotated for ${email}. ${revoked.length} live session(s) revoked — sign in again.`,
+      `Password rotated for ${email}. ${revoked.length} live session(s) revoked — sign in again.` +
+        (disableTotp ? " Two-factor authentication was disabled." : ""),
     );
   } else {
     await sql`

@@ -105,7 +105,7 @@ There are **no admin routes at all** (`rg --files src/app | rg admin` → empty)
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| G1 | Admin authentication · input sanitisation · rate limiting on public endpoints · CSRF-safe mutations · secure headers | 🟡 | Secure headers ✅. Sanitisation ✅ (zod on every input). **Admin auth ✅ built** — argon2id, DB-backed sessions, lockout after 5 failures, address limiting after 20 in 15 minutes, timing-equalised unknown emails, 33/33 behavioural assertions. CSRF: `sameSite: strict` plus an origin check on every state-changing action. Still missing: TOTP enrolment, a public-endpoint rate limit (the token route does not exist yet), and CSP |
+| G1 | Admin authentication · input sanitisation · rate limiting on public endpoints · CSRF-safe mutations · secure headers | ✅ | argon2id, DB-backed sessions, lockout, address limiting, timing-equalised unknown emails, **TOTP two-factor** (RFC 6238, verified against the RFC's own vectors, single-use codes), password change that **revokes every other session**, `sameSite: strict` + origin checks, and a **strict CSP** with a per-request nonce. The one public-endpoint rate limit still missing belongs to the RSVP route, which does not exist yet |
 | G2 | Short AR/EN privacy notice on the public page | ❌ | Absent |
 | G3 | Ability to permanently delete an event and all its guest data | ❌ | Absent |
 | G4 | Backup guidance in the README | ❌ | CranL exposes `snapshot_database` / `restore_database_snapshot`; nothing is documented yet |
@@ -168,10 +168,10 @@ guest, length limits enforced on both sides) are **entirely absent**.
 | J5 | Managed PostgreSQL in MENA, same region as the app, private connection string | 🔒 | **Deviation, owner-chosen:** the account is on the free plan, which cannot use `riyadh-1`. Database `velora` (`10ca540d`) runs in `netherlands-1`, same region as the app, internal host `velora-q2hbtb`, `DATABASE_URL` injected; the app reaches it in **69 ms** (`/api/health`). Riyadh needs Pro |
 | J6 | Prisma or Drizzle + versioned migrations applied on deploy + seed script | 🟡 | Versioned migrations **exist and have run in production**: `db/migrations/0001_operator_baseline.sql`, applied 13:51:31Z, checksum `3b3e42d444d319c3`, driven by `scripts/db-migrate.mjs` (transactional, refuses a changed applied migration) and verified by `tests/db/operator-schema.mjs` — 32/32 on real PostgreSQL. **Drizzle is not installed yet** (AD-14's access layer), and seeding stops at the settings row |
 | J7 | Application-layer authorization; the only public surface is a token route returning the minimum | ❌ | Not started |
-| J8 | Single-admin credentials login (argon2/bcrypt, httpOnly session cookies, rate limiting + lockout, optional TOTP, password change); initial credentials from environment variables | 🟡 | **Built and live**: argon2id (19 MiB, t=2), sessions in the database with **hashed** tokens, `httpOnly` + `SameSite=strict` + `secure` cookie, lockout and address limits, `scripts/seed-admin.mjs` as the only way an account is created and `--reset` as the rotation path. Still missing: TOTP enrolment (columns exist, unwired) and the password-change screen in Settings |
+| J8 | Single-admin credentials login (argon2/bcrypt, httpOnly session cookies, rate limiting + lockout, optional TOTP, password change); initial credentials from environment variables | ✅ | All of it: argon2id, `httpOnly`/`SameSite=strict`/`secure` sessions with hashed tokens, lockout and address limits, `/admin/settings` for the password, TOTP enrolment with a verified-code confirmation, and `scripts/seed-admin.mjs --reset [--disable-totp]` as the documented recovery path |
 | J9 | S3-compatible object storage with signed URLs, CDN-served images | 🔒 | Storage buckets are a **Pro** feature; the free plan allows 0. Until then, assets live in the repo/container and the gap is documented |
 | J10 | Cron jobs for mark-ended, reminder lists, temp-file cleanup, protected by a secret token | ❌ | No jobs created and no code to run. Recorded deviation: CranL Schedules execute a shell command **inside the container** (UTC), so the command is `node scripts/cron.mjs <job>` and no public endpoint or shared secret is needed |
-| J11 | Custom domain + automatic SSL, HTTPS, HSTS, secure headers, CSP | 🔒 | HSTS and the other security headers are in `next.config.mjs` ✅; **CSP is not** defined yet; a custom domain is a Pro feature (0 allowed on free) and no domain has been chosen |
+| J11 | Custom domain + automatic SSL, HTTPS, HSTS, secure headers, CSP | 🟡 | HSTS, `nosniff`, `DENY`, referrer and permissions policies, plus a **strict CSP** (`script-src` with a per-request nonce and `strict-dynamic`, no `unsafe-inline`, no `unsafe-eval`; `style-src` allows inline styles, which is a recorded gap rather than a hidden one). A custom domain is still a Pro-plan feature, so it stays blocked |
 | J12 | All secrets in CranL environment variables, never in the repo; `.env.example` | 🟡 | `DATABASE_URL` is injected by CranL and `NEXT_PUBLIC_SITE_URL` is set (masked in the API). The connection string is stored **0600 outside the repository**. `.env.example` still describes Supabase |
 | J13 | Reliability: health-check endpoint, structured logging, error reporting, analytics; automated backups and a documented restore | 🟡 | **`/api/health` exists, is live, and earned its keep immediately** — it returned `"Client network socket disconnected before secure TLS connection was established"` from inside the container and turned a 21-second mystery into a one-line fix. It reports the class of failure, never the driver's message, unless `HEALTH_VERBOSE=1`. Still missing: structured logging, error reporting, a snapshot, and a rehearsed restore |
 | J14 | Performance: cached static assets, never-cached per-guest data | 🟡 | The private invitation page is correctly non-public; explicit cache policy per route is not written |
@@ -219,3 +219,22 @@ Not built, and not claimed:
 | Sequential send mode and the WhatsApp Business provider interface | Per-guest `wa.me` links and "mark sent" exist; the sequential walk-through and the provider seam belong to the sending slice |
 | RSVP, the RSVP dashboard, the Excel export | Phase 2 |
 | Change-password screen, TOTP, strict CSP | **Next, and before any real guest data** — an operator who cannot rotate their own password should not be putting 50 people into this |
+
+---
+
+## M. The hardening slice — password, second factor, CSP
+
+Written before the console takes on a single real guest. An operator who cannot rotate their own
+password, and who has no second factor available, is one borrowed laptop away from a list of
+Bahraini phone numbers in somebody else's hands.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Change-password screen | ✅ | `/admin/settings`; the current password is required, the policy is enforced server-side, and **every other session is revoked** — a change that leaves the other person's session alive is theatre. 26/26 assertions |
+| TOTP 2FA | ✅ | `src/lib/totp.ts` — RFC 6238 on `node:crypto`, **verified against all six of the RFC's own test vectors**, ±1 step of clock drift, codes single-use within their step. Enrolment is unconfirmed until a code from the device proves it can produce one |
+| The two-step login | ✅ | A 5-minute, single-use challenge between the password and the session. Nothing half-authenticated ever becomes a session; five wrong codes end the challenge and require the password again |
+| Strict CSP | ✅ | Per-request nonce, `script-src 'self' 'nonce-…' 'strict-dynamic'`, no `unsafe-inline` or `unsafe-eval` for scripts, `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'self'`, `upgrade-insecure-requests` in production. Asserted as text in `tests/unit/csp.test.mjs` |
+| Recovery when the phone is lost | ✅ | `scripts/seed-admin.mjs --reset --disable-totp` — a shell on the container, not a route. A recovery path reachable from the internet is the way in |
+| `style-src 'unsafe-inline'` | 🟡 | Still allowed: React and the invitation renderer both write inline styles. Inline *style* injection can misdraw a page; it cannot read a session. Recorded as a gap |
+| CSP violation reporting | ❌ | No `report-to` endpoint, so a blocked script is visible only in a browser console. Worth adding |
+| QR code on the enrolment screen | ❌ | The secret and the `otpauth://` URI are shown as text, which can be typed. A scannable QR needs one more dependency and is a convenience, not a control |

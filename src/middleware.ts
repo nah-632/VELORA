@@ -1,7 +1,8 @@
 import createMiddleware from "next-intl/middleware";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_SESSION_COOKIE } from "@/features/admin/cookie";
+import { buildCsp } from "@/lib/csp";
 import { defaultLocale, locales } from "@/i18n/routing";
 
 const intlMiddleware = createMiddleware({
@@ -14,32 +15,53 @@ const intlMiddleware = createMiddleware({
 });
 
 const ADMIN_PATH = /^\/(ar|en)\/admin(\/|$)/;
-const LOGIN_PATH = /^\/(ar|en)\/admin\/login\/?$/;
+const LOGIN_PATH = /^\/(ar|en)\/admin\/(login|totp)\/?$/;
 
 /**
- * Locale routing, plus one convenience for the operator console.
+ * Locale routing, one convenience for the console, and the Content-Security-Policy.
  *
- * This middleware is **not** the admin authorization check. It runs at the edge, where there is no
+ * The admin redirect is **not** the authorization check. It runs at the edge, where there is no
  * database, so all it can see is whether a cookie is present — and a present cookie is not a valid
  * session. Its only job is to send a signed-out reader to the login form instead of letting them
- * watch an admin page fail. The check that decides is `requireAdmin()` in the page and in every
- * server action, which verifies the session against the database.
+ * watch an admin page fail. The check that decides is `requireAdmin()`, in the page and in every
+ * server action.
  *
- * Keeping the two apart matters: if this were treated as the gate, deleting a cookie would look
- * like a security control.
+ * The CSP is generated per request because it carries a nonce. A policy that allows `unsafe-inline`
+ * for scripts protects against nothing that matters: an injected inline script is exactly what it
+ * was meant to stop. See `src/lib/csp.ts` for the policy and for what it deliberately does not
+ * constrain.
  */
 export default function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  // One nonce per request, fresh each time. `randomUUID` is available in the edge runtime.
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = buildCsp(nonce, { production: process.env.NODE_ENV === "production" });
 
   if (ADMIN_PATH.test(path) && !LOGIN_PATH.test(path) && !request.cookies.get(ADMIN_SESSION_COOKIE)) {
     const locale = path.split("/")[1] ?? defaultLocale;
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/admin/login`;
     url.search = "";
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    redirect.headers.set("Content-Security-Policy", csp);
+    return redirect;
   }
 
-  return intlMiddleware(request);
+  /**
+   * The nonce travels on the request as well as the response.
+   *
+   * Next reads the policy from the forwarded request headers and stamps the nonce onto the scripts
+   * it generates; without this the app's own JavaScript would be blocked by the policy that was
+   * written to protect it — which is a failure that looks exactly like "the deployment is broken".
+   */
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const response = intlMiddleware(new NextRequest(request, { headers: requestHeaders }));
+  response.headers.set("Content-Security-Policy", csp);
+  return response;
 }
 
 export const config = {

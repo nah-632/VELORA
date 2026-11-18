@@ -1,7 +1,7 @@
 import { type Metadata } from "next";
 import { getTranslations, unstable_setRequestLocale } from "next-intl/server";
 
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Card, SectionHeading } from "@/components/ui/Card";
 import { isLocale } from "@/i18n/routing";
 import { getSql } from "@/lib/db";
@@ -126,12 +126,20 @@ export default async function AdminDashboardPage({
       <p className="mt-6 text-xs text-ink-muted">{t("sessionNote")}</p>
       <p className="mt-2 text-xs text-ink-muted">{t("nextStep")}</p>
 
-      <form action={logoutAction} className="mt-8">
-        <input type="hidden" name="locale" value={locale} />
-        <Button type="submit" variant="secondary">
-          {t("signOut")}
-        </Button>
-      </form>
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <a className={buttonClass("secondary")} href={`/${locale}/admin/events`}>
+          {t("events")}
+        </a>
+        <a className={buttonClass("secondary")} href={`/${locale}/admin/settings`}>
+          {t("settings")}
+        </a>
+        <form action={logoutAction}>
+          <input type="hidden" name="locale" value={locale} />
+          <Button type="submit" variant="quiet">
+            {t("signOut")}
+          </Button>
+        </form>
+      </div>
     </main>
   );
 }

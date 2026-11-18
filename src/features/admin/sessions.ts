@@ -137,6 +137,15 @@ export async function destroyCurrentSession(): Promise<void> {
   cookies().delete(COOKIE_NAME);
 }
 
+/**
+ * The hash of the session in this request, for the one caller that needs to tell "this session"
+ * apart from "every other session" — revoking the others on a password change.
+ */
+export function currentSessionToken(): string | null {
+  const token = cookies().get(COOKIE_NAME)?.value;
+  return token ? hashSessionToken(token) : null;
+}
+
 /** Housekeeping, called on login: expired rows are noise, and noise hides a live session. */
 export async function pruneExpiredSessions(): Promise<void> {
   await getSql()`delete from public.admin_sessions where expires_at < now() - interval '30 days'`;
