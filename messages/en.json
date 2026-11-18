@@ -155,6 +155,30 @@
       "notYetSaved": "Not saved yet",
       "saveNow": "Save",
       "retry": "Try again"
+    },
+    "mode": {
+      "label": "Mode",
+      "edit": "Edit",
+      "preview": "Preview",
+      "viewportLabel": "Preview size",
+      "viewports": {
+        "mobile": "Mobile",
+        "desktop": "Desktop",
+        "full": "Full"
+      },
+      "openFinal": "Open the finished invitation"
     }
+  },
+  "invitation": {
+    "eyebrow": "Your invitation",
+    "title": "Ready to send",
+    "label": "The finished invitation",
+    "backToStudio": "Back to the Studio",
+    "browse": "Browse designs",
+    "privateNote": "This page is private to this browser. Nothing here is shared with anyone, and it is not indexed by search engines. Sending an invitation to guests is a separate step that has not been built yet.",
+    "nothingTitle": "No invitation yet",
+    "nothingBody": "Choose a design and start filling in your details; it will appear here.",
+    "brokenTitle": "This invitation cannot be displayed",
+    "brokenBody": "Its design configuration could not be read, so it has not been drawn. Nothing has been changed or lost."
   }
 }

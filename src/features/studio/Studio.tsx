@@ -4,7 +4,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, us
 import { useTranslations } from "next-intl";
 
 import { TemplateCanvas, type BlockKey } from "@/components/invitation/TemplateCanvas";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { type DesignConfig } from "@/features/catalogue/design-config";
 import { saveCurrentDraft, type SaveOutcome } from "@/features/studio/actions";
 import { blocksFromContent, type InvitationBlocks } from "@/features/studio/blocks";
@@ -23,6 +23,7 @@ import {
   isDirty,
 } from "@/features/studio/editor-state";
 import { type Locale } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 
 /**
  * The Wedding Studio.
@@ -40,6 +41,21 @@ import { type Locale } from "@/i18n/routing";
  */
 
 const AUTOSAVE_DELAY_MS = 1600;
+
+/** The three widths the brief asks for. Mobile is a real phone width, not a narrow column. */
+export type Viewport = "mobile" | "desktop" | "full";
+
+const VIEWPORT_WIDTH: Record<Viewport, string> = {
+  mobile: "390px",
+  desktop: "720px",
+  full: "100%",
+};
+
+const VIEWPORT_MAX: Record<Viewport, number> = {
+  mobile: 390,
+  desktop: 720,
+  full: 1100,
+};
 
 export interface StudioProps {
   templateId: string;
@@ -72,6 +88,10 @@ export function Studio({
   const [zoom, setZoom] = useState(100);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [isPending, startTransition] = useTransition();
+  // Editing and previewing are different intentions, so they are different modes rather than a
+  // wider canvas. In preview the panels step aside entirely.
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [viewport, setViewport] = useState<Viewport>("desktop");
 
   // The snapshot the server last confirmed, so autosave can tell "still dirty" from "already saved".
   const savedRef = useRef(JSON.stringify({ content: initialContent, design: initialDesign }));
@@ -190,6 +210,47 @@ export function Studio({
         />
       </header>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-ground-paper px-4 py-3">
+        <div className="flex items-center gap-1" role="group" aria-label={t("mode.label")}>
+          <button
+            type="button"
+            onClick={() => setMode("edit")}
+            aria-pressed={mode === "edit"}
+            className={modeButtonClass(mode === "edit")}
+          >
+            {t("mode.edit")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("preview")}
+            aria-pressed={mode === "preview"}
+            className={modeButtonClass(mode === "preview")}
+          >
+            {t("mode.preview")}
+          </button>
+        </div>
+
+        {mode === "preview" ? (
+          <div className="flex items-center gap-1" role="group" aria-label={t("mode.viewportLabel")}>
+            {(["mobile", "desktop", "full"] as const).map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => setViewport(size)}
+                aria-pressed={viewport === size}
+                className={modeButtonClass(viewport === size)}
+              >
+                {t(`mode.viewports.${size}`)}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <Link href="/invitation" className={buttonClass("quiet")}>
+          {t("mode.openFinal")}
+        </Link>
+      </div>
+
       {!complete ? (
         <div
           role="status"
@@ -204,8 +265,15 @@ export function Studio({
         </div>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)_340px]">
-        <aside className="order-2 flex flex-col gap-4 lg:order-none" aria-label={t("panels.controls")}>
+      <div
+        className={
+          mode === "preview" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)_340px]"
+        }
+      >
+        <aside
+          className={mode === "preview" ? "hidden" : "order-2 flex flex-col gap-4 lg:order-none"}
+          aria-label={t("panels.controls")}
+        >
           <DesignControls
             design={state.present.design}
             selection={selection}
@@ -275,14 +343,20 @@ export function Studio({
           </div>
 
           <div className="flex justify-center rounded-lg border border-line bg-ground-recipe p-4">
-            <div style={{ width: `${zoom}%`, maxWidth: 560 }}>
+            <div
+              style={
+                mode === "preview"
+                  ? { width: VIEWPORT_WIDTH[viewport], maxWidth: VIEWPORT_MAX[viewport] }
+                  : { width: `${zoom}%`, maxWidth: 560 }
+              }
+            >
               <div className="overflow-hidden rounded-md border border-line shadow-sm">
                 <TemplateCanvas
                   design={state.present.design}
                   blocks={blocks}
                   locale={locale}
                   label={t("canvasLabel")}
-                  highlight={highlight}
+                  highlight={mode === "preview" ? null : highlight}
                 />
               </div>
             </div>
@@ -290,7 +364,7 @@ export function Studio({
         </section>
 
         <aside
-          className="order-3 flex flex-col gap-4 lg:order-none"
+          className={mode === "preview" ? "hidden" : "order-3 flex flex-col gap-4 lg:order-none"}
           aria-label={t("panels.properties")}
         >
           <PropertiesPanel
@@ -306,9 +380,17 @@ export function Studio({
   );
 }
 
+/** A small segmented control, shared by the mode and viewport switches. */
+function modeButtonClass(active: boolean): string {
+  return `rounded-sm border px-3 py-1 text-sm transition-colors ${
+    active
+      ? "border-gold-deep bg-ground-recipe text-gold-deep"
+      : "border-line text-ink-muted hover:text-ink"
+  }`;
+}
+
 /** Which block the canvas should outline for the current selection. */
-function selectionBlock(selection: PanelSelection): BlockKey | null {
-  switch (selection) {
+function selectionBlock(selection: PanelSelection): BlockKey | null {  switch (selection) {
     case "couple":
       return "names";
     case "when":
@@ -326,7 +408,6 @@ function selectionBlock(selection: PanelSelection): BlockKey | null {
 // ---------------------------------------------------------------------------
 // Save status
 // ---------------------------------------------------------------------------
-
 function SaveIndicator({
   status,
   savedAt,

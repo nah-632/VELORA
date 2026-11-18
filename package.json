@@ -18,7 +18,7 @@
     "fonts:build": "python3 scripts/fonts.py",
     "brand:build": "python3 scripts/build-wordmark.py && node scripts/build-brand.mjs",
     "wordmark:build": "python3 scripts/build-wordmark.py",
-    "test:ui": "python3 scripts/check-contrast.py && node scripts/check-rtl.mjs && node scripts/check-css.mjs && node tests/ui/guard-canary.mjs",
+    "test:ui": "python3 scripts/check-contrast.py && node scripts/check-rtl.mjs && node scripts/check-css.mjs && node tests/ui/check-renderer.mjs && node tests/ui/guard-canary.mjs",
     "verify": "npm run type-check && npm run test && npm run test:db && npm run test:fonts && npm run test:brand && npm run test:ui",
     "db:types": "supabase gen types typescript --local > src/lib/database.types.ts"
   },

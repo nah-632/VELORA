@@ -120,11 +120,32 @@ implementation, not two that drift. The PGlite transport is refused in productio
 - [ ] mobile editing has not been exercised below `lg` yet
 
 ## Phase 5 — Live preview (Milestone 5)
-- [ ] 5.1 renderer component (single source of truth)
-- [ ] 5.2 desktop / mobile / full viewport modes
-- [ ] 5.3 AR + EN rendering inside the correct direction context
-- [ ] 5.4 empty-optional-field resilience
-- [ ] 5.5 proof of shared code path with final output
+
+- [x] 5.1 the renderer — one component, used by the catalogue, the Studio and the finished
+      invitation. The claim is now provable rather than asserted
+- [x] 5.2 desktop / mobile / full viewport modes, plus an edit↔preview switch that steps the
+      panels aside
+- [x] 5.3 Arabic and English rendering through the same content, localised at the block adapter
+- [x] 5.4 empty optional fields — unit-tested for the cases customers actually hit: names only, a
+      half-typed date, a venue without an address, one name without a dangling "و"
+- [x] 5.5 **the customer-facing invitation** at `/[locale]/invitation`, private to the browser that
+      owns the draft and marked `noindex`
+
+### Why the invitation page was the real gap
+The brief requires the preview to "use the same rendering logic as the eventual customer-facing
+invitation". Without such a page there was nothing for the preview to agree with, so the claim was
+untestable. It now exists, renders from the saved draft, and is reached through the same
+`blocksFromContent` adapter the Studio uses.
+
+Not built, and deliberately: sharing an invitation with guests. The brief forbids introducing
+public invitation pages in Phase 1 unless explicitly scoped and protected.
+
+### Guard
+`tests/ui/check-renderer.mjs` — 11 expectations asserting there is exactly **one** renderer:
+one file sizes an invitation canvas, one file applies a design's colours to a surface, and every
+surface that shows an invitation imports `TemplateCanvas`. A second renderer would fail the build.
+Its first version was too crude — it flagged the Studio's palette swatches, which *display*
+colours rather than *painting* an invitation — so it now checks the act of painting.
 
 ## Phase 6 — Orders & pricing (Milestone 6)
 - [ ] 6.1 pricing rules, add-ons, discounts schema
