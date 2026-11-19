@@ -295,3 +295,32 @@ In a Codespace, all of that is available:
 user, `python3-fonttools` for the font gate. The first attempt at this used compose and produced a
 bare Alpine container with no Node and no PostgreSQL — `devcontainer_path` was recorded, which made it
 look configured until `node -v` said otherwise.
+
+---
+
+## O. The operator's fix pass — real-device feedback
+
+The operator opened the console and the invitation on a phone and reported what they saw. Everything
+below is fixed at the source; the measurements are in section P.
+
+### Root causes found
+
+| # | Reported | Root cause | Fix |
+|---|---|---|---|
+| 1 | Wedding details missing | The event model was built from the brief's data model, which stopped at venue name and a quote. Address, parking, entrances, sections, dress code and a programme were never columns | `0006_event_details.sql` + editor + checklist + public page + `.ics` |
+| 2 | The seal looks flat and generic | It was one SVG path filled with a flat colour and a two-stop gradient — a sticker, not wax. There was no ring, no emboss, no highlight, no shadow, and the monogram sat *on* the surface instead of in it | `seal.ts` (generated edge, wedges, six wax palettes) and a rebuilt `WaxSeal` |
+| 3 | The screen shakes every second | Four causes, none of them in the number: every tick re-rendered (React), the cells were sized by their content (proportional digits), `setInterval` drifted off the second, and it ticked while hidden | `Countdown.tsx` writes `textContent` on refs; fixed cell sizes; boundary-aligned timer; paused when hidden |
+| 4 | Jitter after the envelope opens | The entrance was `absolute` inside a container as tall as the invitation, so it centred in the document — the envelope sat low with a void above it. Scroll-lock, an infinite pulse on an invisible element, `100vh` on the admin screens and `font-display: swap` all added shifts on top | `position: fixed`; no overflow change; `scrollbar-gutter: stable`; the pulse stops when it is no longer an invitation to touch; `dvh`; the four preloaded faces no longer swap and the Latin fallbacks are metric-matched |
+| 5 | — | **Missing security control**: the two public routes had no rate limit at all | `0005_rate_limits.sql` and `rate-limit.ts`, wired into the invitation page, the RSVP action and the `.ics` |
+
+### What the details work changed
+
+| Where | Before | After |
+|---|---|---|
+| `events` columns | 29 | 38 |
+| Editor fields | 24 | 32 + a schedule editor with add/remove/reorder |
+| Completeness checklist | none | 11 items, weighted: ✗ blocks a send, ○ does not |
+| Guest-visible detail rows | venue only | venue, address, dress code, parking, entrance, sections, notes, programme |
+| `.ics` DESCRIPTION | couple + verse | couple + verse + address + notes + dress code + programme |
+| `.ics` LOCATION | venue | venue, address |
+| Map button | "Open in Maps" for everything | Google / Apple / generic, and `javascript:`/`data:` refused |
