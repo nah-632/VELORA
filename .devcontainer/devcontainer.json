@@ -1,10 +1,19 @@
 {
-  "name": "VELORA — Next.js + PostgreSQL",
+  "name": "VELORA \u2014 Next.js + PostgreSQL",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
-  "forwardPorts": [3000, 5432],
+  "forwardPorts": [
+    3000,
+    5432
+  ],
   "portsAttributes": {
-    "3000": { "label": "VELORA", "onAutoForward": "notify" },
-    "5432": { "label": "PostgreSQL", "onAutoForward": "silent" }
+    "3000": {
+      "label": "VELORA",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "postStartCommand": "bash .devcontainer/start-db.sh",
@@ -15,7 +24,10 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss"],
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss"
+      ],
       "settings": {
         "typescript.tsdk": "node_modules/typescript/lib",
         "editor.formatOnSave": false
@@ -25,5 +37,10 @@
   "hostRequirements": {
     "cpus": 2,
     "memory": "4gb"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
   }
 }
