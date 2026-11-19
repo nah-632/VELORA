@@ -10,6 +10,8 @@ import { direction, isLocale, locales, type Locale } from "@/i18n/routing";
 
 // fonts first: @font-face declarations have to exist before anything references the families.
 import "@/styles/fonts.css";
+// Metric-matched fallbacks, so a late font cannot reflow the text it replaces.
+import "@/styles/font-fallbacks.css";
 // tokens before tailwind so the utilities can reference the custom properties, and base last so
 // it can override preflight.
 import "@/styles/tokens.css";

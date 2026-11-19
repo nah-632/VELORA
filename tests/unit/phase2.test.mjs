@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 
 import { remaining, DEFAULT_DURATION_MINUTES } from "../../src/features/invitations/countdown.ts";
 import { wallClockIn, zonedToUtc, zoneOffsetMinutes } from "../../src/lib/time.ts";
+import { SEAL_VARIANTS, crackWedges, sealMonogram, sealPalette, waxPath } from "../../src/features/invitations/seal.ts";
 import {
   buildIcs,
   escapeIcsText,
@@ -192,4 +193,60 @@ test("the offset is read from the zone, not assumed", () => {
   assert.equal(zoneOffsetMinutes(new Date("2027-02-14T15:30:00Z"), "Asia/Bahrain"), 180);
   assert.equal(zoneOffsetMinutes(new Date("2027-02-14T15:30:00Z"), "Europe/London"), 0);
   assert.equal(zoneOffsetMinutes(new Date("2027-06-14T15:30:00Z"), "Europe/London"), 60);
+});
+
+// ---------------------------------------------------------------------------------------------
+
+test("the wax edge is irregular, closed, and the same every time", () => {
+  const a = waxPath({ seed: 20260214 });
+  const b = waxPath({ seed: 20260214 });
+  const other = waxPath({ seed: 99 });
+
+  assert.equal(a, b, "a fixed seed must give a fixed shape");
+  assert.notEqual(a, other, "and a different seed a different one");
+  assert.match(a, /^M[\d.,-]+C/, "it starts with a move and continues with curves");
+  assert.equal(a.endsWith("Z"), true, "it is closed");
+
+  // Every coordinate is inside the viewBox, with room for the drop shadow.
+  const numbers = a.match(/-?\d+(\.\d+)?/g).map(Number);
+  assert.equal(numbers.every((n) => n >= 0 && n <= 120), true, "the shape stays inside its viewBox");
+
+  // Not a circle: the radii vary. Every coordinate pair, read as a distance from the centre.
+  const radii = [...a.matchAll(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)].map((match) =>
+    Math.hypot(Number(match[1]) - 60, Number(match[2]) - 60),
+  );
+  assert.ok(radii.length > 20, `expected many points, found ${radii.length}`);
+  const spread = Math.max(...radii) - Math.min(...radii);
+  assert.ok(spread > 4, `the edge should wobble, spread was ${spread.toFixed(2)}`);
+});
+
+test("the seal breaks into three wedges that each start at the centre", () => {
+  const wedges = crackWedges();
+  assert.equal(wedges.length, 3);
+  assert.equal(wedges.every((wedge) => wedge.startsWith("M60,60")), true, "the break starts at the middle");
+  assert.equal(wedges.every((wedge) => wedge.endsWith("Z")), true);
+});
+
+test("the six wax colours, and the tones mixed from them", () => {
+  assert.deepEqual(Object.keys(SEAL_VARIANTS), ["gold", "burgundy", "emerald", "roseGold", "champagne", "black"]);
+
+  const gold = sealPalette(SEAL_VARIANTS.gold);
+  assert.equal(gold.face, SEAL_VARIANTS.gold);
+  // Lighter than the face, darker than the face, and a near-black for the pressed monogram.
+  const value = (hex) => Number.parseInt(hex.slice(1, 3), 16) + Number.parseInt(hex.slice(3, 5), 16) + Number.parseInt(hex.slice(5, 7), 16);
+  assert.ok(value(gold.light) > value(gold.face), "the crown is lit");
+  assert.ok(value(gold.dark) < value(gold.face), "the edge is in shadow");
+  assert.ok(value(gold.emboss) < value(gold.dark), "the monogram is pressed in, so it is the darkest");
+
+  // A colour that is not a colour falls back rather than producing a broken gradient.
+  assert.equal(sealPalette("not-a-colour").face, SEAL_VARIANTS.gold);
+  assert.equal(sealPalette("#abc").face, SEAL_VARIANTS.gold, "three-digit hex is not what the schema allows");
+});
+
+test("what is pressed into the wax", () => {
+  assert.equal(sealMonogram("K & N", { groom: null, bride: null }), "K & N");
+  assert.equal(sealMonogram("  ", { groom: "خالد", bride: "نور" }), "خ و ن");
+  assert.equal(sealMonogram(null, { groom: "Khalid", bride: "Noor" }), "K و N");
+  assert.equal(sealMonogram(null, { groom: "Khalid", bride: null }), "K");
+  assert.equal(sealMonogram(null, { groom: null, bride: null }), "V", "the house mark when there is nothing else");
 });

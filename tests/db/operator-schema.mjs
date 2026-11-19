@@ -194,5 +194,47 @@ t.check(
 const guards = await db.query(`select count(*)::int as n from public.guests`);
 t.check("(the constraint probes left nothing behind)", guards.rows[0].n === 0, `${guards.rows[0].n} guests`);
 
+// ---------------------------------------------------------------------------------------------
+t.section("the details an invitation carries");
+const columns = await db.query(
+  `select column_name from information_schema.columns
+    where table_schema = 'public' and table_name = 'events' order by column_name`,
+);
+const columnNames = columns.rows.map((row) => row.column_name);
+for (const expected of [
+  "venue_address_ar", "venue_address_en", "parking_ar", "parking_en",
+  "entrance_ar", "entrance_en", "sections_ar", "sections_en", "schedule",
+]) {
+  t.check(`events.${expected} exists`, columnNames.includes(expected));
+}
+
+const detailed = await db.query(
+  `insert into public.events (slug, bride_name_ar, groom_name_ar, event_datetime,
+                              venue_name_ar, venue_address_ar, parking_en, entrance_en,
+                              sections_ar, dress_code_ar, schedule, status)
+   values ('details-round-trip', 'نور', 'خالد', '2027-02-14 18:30+03',
+           'قاعة البحرين', 'المنامة، طريق 123', 'Behind the hall', 'Gate 2',
+           'قاعة رجال، قاعة نساء', 'زي رسمي',
+           '[{"time":"20:30","title_ar":"الاستقبال","title_en":"Reception"},{"time":"","title_ar":"الزفة"}]'::jsonb,
+           'draft')
+   returning schedule, venue_address_ar, parking_en`,
+);
+t.check("a fully described event is stored", detailed.rows.length === 1);
+t.check("the schedule keeps its order and its shape", Array.isArray(detailed.rows[0].schedule) && detailed.rows[0].schedule[0].title_en === "Reception", JSON.stringify(detailed.rows[0].schedule).slice(0, 80));
+t.check("a line without a time survives", detailed.rows[0].schedule[1].time === "");
+t.check("the bilingual details come back as written", detailed.rows[0].venue_address_ar === "المنامة، طريق 123" && detailed.rows[0].parking_en === "Behind the hall");
+
+await refused(
+  "a schedule that is not an array",
+  `insert into public.events (slug, bride_name_ar, event_datetime, schedule)
+   values ('bad-schedule', 'نور', now(), '{"time":"20:30"}'::jsonb)`,
+);
+
+const defaulted = await db.query(
+  `insert into public.events (slug, bride_name_ar, event_datetime) values ('no-schedule', 'نور', now())
+   returning schedule`,
+);
+t.check("an event with no programme gets an empty one, not null", JSON.stringify(defaulted.rows[0].schedule) === "[]");
+
 await db.close();
 t.finish();

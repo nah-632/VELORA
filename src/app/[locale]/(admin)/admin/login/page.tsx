@@ -52,7 +52,7 @@ export default async function AdminLoginPage({
   const errorKey = ERROR_KEYS[searchParams.error as keyof typeof ERROR_KEYS];
 
   return (
-    <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center px-6 py-16">
+    <main className="mx-auto flex min-h-[70dvh] w-full max-w-md flex-col justify-center px-6 py-16">
       <SectionHeading eyebrow={t("eyebrow")} title={t("title")}>
         {t("intro")}
       </SectionHeading>

@@ -56,8 +56,8 @@
   /* Faces are self-hosted and subset; see docs/BRAND.md. Aref Ruqaa is a calligraphic face and
      is restricted to display headings — never body copy, never interface chrome. Until the
      subsets land in Milestone 2 these stacks end at a system fallback. */
-  --font-display-en: "Cormorant Garamond", "Times New Roman", serif;
-  --font-body-en: "Manrope", system-ui, sans-serif;
+  --font-display-en: "Cormorant Garamond", "Cormorant Garamond Fallback", "Times New Roman", serif;
+  --font-body-en: "Manrope", "Manrope Fallback", system-ui, sans-serif;
   --font-display-ar: "Aref Ruqaa", "Noto Naskh Arabic", serif;
   --font-body-ar: "IBM Plex Sans Arabic", "Geeza Pro", sans-serif;
   --font-display: var(--font-display-ar);

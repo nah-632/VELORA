@@ -11,6 +11,13 @@
  */
 
 html {
+  /*
+   * Reserved whether or not a scrollbar is present.
+   *
+   * Without this, anything that makes the page taller or shorter than the viewport changes the
+   * layout width by the width of the scrollbar — and the opening sequence does exactly that.
+   */
+  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
 }
 

@@ -10,7 +10,8 @@ import { requireAdmin } from "@/features/admin/sessions";
 import { deleteGuestAction, markSentAction, updateGuestAction } from "@/features/guests/actions";
 import { ImportForm } from "@/features/guests/ImportForm";
 import { guestWhatsappLink, listGuests } from "@/features/guests/queries";
-import { eventReadiness } from "@/features/events/schema";
+import { eventChecklist, eventReadiness } from "@/features/events/schema";
+import { ScheduleEditor } from "@/features/events/ScheduleEditor";
 import { getEvent, listTemplateOptions } from "@/features/events/queries";
 import { updateEventAction } from "@/features/events/actions";
 import { formatPhone } from "@/lib/phone";
@@ -52,7 +53,7 @@ export default async function EventPage({
   const g = await getTranslations("admin.guests");
   const [guests, templates] = await Promise.all([listGuests(id), listTemplateOptions()]);
 
-  const readiness = eventReadiness({
+  const readinessFields = {
     bride_name_ar: event.bride_name_ar,
     bride_name_en: event.bride_name_en,
     groom_name_ar: event.groom_name_ar,
@@ -60,8 +61,25 @@ export default async function EventPage({
     event_datetime: event.event_datetime,
     venue_name_ar: event.venue_name_ar,
     venue_name_en: event.venue_name_en,
+    venue_address_ar: event.venue_address_ar,
+    venue_address_en: event.venue_address_en,
+    venue_map_url: event.venue_map_url,
+    notes_ar: event.notes_ar,
+    notes_en: event.notes_en,
+    dress_code_ar: event.dress_code_ar,
+    dress_code_en: event.dress_code_en,
+    parking_ar: event.parking_ar,
+    parking_en: event.parking_en,
+    sections_ar: event.sections_ar,
+    sections_en: event.sections_en,
+    schedule: Array.isArray(event.schedule) ? event.schedule : [],
     template_id: event.template_id,
-  });
+  };
+  const readiness = eventReadiness(readinessFields);
+  const checklist = eventChecklist(readinessFields);
+  const scheduleItems = (Array.isArray(event.schedule) ? event.schedule : []) as {
+    time?: string; title_ar?: string; title_en?: string; detail_ar?: string; detail_en?: string;
+  }[];
 
   const couple =
     locale === "ar"
@@ -92,6 +110,19 @@ export default async function EventPage({
           <StatePanel kind="success" message={t("markedSent", { count: Number(searchParams.sent) })} />
         </div>
       ) : null}
+
+      <Card className="mb-6">
+        <h2 className="text-sm font-medium text-ink">{t("checklist")}</h2>
+        <p className="mt-1 text-xs text-ink-muted">{t("checklistHint")}</p>
+        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          {checklist.map((entry) => (
+            <li key={entry.key} className={entry.done ? "text-ink-muted" : entry.required ? "text-danger" : "text-ink"}>
+              {entry.done ? "✓" : entry.required ? "✗" : "○"} {t(`check.${entry.key}`)}
+              {entry.required ? "" : ` (${t("optional")})`}
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       <details className="mb-6">
         <summary className="cursor-pointer text-sm font-medium text-ink underline-offset-4 hover:underline">
@@ -136,7 +167,18 @@ export default async function EventPage({
 
             <Field label={t("venueAr")} name="venue_name_ar" defaultValue={event.venue_name_ar ?? ""} dir="rtl" />
             <Field label={t("venueEn")} name="venue_name_en" defaultValue={event.venue_name_en ?? ""} className="ltr-token" dir="ltr" />
+            <Field label={t("addressAr")} name="venue_address_ar" defaultValue={event.venue_address_ar ?? ""} dir="rtl" />
+            <Field label={t("addressEn")} name="venue_address_en" defaultValue={event.venue_address_en ?? ""} className="ltr-token" dir="ltr" />
             <Field label={t("mapUrl")} name="venue_map_url" defaultValue={event.venue_map_url ?? ""} className="ltr-token" dir="ltr" />
+            <div />
+            <Field label={t("parkingAr")} name="parking_ar" defaultValue={event.parking_ar ?? ""} dir="rtl" />
+            <Field label={t("parkingEn")} name="parking_en" defaultValue={event.parking_en ?? ""} className="ltr-token" dir="ltr" />
+            <Field label={t("entranceAr")} name="entrance_ar" defaultValue={event.entrance_ar ?? ""} dir="rtl" />
+            <Field label={t("entranceEn")} name="entrance_en" defaultValue={event.entrance_en ?? ""} className="ltr-token" dir="ltr" />
+            <Field label={t("sectionsAr")} name="sections_ar" defaultValue={event.sections_ar ?? ""} dir="rtl" />
+            <Field label={t("sectionsEn")} name="sections_en" defaultValue={event.sections_en ?? ""} className="ltr-token" dir="ltr" />
+            <Field label={t("dressCodeAr")} name="dress_code_ar" defaultValue={event.dress_code_ar ?? ""} dir="rtl" />
+            <Field label={t("dressCodeEn")} name="dress_code_en" defaultValue={event.dress_code_en ?? ""} className="ltr-token" dir="ltr" />
 
             <Field label={t("quoteAr")} name="quote_ar" defaultValue={event.quote_ar ?? ""} dir="rtl" />
             <Field label={t("quoteEn")} name="quote_en" defaultValue={event.quote_en ?? ""} className="ltr-token" dir="ltr" />
@@ -160,6 +202,33 @@ export default async function EventPage({
                 <option value="ended">ended</option>
               </select>
             </label>
+
+            <div className="sm:col-span-2">
+              <h3 className="text-sm font-medium text-ink">{t("schedule")}</h3>
+              <p className="mb-3 text-xs text-ink-muted">{t("scheduleHint")}</p>
+              <ScheduleEditor
+                initial={scheduleItems.map((item) => ({
+                  time: item.time ?? "",
+                  title_ar: item.title_ar ?? "",
+                  title_en: item.title_en ?? "",
+                  detail_ar: item.detail_ar ?? "",
+                  detail_en: item.detail_en ?? "",
+                }))}
+                labels={{
+                  time: t("scheduleTime"),
+                  titleAr: t("scheduleTitleAr"),
+                  titleEn: t("scheduleTitleEn"),
+                  detailAr: t("scheduleDetailAr"),
+                  detailEn: t("scheduleDetailEn"),
+                  add: t("scheduleAdd"),
+                  remove: t("scheduleRemove"),
+                  up: t("scheduleUp"),
+                  down: t("scheduleDown"),
+                  empty: t("scheduleEmpty"),
+                  item: t("scheduleItem"),
+                }}
+              />
+            </div>
 
             <div className="sm:col-span-2">
               <Button type="submit">{t("save")}</Button>

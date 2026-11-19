@@ -15,7 +15,9 @@ import { isLocale } from "@/i18n/routing";
 import { assertSameOrigin, requireAdmin } from "@/features/admin/sessions";
 import {
   EventInputSchema,
+  ScheduleSchema,
   buildEventSlug,
+  eventChecklist,
   eventReadiness,
   type EventInput,
 } from "./schema";
@@ -40,6 +42,20 @@ function readEventForm(formData: FormData): Record<string, unknown> {
   }
   // An empty select is "no template", not the string "".
   if (!out.template_id) out.template_id = null;
+
+  // The schedule arrives as one hidden JSON field, because it is a list the operator builds rather
+  // than a set of inputs. Parsed here so a malformed value is a validation error, not a crash.
+  const rawSchedule = formData.get("schedule");
+  if (typeof rawSchedule === "string" && rawSchedule.trim().length > 0) {
+    try {
+      out.schedule = JSON.parse(rawSchedule);
+    } catch {
+      out.schedule = [];
+    }
+  } else {
+    out.schedule = [];
+  }
+
   return out;
 }
 

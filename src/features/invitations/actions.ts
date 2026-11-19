@@ -11,6 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { looksLikeToken } from "./public";
+import { LIMITS, clientAddress, consume, requestKey } from "./rate-limit";
 import { submitRsvp } from "./rsvp";
 
 export async function submitRsvpAction(formData: FormData): Promise<void> {
@@ -19,6 +20,15 @@ export async function submitRsvpAction(formData: FormData): Promise<void> {
   const companions = Number(formData.get("companions") ?? 0);
 
   if (!looksLikeToken(token)) redirect("/i/invalid");
+
+  // Two limits, because they defend different things: one bounds a single guest's link being used as
+  // a public write endpoint, the other bounds one address doing it across many invitations.
+  const address = clientAddress();
+  const perGuest = await consume(requestKey("rsvp-guest", { token }), LIMITS.rsvpPerGuest);
+  const perAddress = await consume(requestKey("rsvp-address", { address }), LIMITS.rsvpPerAddress);
+  if (!perGuest.allowed || !perAddress.allowed) {
+    redirect(`/i/${token}?rsvp=rate_limited`);
+  }
 
   const outcome = await submitRsvp(token, { response, companions });
   revalidatePath(`/i/${token}`);

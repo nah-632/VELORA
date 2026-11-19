@@ -37,7 +37,18 @@ export interface PublicInvitation {
     hijriDateText: string | null;
     venueNameAr: string | null;
     venueNameEn: string | null;
+    venueAddressAr: string | null;
+    venueAddressEn: string | null;
     venueMapUrl: string | null;
+    parkingAr: string | null;
+    parkingEn: string | null;
+    entranceAr: string | null;
+    entranceEn: string | null;
+    sectionsAr: string | null;
+    sectionsEn: string | null;
+    dressCodeAr: string | null;
+    dressCodeEn: string | null;
+    schedule: unknown;
     quoteAr: string | null;
     quoteEn: string | null;
     notesAr: string | null;
@@ -66,7 +77,18 @@ interface Row {
   hijri_date_text: string | null;
   venue_name_ar: string | null;
   venue_name_en: string | null;
+  venue_address_ar: string | null;
+  venue_address_en: string | null;
   venue_map_url: string | null;
+  parking_ar: string | null;
+  parking_en: string | null;
+  entrance_ar: string | null;
+  entrance_en: string | null;
+  sections_ar: string | null;
+  sections_en: string | null;
+  dress_code_ar: string | null;
+  dress_code_en: string | null;
+  schedule: unknown;
   quote_ar: string | null;
   quote_en: string | null;
   notes_ar: string | null;
@@ -124,7 +146,9 @@ export async function loadInvitation(
              g.first_opened_at,
              e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
              e.event_datetime, e.timezone, e.hijri_date_text,
-             e.venue_name_ar, e.venue_name_en, e.venue_map_url,
+             e.venue_name_ar, e.venue_name_en, e.venue_address_ar, e.venue_address_en, e.venue_map_url,
+           e.parking_ar, e.parking_en, e.entrance_ar, e.entrance_en, e.sections_ar, e.sections_en,
+           e.dress_code_ar, e.dress_code_en, e.schedule,
              e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
              e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
              e.thank_you_declined_ar, e.thank_you_declined_en,
@@ -149,7 +173,9 @@ export async function loadInvitation(
            o.first_opened_at,
            e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
            e.event_datetime, e.timezone, e.hijri_date_text,
-           e.venue_name_ar, e.venue_name_en, e.venue_map_url,
+           e.venue_name_ar, e.venue_name_en, e.venue_address_ar, e.venue_address_en, e.venue_map_url,
+           e.parking_ar, e.parking_en, e.entrance_ar, e.entrance_en, e.sections_ar, e.sections_en,
+           e.dress_code_ar, e.dress_code_en, e.schedule,
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
@@ -194,7 +220,18 @@ function toInvitation(row: Row): PublicInvitation | null {
       hijriDateText: row.hijri_date_text,
       venueNameAr: row.venue_name_ar,
       venueNameEn: row.venue_name_en,
+      venueAddressAr: row.venue_address_ar,
+      venueAddressEn: row.venue_address_en,
       venueMapUrl: row.venue_map_url,
+      parkingAr: row.parking_ar,
+      parkingEn: row.parking_en,
+      entranceAr: row.entrance_ar,
+      entranceEn: row.entrance_en,
+      sectionsAr: row.sections_ar,
+      sectionsEn: row.sections_en,
+      dressCodeAr: row.dress_code_ar,
+      dressCodeEn: row.dress_code_en,
+      schedule: Array.isArray(row.schedule) ? row.schedule : [],
       quoteAr: row.quote_ar,
       quoteEn: row.quote_en,
       notesAr: row.notes_ar,
@@ -249,7 +286,9 @@ export async function previewInvitationForGuest(
            g.first_opened_at,
            e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
            e.event_datetime, e.timezone, e.hijri_date_text,
-           e.venue_name_ar, e.venue_name_en, e.venue_map_url,
+           e.venue_name_ar, e.venue_name_en, e.venue_address_ar, e.venue_address_en, e.venue_map_url,
+           e.parking_ar, e.parking_en, e.entrance_ar, e.entrance_en, e.sections_ar, e.sections_en,
+           e.dress_code_ar, e.dress_code_en, e.schedule,
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,

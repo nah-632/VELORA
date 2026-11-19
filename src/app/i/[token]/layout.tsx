@@ -5,6 +5,8 @@ import { loadInvitationOnce } from "@/features/invitations/cache";
 // fonts first, exactly as the locale layout does: the @font-face declarations must exist before
 // anything references the families.
 import "@/styles/fonts.css";
+// Metric-matched fallbacks, so a late font cannot reflow the text it replaces.
+import "@/styles/font-fallbacks.css";
 import "@/styles/tokens.css";
 import "@/styles/tailwind.css";
 import "@/styles/base.css";

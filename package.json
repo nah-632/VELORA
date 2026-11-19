@@ -27,7 +27,8 @@
     "seed:admin": "node scripts/seed-admin.mjs",
     "check:native": "node scripts/check-native-deps.mjs",
     "test:db:invitations": "node --import tsx tests/db/invitations.mjs",
-    "test:db:security": "node --import tsx tests/db/security.mjs"
+    "test:db:security": "node --import tsx tests/db/security.mjs",
+    "fonts:fallbacks": "python3 scripts/font-fallbacks.py"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",

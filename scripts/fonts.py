@@ -73,6 +73,7 @@ FONTS = [
         "cache_name": "CormorantGaramond[wght].ttf",
         "profile": "latin",
         "out": "cormorantgaramond-latin-var",
+        "above_fold": True,
         "licence": f"{BASE}/cormorantgaramond/OFL.txt",
         "licence_name": "CormorantGaramond-OFL.txt",
     },
@@ -86,6 +87,7 @@ FONTS = [
         "cache_name": "Manrope[wght].ttf",
         "profile": "latin",
         "out": "manrope-latin-var",
+        "above_fold": True,
         "licence": f"{BASE}/manrope/OFL.txt",
         "licence_name": "Manrope-OFL.txt",
     },
@@ -99,6 +101,7 @@ FONTS = [
         "cache_name": "ArefRuqaa-Regular.ttf",
         "profile": "arabic",
         "out": "arefruqaa-arabic-400",
+        "above_fold": True,
         "licence": f"{BASE}/arefruqaa/OFL.txt",
         "licence_name": "ArefRuqaa-OFL.txt",
     },
@@ -125,6 +128,7 @@ FONTS = [
         "cache_name": "IBMPlexSansArabic-Regular.ttf",
         "profile": "arabic",
         "out": "plexsansarabic-arabic-400",
+        "above_fold": True,
         "licence": f"{BASE}/ibmplexsansarabic/OFL.txt",
         "licence_name": "IBMPlexSansArabic-OFL.txt",
     },
@@ -213,12 +217,19 @@ def subset(source: Path, destination: Path, profile: str) -> None:
 
 def css_block(entry: dict, file_name: str) -> str:
     weight = entry["weight_range"] if entry["variable"] else str(entry["weight"])
+    # `block` for the faces the layouts preload, `swap` for the rest.
+    #
+    # These four arrive with the stylesheet — they are self-hosted, subset and preloaded — so the
+    # browser has no reason to paint a fallback first. `swap` would paint one and then replace it,
+    # and a text substitution is a layout shift by definition. For a face that is *not* preloaded,
+    # blocking risks invisible text on a slow connection, and a shift is the lesser evil.
+    display = "block" if entry.get("above_fold") else "swap"
     return (
         "@font-face {\n"
         f'  font-family: "{entry["css_family"]}";\n'
         f"  font-style: normal;\n"
         f"  font-weight: {weight};\n"
-        f"  font-display: swap;\n"
+        f"  font-display: {display};\n"
         f"  src: url(\"/fonts/{file_name}\") format(\"woff2\");\n"
         f"  unicode-range: {CSS_RANGES[entry['profile']]};\n"
         "}"

@@ -163,5 +163,46 @@ t.check("and no inline script allowance", !/script-src[^;]*unsafe-inline/.test(c
 t.check("and no eval", !csp.includes("unsafe-eval"));
 t.check("frames are refused outright", csp.includes("frame-ancestors 'none'"));
 
+// ---------------------------------------------------------------------------------------------
+t.section("rate limits on the public routes");
+const limits = await import("../../src/features/invitations/rate-limit.ts");
+const limit = { limit: 3, windowMinutes: 10 };
+const guestKey = limits.requestKey("rsvp-guest", { token: "aTokenThatIsLongEnoughToSlice" });
+
+const decisions = [];
+for (let i = 0; i < 4; i += 1) decisions.push((await limits.consume(guestKey, limit, { sql })).allowed);
+t.check("the first requests are allowed and the next is not", JSON.stringify(decisions) === "[true,true,true,false]", JSON.stringify(decisions));
+
+const used = (await limits.consume(guestKey, limit, { sql })).used;
+t.check("a refused request does not extend its own window", used === 3, `${used}`);
+
+// The window is a window: move the recorded events into the past and the key is free again.
+await db.query(`update public.rate_limit_events set at = now() - interval '11 minutes' where key = $1`, [guestKey]);
+t.check("the window expires", (await limits.consume(guestKey, limit, { sql })).allowed === true);
+
+const otherKey = limits.requestKey("rsvp-guest", { token: "anotherTokenLongEnoughToSlice" });
+t.check("a different key is unaffected", (await limits.consume(otherKey, limit, { sql })).allowed === true);
+
+// One shape for every key: scope, a token fragment (or a dash), and the address hash (or a dash).
+t.check("the key shape is the same everywhere", guestKey.split(":").length === 3, guestKey);
+t.check("the token is truncated, not stored whole", guestKey.length < "rsvp-guest:".length + 12 + 34, `${guestKey.length} chars`);
+const addressKey = limits.requestKey("rsvp-address", { address: "203.0.113.7" });
+t.check(
+  "an address becomes an opaque hash and is never written down",
+  addressKey.startsWith("rsvp-address:-:") && !addressKey.includes("203.0.113.7") && addressKey.endsWith(addressKey.slice(-32)),
+  `${addressKey.length} chars`,
+);
+t.check(
+  "two addresses never share a key",
+  addressKey !== limits.requestKey("rsvp-address", { address: "203.0.113.8" }),
+);
+
+const before = (await db.query(`select count(*)::int as n from public.rate_limit_events`)).rows[0].n;
+await limits.pruneRateLimits({ sql, olderThanHours: 0 });
+const after = (await db.query(`select count(*)::int as n from public.rate_limit_events`)).rows[0].n;
+t.check("pruning removes what nobody is counting any more", after < before, `${before} → ${after}`);
+
+t.check("the shipped limits are generous to a guest", limits.LIMITS.invitation.limit >= 60 && limits.LIMITS.rsvpPerGuest.limit >= 5);
+
 await db.close();
 t.finish();
