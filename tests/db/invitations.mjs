@@ -182,5 +182,51 @@ const withoutWords = {
 t.check("a plain default stands in when they are empty", thankYou(withoutWords, "confirmed", "en").includes("delighted"));
 t.check("...and the two answers are told apart", thankYou(withoutWords, "confirmed", "ar") !== thankYou(withoutWords, "declined", "ar"));
 
+// ---------------------------------------------------------------------------------------------
+t.section("the writers, not just the schema");
+// The gap that let a production bug through: the assertions above insert SQL literals, so they
+// watched the *schema* and never the code that writes to it. These drive the real functions.
+const queries = await import("../../src/features/events/queries.ts");
+const schedule = [
+  { time: "19:30", title_ar: "الاستقبال", title_en: "Reception", detail_ar: "البهو", detail_en: "Lobby" },
+  { time: "20:30", title_ar: "الزفة", title_en: "Zaffa", detail_ar: null, detail_en: null },
+];
+const createdId = await queries.createEvent(
+  {
+    bride_name_ar: "نور", groom_name_ar: "خالد",
+    bride_name_en: null, groom_name_en: null,
+    event_datetime: "2027-02-14T18:30", timezone: "Asia/Bahrain",
+    hijri_date_text: null,
+    venue_name_ar: "قاعة البحرين", venue_name_en: null,
+    venue_map_url: null,
+    venue_address_ar: "المنامة", venue_address_en: null,
+    parking_ar: null, parking_en: null, entrance_ar: null, entrance_en: null,
+    sections_ar: null, sections_en: null,
+    quote_ar: null, quote_en: null, notes_ar: null, notes_en: null,
+    dress_code_ar: null, dress_code_en: null,
+    thank_you_confirmed_ar: null, thank_you_confirmed_en: null,
+    thank_you_declined_ar: null, thank_you_declined_en: null,
+    template_id: null, monogram_text: null, status: "draft", schedule,
+  },
+  "writer-probe",
+  { sql },
+);
+
+const written = await db.query(`select jsonb_typeof(schedule) as kind, venue_address_ar from public.events where id = $1`, [createdId]);
+t.check("the writer stores the programme as a jsonb array", written.rows[0].kind === "array", `jsonb_typeof = ${written.rows[0].kind}`);
+t.check("and the details alongside it", written.rows[0].venue_address_ar === "المنامة");
+
+const readBack = await queries.getEvent(createdId, { sql });
+t.check("order is preserved through the round trip", Array.isArray(readBack.schedule) && readBack.schedule[0].title_en === "Reception");
+
+await queries.updateEvent(
+  createdId,
+  { ...readBack, timezone: readBack.timezone, event_datetime: "2027-02-14T19:00", schedule: [schedule[0]], status: "active" },
+  { sql },
+);
+const updated = await db.query(`select jsonb_typeof(schedule) as kind, jsonb_array_length(schedule) as len, status from public.events where id = $1`, [createdId]);
+t.check("the updater keeps it an array too", updated.rows[0].kind === "array", `jsonb_typeof = ${updated.rows[0].kind}`);
+t.check("and replaces rather than appends", updated.rows[0].len === 1 && updated.rows[0].status === "active");
+
 await db.close();
 t.finish();

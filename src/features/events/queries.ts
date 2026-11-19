@@ -7,6 +7,9 @@
  */
 import { getSql } from "@/lib/db";
 import { zonedToUtc } from "@/lib/time";
+
+/** The database handle, injectable so the writers can be driven against PGlite in tests. */
+type Sql = ReturnType<typeof getSql>;
 import { type EventInput } from "./schema";
 
 export interface EventListRow {
@@ -30,6 +33,21 @@ export interface EventListRow {
   declined: number;
   no_response: number;
 }
+
+/**
+ * The programme is written as JSON *text* with the cast in the SQL, never as a jsonb parameter.
+ *
+ * Two driver behaviours had to be satisfied at once, and both bit before this line settled:
+ *
+ *   1. `::jsonb` on a value the client already JSON-encoded makes postgres.js serialise it a second
+ *      time — `"[]"` arrives as the jsonb **string** `"[]"`, `jsonb_typeof` answers `string`, and the
+ *      array constraint refuses the row.
+ *   2. Putting the cast in the *value* (`${"[]" + "::jsonb"}`) sends `[]::jsonb` as data, and the
+ *      parser reports "Expected end of input, but found ':'".
+ *
+ * `::text::jsonb` in the SQL text pins the parameter as text first and lets Postgres parse the JSON
+ * itself. Same expression, same result, in the tests and in production.
+ */
 
 export async function listEvents(): Promise<EventListRow[]> {
   return getSql()<EventListRow[]>`
@@ -77,8 +95,9 @@ export interface EventDetail extends EventListRow {
   design_config: unknown;
 }
 
-export async function getEvent(id: string): Promise<EventDetail | null> {
-  const rows = await getSql()<EventDetail[]>`
+export async function getEvent(id: string, options: { sql?: Sql } = {}): Promise<EventDetail | null> {
+  const sql = options.sql ?? getSql();
+  const rows = await sql<EventDetail[]>`
     select e.*, t.name_en as template_name, t.design_config
       from public.events e
       left join public.templates t on t.id = e.template_id
@@ -100,13 +119,18 @@ export async function listTemplateOptions(): Promise<TemplateOption[]> {
     select id, slug, name_ar, name_en from public.templates order by sort_order, slug`;
 }
 
-export async function createEvent(input: EventInput, slug: string): Promise<string> {
+export async function createEvent(
+  input: EventInput,
+  slug: string,
+  options: { sql?: Sql } = {},
+): Promise<string> {
   // The form sends a wall clock and the event carries a zone; the conversion is here, once, rather
   // than in three places that could disagree.
+  const sql = options.sql ?? getSql();
   const startsAt = input.event_datetime
     ? zonedToUtc(input.event_datetime, input.timezone)
     : new Date();
-  const rows = await getSql()<{ id: string }[]>`
+  const rows = await sql<{ id: string }[]>`
     insert into public.events (
       slug, bride_name_ar, bride_name_en, groom_name_ar, groom_name_en,
       event_datetime, timezone, hijri_date_text,
@@ -127,7 +151,7 @@ export async function createEvent(input: EventInput, slug: string): Promise<stri
       ${input.parking_ar ?? null}, ${input.parking_en ?? null},
       ${input.entrance_ar ?? null}, ${input.entrance_en ?? null},
       ${input.sections_ar ?? null}, ${input.sections_en ?? null},
-      ${JSON.stringify(input.schedule ?? [])}::jsonb,
+      ${JSON.stringify(input.schedule ?? [])}::text::jsonb,
       ${input.quote_ar ?? null}, ${input.quote_en ?? null},
       ${input.notes_ar ?? null}, ${input.notes_en ?? null},
       ${input.dress_code_ar ?? null}, ${input.dress_code_en ?? null},
@@ -138,11 +162,16 @@ export async function createEvent(input: EventInput, slug: string): Promise<stri
   return rows[0]!.id;
 }
 
-export async function updateEvent(id: string, input: EventInput): Promise<void> {
+export async function updateEvent(
+  id: string,
+  input: EventInput,
+  options: { sql?: Sql } = {},
+): Promise<void> {
+  const sql = options.sql ?? getSql();
   const startsAt = input.event_datetime
     ? zonedToUtc(input.event_datetime, input.timezone)
     : new Date();
-  await getSql()`
+  await sql`
     update public.events set
       bride_name_ar = ${input.bride_name_ar ?? null},
       bride_name_en = ${input.bride_name_en ?? null},
@@ -162,7 +191,7 @@ export async function updateEvent(id: string, input: EventInput): Promise<void> 
       entrance_en = ${input.entrance_en ?? null},
       sections_ar = ${input.sections_ar ?? null},
       sections_en = ${input.sections_en ?? null},
-      schedule = ${JSON.stringify(input.schedule ?? [])}::jsonb,
+      schedule = ${JSON.stringify(input.schedule ?? [])}::text::jsonb,
       quote_ar = ${input.quote_ar ?? null},
       quote_en = ${input.quote_en ?? null},
       notes_ar = ${input.notes_ar ?? null},
