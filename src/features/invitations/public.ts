@@ -22,6 +22,8 @@ import { type InvitationBlocks } from "@/features/studio/blocks";
 export interface PublicInvitation {
   guestName: string;
   language: "ar" | "en";
+  /** How this design opens. 'none' still renders the invitation, just without an entrance. */
+  animation: "wax_seal" | "curtain" | "none";
   personalLine: string | null;
   blocks: InvitationBlocks;
   design: DesignConfig;
@@ -41,6 +43,10 @@ export interface PublicInvitation {
     notesAr: string | null;
     notesEn: string | null;
     monogramText: string | null;
+    thankYouConfirmedAr: string | null;
+    thankYouConfirmedEn: string | null;
+    thankYouDeclinedAr: string | null;
+    thankYouDeclinedEn: string | null;
   };
 }
 
@@ -66,7 +72,12 @@ interface Row {
   notes_ar: string | null;
   notes_en: string | null;
   monogram_text: string | null;
+  thank_you_confirmed_ar: string | null;
+  thank_you_confirmed_en: string | null;
+  thank_you_declined_ar: string | null;
+  thank_you_declined_en: string | null;
   design_config: unknown;
+  opening_animation_type: string | null;
 }
 
 /**
@@ -96,10 +107,35 @@ export function looksLikeToken(value: string): boolean {
  */
 export async function loadInvitation(
   token: string,
-  options: { sql?: Sql } = {},
+  options: { sql?: Sql; recordOpen?: boolean } = {},
 ): Promise<PublicInvitation | null> {
   if (!looksLikeToken(token)) return null;
   const sql = options.sql ?? getSql();
+
+  /**
+   * `recordOpen` is true for the page and false for everything else. The calendar file and the
+   * operator's preview are not the guest opening their invitation, and counting them would make the
+   * RSVP dashboard's "has not opened it yet" column a lie — which is exactly the number the operator
+   * uses to decide who to chase.
+   */
+  if (options.recordOpen === false) {
+    const rows = await sql<Row[]>`
+      select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en,
+             g.first_opened_at,
+             e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
+             e.event_datetime, e.timezone, e.hijri_date_text,
+             e.venue_name_ar, e.venue_name_en, e.venue_map_url,
+             e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
+             e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
+             e.thank_you_declined_ar, e.thank_you_declined_en,
+             t.design_config, t.opening_animation_type
+        from public.guests g
+        join public.events e on e.id = g.event_id
+        left join public.templates t on t.id = e.template_id
+       where g.token = ${token}
+       limit 1`;
+    return rows[0] ? toInvitation(rows[0]) : null;
+  }
 
   const rows = await sql<Row[]>`
     with opened as (
@@ -115,15 +151,19 @@ export async function loadInvitation(
            e.event_datetime, e.timezone, e.hijri_date_text,
            e.venue_name_ar, e.venue_name_en, e.venue_map_url,
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
-           t.design_config
+           e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
+           e.thank_you_declined_ar, e.thank_you_declined_en,
+           t.design_config, t.opening_animation_type
       from opened o
       join public.events e on e.id = o.event_id
       left join public.templates t on t.id = e.template_id
      limit 1`;
 
-  const row = rows[0];
-  if (!row) return null;
+  return rows[0] ? toInvitation(rows[0]) : null;
+}
 
+/** One place that turns a row into an invitation, so the counting and non-counting paths cannot drift. */
+function toInvitation(row: Row): PublicInvitation | null {
   const design = DesignConfigSchema.safeParse(row.design_config);
   if (!design.success) {
     // A design that cannot be parsed is a stored bug. Rendering "something close" would put a
@@ -132,9 +172,15 @@ export async function loadInvitation(
   }
 
   const language: "ar" | "en" = row.language === "en" ? "en" : "ar";
+  const animation =
+    row.opening_animation_type === "curtain" || row.opening_animation_type === "none"
+      ? row.opening_animation_type
+      : "wax_seal";
+
   return {
     guestName: row.full_name,
     language,
+    animation,
     personalLine: language === "ar" ? row.personal_line_ar : row.personal_line_en,
     design: design.data,
     blocks: blocksFromEvent(row, language),
@@ -154,6 +200,10 @@ export async function loadInvitation(
       notesAr: row.notes_ar,
       notesEn: row.notes_en,
       monogramText: row.monogram_text,
+      thankYouConfirmedAr: row.thank_you_confirmed_ar,
+      thankYouConfirmedEn: row.thank_you_confirmed_en,
+      thankYouDeclinedAr: row.thank_you_declined_ar,
+      thankYouDeclinedEn: row.thank_you_declined_en,
     },
   };
 }
@@ -201,39 +251,13 @@ export async function previewInvitationForGuest(
            e.event_datetime, e.timezone, e.hijri_date_text,
            e.venue_name_ar, e.venue_name_en, e.venue_map_url,
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
-           t.design_config
+           e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
+           e.thank_you_declined_ar, e.thank_you_declined_en,
+           t.design_config, t.opening_animation_type
       from public.guests g
       join public.events e on e.id = g.event_id
       left join public.templates t on t.id = e.template_id
      where g.id = ${guestId}
      limit 1`;
-  const row = rows[0];
-  if (!row) return null;
-  const design = DesignConfigSchema.safeParse(row.design_config);
-  if (!design.success) return null;
-  const language: "ar" | "en" = row.language === "en" ? "en" : "ar";
-  return {
-    guestName: row.full_name,
-    language,
-    personalLine: language === "ar" ? row.personal_line_ar : row.personal_line_en,
-    design: design.data,
-    blocks: blocksFromEvent(row, language),
-    event: {
-      brideNameAr: row.bride_name_ar,
-      brideNameEn: row.bride_name_en,
-      groomNameAr: row.groom_name_ar,
-      groomNameEn: row.groom_name_en,
-      eventDatetime: row.event_datetime,
-      timezone: row.timezone,
-      hijriDateText: row.hijri_date_text,
-      venueNameAr: row.venue_name_ar,
-      venueNameEn: row.venue_name_en,
-      venueMapUrl: row.venue_map_url,
-      quoteAr: row.quote_ar,
-      quoteEn: row.quote_en,
-      notesAr: row.notes_ar,
-      notesEn: row.notes_en,
-      monogramText: row.monogram_text,
-    },
-  };
+  return rows[0] ? toInvitation(rows[0]) : null;
 }

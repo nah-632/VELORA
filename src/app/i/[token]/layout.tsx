@@ -8,6 +8,8 @@ import "@/styles/fonts.css";
 import "@/styles/tokens.css";
 import "@/styles/tailwind.css";
 import "@/styles/base.css";
+// The entrance's keyframes, scoped to this route.
+import "@/styles/invitation.css";
 
 /**
  * The root layout for /i/[token].

@@ -21,6 +21,7 @@ const DIR = join(ROOT, "db/migrations");
 const { loadInvitation, looksLikeToken, previewInvitationForGuest } = await import(
   "../../src/features/invitations/public.ts"
 );
+const { submitRsvp, rsvpForToken, thankYou } = await import("../../src/features/invitations/rsvp.ts");
 const { newGuestToken } = await import("../../src/features/admin/credentials.ts");
 
 const files = existsSync(DIR) ? readdirSync(DIR).filter((n) => n.endsWith(".sql")).sort() : [];
@@ -138,6 +139,48 @@ t.check(
   withoutDesign === null,
   "the route shows its apology page instead",
 );
+
+// ---------------------------------------------------------------------------------------------
+t.section("RSVP");
+// The companion cap belongs to the guest, not to the form. `first` was created with 3.
+const confirmed = await submitRsvp(firstToken, { response: "confirmed", companions: 2 }, { sql });
+t.check("a confirmation with companions is stored", confirmed.ok && confirmed.state.response === "confirmed" && confirmed.state.companions === 2);
+
+const changed = await submitRsvp(firstToken, { response: "declined", companions: 3 }, { sql });
+t.check("changing to a decline is accepted", changed.ok && changed.state.response === "declined");
+t.check("...and the companions go to zero without the guest noticing", changed.state.companions === 0);
+const rows = await db.query(`select count(*)::int as n from public.rsvps where guest_id = $1`, [first.rows[0].id]);
+t.check("...on the same row, never a second one", rows.rows[0].n === 1, `${rows.rows[0].n} row(s)`);
+
+const tooMany = await submitRsvp(firstToken, { response: "confirmed", companions: 9 }, { sql });
+t.check("more companions than the guest is allowed is refused", tooMany.ok === false && tooMany.reason === "too_many_companions");
+const unchanged = await rsvpForToken(firstToken, { sql });
+t.check("...and the previous answer stands", unchanged.response === "declined", String(unchanged.response));
+
+const nonsense = await submitRsvp(firstToken, { response: "maybe", companions: 0 }, { sql });
+t.check("an answer that is neither is refused", nonsense.ok === false && nonsense.reason === "bad_response");
+t.check("an unknown token is refused", (await submitRsvp(newGuestToken(), { response: "confirmed" }, { sql })).reason === "invalid_token");
+t.check("a malformed token never reaches the database", (await submitRsvp("short", { response: "confirmed" }, { sql })).reason === "invalid_token");
+
+const opensAfterAnswering = await db.query(`select open_count from public.guests where id = $1`, [first.rows[0].id]);
+t.check(
+  "answering does not count as an open",
+  opensAfterAnswering.rows[0].open_count === 3,
+  `${opensAfterAnswering.rows[0].open_count}`,
+);
+
+t.section("the thank-you");
+const withWords = {
+  thankYouConfirmedAr: "شكرًا من القلب", thankYouConfirmedEn: "With all our hearts",
+  thankYouDeclinedAr: "نفتقدكم", thankYouDeclinedEn: "You will be missed",
+};
+t.check("the couple's own words are used when they exist", thankYou(withWords, "confirmed", "ar") === "شكرًا من القلب");
+t.check("...in the guest's language", thankYou(withWords, "declined", "en") === "You will be missed");
+const withoutWords = {
+  thankYouConfirmedAr: null, thankYouConfirmedEn: null, thankYouDeclinedAr: null, thankYouDeclinedEn: null,
+};
+t.check("a plain default stands in when they are empty", thankYou(withoutWords, "confirmed", "en").includes("delighted"));
+t.check("...and the two answers are told apart", thankYou(withoutWords, "confirmed", "ar") !== thankYou(withoutWords, "declined", "ar"));
 
 await db.close();
 t.finish();

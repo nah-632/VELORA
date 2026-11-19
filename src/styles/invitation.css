@@ -1,0 +1,212 @@
+/*
+ * The wax-seal entrance.
+ *
+ * Kept out of the Tailwind utilities on purpose: a keyframed sequence with five coordinated
+ * transitions is not a set of class names, and writing it as one would make it unreadable at the
+ * exact moment somebody needs to adjust the timing.
+ *
+ * Everything here is CSS and inline SVG. No video, no image sequence, no canvas: the whole entrance
+ * is a handful of transforms, which is what keeps it off the critical path on a mid-range phone.
+ *
+ * `prefers-reduced-motion` is not a courtesy at the end of the file — it removes the sequence
+ * entirely, so a guest who has asked for less motion sees their invitation, not an animation of one.
+ */
+
+.seal-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  background: var(--ground-paper, #faf7f1);
+}
+
+/*
+ * `overflow: hidden` only while the entrance is on screen. Leaving it on would clip a long
+ * invitation at the fold — the kind of bug that gets blamed on the guest's phone.
+ */
+.seal-stage[data-phase="sealed"],
+.seal-stage[data-phase="opening"] {
+  overflow: hidden;
+}
+
+/* The envelope, and the card that comes out of it. */
+.envelope {
+  position: relative;
+  width: min(88vw, 380px);
+  aspect-ratio: 3 / 2;
+  perspective: 1200px;
+}
+
+.envelope__body {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.45);
+}
+
+/* The flap: a triangle that pivots on its top edge. */
+.envelope__flap {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 62%;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top center;
+  transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.envelope[data-phase="opening"] .envelope__flap,
+.envelope[data-phase="open"] .envelope__flap {
+  transform: rotateX(-172deg);
+}
+
+/* The invitation card, hidden behind the flap until the seal breaks. */
+.envelope__card {
+  position: absolute;
+  inset-inline: 6%;
+  top: 12%;
+  height: 92%;
+  border-radius: 4px;
+  transform: translateY(6%) scale(0.98);
+  transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 180ms;
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.5);
+}
+
+.envelope[data-phase="opening"] .envelope__card,
+.envelope[data-phase="open"] .envelope__card {
+  transform: translateY(-46%) scale(1);
+}
+
+/*
+ * The seal.
+ *
+ * The pulse is the only thing asking the guest to touch it, so it has to be visible without being
+ * an advertisement: 2.4 seconds, a small scale and a soft ring, and it stops the moment the seal is
+ * touched.
+ */
+.seal {
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 52%;
+  translate: -50% -50%;
+  width: clamp(84px, 26vw, 116px);
+  aspect-ratio: 1;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  animation: seal-pulse 2.4s ease-in-out infinite;
+}
+
+.seal[data-broken="true"] {
+  animation: none;
+  pointer-events: none;
+  transition: transform 520ms cubic-bezier(0.3, 0, 0.2, 1), opacity 520ms ease-out;
+  transform: scale(1.35) rotate(-6deg);
+  opacity: 0;
+}
+
+@keyframes seal-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+/* The ring that draws attention without shouting. */
+.seal__ring {
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  opacity: 0.25;
+  animation: seal-ring 2.4s ease-out infinite;
+}
+
+@keyframes seal-ring {
+  0% { transform: scale(0.9); opacity: 0.3; }
+  70%, 100% { transform: scale(1.18); opacity: 0; }
+}
+
+/* The prompt under the envelope. */
+.seal__prompt {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -3.25rem;
+  text-align: center;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+.seal-skip {
+  position: absolute;
+  inset-block-start: 1rem;
+  inset-inline-end: 1rem;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  opacity: 0.7;
+}
+
+/* The reveal: the invitation fades up as the entrance steps aside. */
+.seal-stage[data-phase="open"] .seal-stage__entrance {
+  opacity: 0;
+  transform: translateY(-2%);
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+  pointer-events: none;
+}
+
+.invitation-reveal {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.seal-stage[data-phase="open"] .invitation-reveal {
+  opacity: 1;
+  transform: none;
+  transition: opacity 700ms ease-out 200ms, transform 700ms ease-out 200ms;
+}
+
+/*
+ * Reduced motion: no entrance at all.
+ *
+ * Not a faster animation — none. The seal is still a button (so the interaction is discoverable and
+ * a keyboard or screen-reader user is not trapped behind a decoration), but the sequence and the
+ * pulse are gone and the invitation is simply there.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .seal,
+  .seal__ring {
+    animation: none;
+  }
+  .envelope__flap,
+  .envelope__card,
+  .invitation-reveal,
+  .seal-stage[data-phase="open"] .seal-stage__entrance {
+    transition: opacity 200ms ease-out;
+    transform: none !important;
+  }
+  .invitation-reveal {
+    opacity: 1;
+  }
+}
+
+/* The countdown, as a row of units. */
+.countdown {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown__unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.5rem;
+}
+
+.countdown__value {
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
