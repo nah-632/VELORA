@@ -55,6 +55,37 @@ will not work here.
 gate is a scoped type-check plus the test suites. Any report of "build verified" will say
 which of the two actually ran.
 
+## Developing in a Codespace
+
+The device this project was built on cannot run `next build` (it exhausts the memory) and cannot run
+a PostgreSQL server (`shmget` is unimplemented in its sandbox). Both of those are limits of that
+device, not of the project.
+
+`.devcontainer/` fixes both: a Node 22 container with a real `postgres:16` beside it, wired together
+so `DATABASE_URL` points at something that actually accepts a connection.
+
+```bash
+gh codespace create -R nah-632/VELORA -b main    # or Code → Codespaces → Create
+npm ci
+npm run db:migrate                               # applies db/migrations to the real PostgreSQL
+npm run verify                                   # the full gate
+npm run build                                    # the production build — finally verifiable here
+npm run seed:admin                               # ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run seed:admin
+npm run dev
+```
+
+What this buys, concretely, in order of how much time it saves:
+
+| | This device | A Codespace |
+|---|---|---|
+| `next build` | impossible — memory | runs, ~15 s |
+| PostgreSQL server | impossible — `shmget` | real, `npm run db:migrate` |
+| The full `verify` | mostly, with PRoot interruptions | clean |
+| Iterating on a deploy | ~4 minutes each | build first, deploy once |
+
+The suite still runs on PGlite too, and that stays: it is what makes `npm run test:db:*` work on a
+phone. The Codespace adds the server rather than replacing the harness.
+
 ## Layout
 
 ```
