@@ -14,20 +14,30 @@
 
 .seal-stage {
   position: relative;
-  display: grid;
-  place-items: center;
   min-height: 100dvh;
   padding: 1.5rem;
   background: var(--ground-paper, #faf7f1);
 }
 
 /*
- * `overflow: hidden` only while the entrance is on screen. Leaving it on would clip a long
- * invitation at the fold — the kind of bug that gets blamed on the guest's phone.
+ * The entrance is **fixed**, not absolute.
+ *
+ * Absolutely positioned inside a container whose height is the invitation's, it centred itself in
+ * the *document* rather than in the viewport — which is why the envelope sat in the bottom half of
+ * the screen with a void above it, and later in the top third with the prompt clipped behind the
+ * card. Fixed also means the page never needs `overflow: hidden`, so opening the seal cannot change
+ * the document's width: there is nothing to change.
  */
-.seal-stage[data-phase="sealed"],
-.seal-stage[data-phase="opening"] {
-  overflow: hidden;
+.seal-stage__entrance {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--ground-paper, #faf7f1);
+  /* While it is up, a swipe does not scroll the invitation behind it out of position. */
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 /* The envelope, and the card that comes out of it. */
