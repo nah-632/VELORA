@@ -327,7 +327,7 @@
       "confirm": "Confirm the new one",
       "changePassword": "Change password",
       "passwordChanged": "Changed. The other sessions were revoked.",
-      "revokes": "%count% other session(s) will be revoked.",
+      "revokes": "{count} other session(s) will be revoked.",
       "wrongPassword": "The current password is not correct.",
       "errors": {
         "invalid": "Missing fields.",

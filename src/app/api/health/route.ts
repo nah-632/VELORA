@@ -31,6 +31,8 @@ export async function GET() {
     pendingCheck: "not_checked",
   };
   let adminAccounts: number | null = null;
+  let adminSessions: number | null = null;
+  let totpEnrolled: boolean | null = null;
 
   if (database.ok) {
     try {
@@ -49,6 +51,23 @@ export async function GET() {
     } catch {
       adminAccounts = null;
     }
+
+    // Counts and a boolean, never a name or an address. This is what makes an authentication
+    // problem diagnosable from outside the container, where the logs carry only the server's own
+    // stdout: "a session was created" and "the second factor is on" are the two facts that decide
+    // whether a failed sign-in is the cookie, the code, or the session row.
+    try {
+      const rows = await getSql()<{ sessions: number; enrolled: number }[]>`
+        select
+          (select count(*)::int from public.admin_sessions
+            where revoked_at is null and expires_at > now()) as sessions,
+          (select count(*)::int from public.admin_users where totp_confirmed_at is not null) as enrolled`;
+      adminSessions = rows[0]?.sessions ?? 0;
+      totpEnrolled = (rows[0]?.enrolled ?? 0) > 0;
+    } catch {
+      adminSessions = null;
+      totpEnrolled = null;
+    }
   }
 
   const body: Record<string, unknown> = {
@@ -62,7 +81,7 @@ export async function GET() {
       migrations,
       // Tells an operator whether this installation has been seeded yet. A number, not a name:
       // a health endpoint should never become a way to enumerate accounts.
-      admin: { accounts: adminAccounts },
+      admin: { accounts: adminAccounts, sessions: adminSessions, totpEnrolled },
     },
     checkedInMs: Date.now() - started,
   };
