@@ -86,15 +86,15 @@ There are **no admin routes at all** (`rg --files src/app | rg admin` → empty)
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| F1 | Elegant opening animation with `prefers-reduced-motion` handling and a skip control | ❌ | Absent (and the wax-seal entrance of ADDENDUM D is the specified form of it) |
+| F1 | Elegant opening animation with `prefers-reduced-motion` handling and a skip control | ✅ | The wax-seal entrance: sealed envelope, the guest's name on it, a gold seal bearing the couple's monogram, a prompt, and on tap the seal breaks and the card rises out. CSS and inline SVG only — no video. Reduced motion **removes** the sequence rather than shortening it, the invitation is in the DOM underneath it either way, and Skip is a real button outside the decorative region |
 | F2 | Personalised greeting with the guest's name | ✅ | `/i/<token>` greets the guest by name, in the language on their row, and shows their personal line under it |
 | F3 | Couple's names in Arabic calligraphic face | ✅ | The public page renders through `TemplateCanvas` — the same component the catalogue and the Studio use, so the brief's "same rendering logic" requirement holds with no second renderer to drift from it |
 | F4 | Verse / quote · notes · venue + "Open in Maps" | ✅ | All four on the public page, in the guest's language, with the map button appearing only when the operator stored a link |
-| F5 | Live countdown in the event's timezone, graceful after the event | ❌ | No countdown code anywhere |
+| F5 | Live countdown in the event's timezone, graceful after the event | ✅ | Target is an absolute instant, so the countdown is identical for a guest in Manama or London; the date beside it is formatted in the **event's** zone, not the guest's. The server renders the first value and the client ticks, so hydration matches and there is no flash of zeros. After the event it stops and says so |
 | F6 | Hijri **and** Gregorian dates | 🟡 | The Gregorian date is formatted per guest language and in the **event's** timezone, and a Hijri line shows when the operator typed one. Auto-computation is not there: it needs a conversion library, and the brief's own wording is "auto-computed, manually editable" |
-| F7 | RSVP confirm/decline with a companion cap, answers changeable | ❌ | Absent |
-| F8 | Different thank-you message for confirm vs decline | ❌ | Absent |
-| F9 | Correct `.ics` (+ timezone) and a Google Calendar link | ❌ | Absent |
+| F7 | RSVP confirm/decline with a companion cap, answers changeable | ✅ | The cap comes from the guest's row, not the form: a guest allowed two cannot answer with five by editing the request. One row per guest, updated in place, so the operator's count is the latest answer and never a sum of revisions. Declining forces zero companions. Answering is not counted as an open |
+| F8 | Different thank-you message for confirm vs decline | ✅ | The operator's own words from the event when they wrote them, in the guest's language, with a plain default when they did not |
+| F9 | Correct `.ics` (+ timezone) and a Google Calendar link | ✅ | RFC 5545: CRLF, 75-octet folding that never splits a UTF-8 sequence, escaping that leaves the Arabic comma alone, `VTIMEZONE` for fixed-offset zones and UTC for the rest. Served as `text/calendar` with `no-store`, and downloading it is not an open. The guest's name is deliberately not in the file |
 | F10 | Record first open and open count only | ✅ | Recorded in the same statement that reads the row, so a double open counts twice without a read-modify-write race, and `first_opened_at` never moves. Asserted: three opens → count 3, timestamp unchanged; the operator's preview counts zero |
 | F11 | 100% mobile-first, fast (Lighthouse 90+), accessible, RTL-correct | 🟡 | RTL-correct ✅ (guarded). Mobile behaviour verified at 390px for the Studio ✅. **Lighthouse has never been run** — no performance number exists |
 | F12 | Hidden from search: noindex/nofollow, `X-Robots-Tag`, robots.txt, unguessable tokens | ✅ | Four controls on one page: `robots` metadata, an `X-Robots-Tag` header, `robots.txt` disallowing `/i/` and the console, and `Cache-Control: no-store, private`. Tokens are 160 random bits, and a malformed token is rejected before it reaches SQL |
@@ -260,3 +260,38 @@ second. The app was never wrong. The scripted interactions were: `input.value = 
 not what had been typed. A trusted click — a real one — worked first time. When a browser test and the
 server disagree, suspect the harness before the product.
 
+
+---
+
+## N. Phase 2 — the guest's experience
+
+| Item | Status | Evidence |
+|---|---|---|
+| Wax-seal entrance | ✅ | `styles/invitation.css`, `WaxSeal.tsx`. Once per session (`sessionStorage`), reduced motion removes it, invitation always in the DOM |
+| Countdown | ✅ | 5 unit assertions on the arithmetic, live on the page |
+| RSVP | ✅ | 14 new assertions: the cap, the change of mind on one row, declines forcing zero, bad answers, unknown and malformed tokens, and that answering is not an open |
+| Calendar file | ✅ | 8 assertions on the format, plus a live fetch: `text/calendar`, `no-store, private`, `DTSTART;TZID=Asia/Bahrain:20270214T183000` |
+| Google Calendar link | ✅ | Built from the same instants; the test asserts the URL's `dates` parameter |
+| **A real calendar client opening the file** | ❌ | The structure is asserted and the file is served correctly, but no iPhone, Outlook or Google has actually imported it. That check needs a device |
+| QR code on the enrolment screen | ❌ | Still text-only |
+
+### Where Phase 2 was verified, and why it matters
+
+Not on the device the rest of this project was built on. That device cannot run `next build` (memory)
+and cannot run a PostgreSQL server (`shmget`), so from the first commit to this one, every production
+build was discovered on CranL minutes after a push, and every migration had only ever been applied to
+a WebAssembly PostgreSQL.
+
+In a Codespace, all of that is available:
+
+| | Sandbox device | Codespace |
+|---|---|---|
+| `next build` | impossible | **exit 0**, all routes including `/i/[token]` and `/i/[token]/calendar` |
+| PostgreSQL server | impossible | **PostgreSQL 17**, 4 migrations applied, 10 tables |
+| Full gate | yes, with PRoot interruptions | **exit 0** |
+| Invitation page | via the deployed site | served by the built app, from the real database |
+
+`.devcontainer/` now reproduces it: Node 22, PostgreSQL installed and initialised as the workspace
+user, `python3-fonttools` for the font gate. The first attempt at this used compose and produced a
+bare Alpine container with no Node and no PostgreSQL — `devcontainer_path` was recorded, which made it
+look configured until `node -v` said otherwise.
