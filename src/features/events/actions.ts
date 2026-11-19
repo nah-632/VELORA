@@ -13,51 +13,10 @@ import { revalidatePath } from "next/cache";
 
 import { isLocale } from "@/i18n/routing";
 import { assertSameOrigin, requireAdmin } from "@/features/admin/sessions";
-import {
-  EventInputSchema,
-  ScheduleSchema,
-  buildEventSlug,
-  eventChecklist,
-  eventReadiness,
-  type EventInput,
-} from "./schema";
+import { EventInputSchema, buildEventSlug, eventReadiness, type EventInput } from "./schema";
+// The reader lives in its own module so a test can prove it covers the schema. See form-fields.ts.
+import { readEventForm } from "./form-fields";
 import { createEvent, getEvent, updateEvent } from "./queries";
-
-/** Reads the flat form into the event shape, so the two actions cannot drift apart. */
-function readEventForm(formData: FormData): Record<string, unknown> {
-  const keys = [
-    "bride_name_ar", "bride_name_en", "groom_name_ar", "groom_name_en",
-    "event_datetime", "timezone", "hijri_date_text",
-    "venue_name_ar", "venue_name_en", "venue_map_url",
-    "quote_ar", "quote_en", "notes_ar", "notes_en",
-    "dress_code_ar", "dress_code_en",
-    "thank_you_confirmed_ar", "thank_you_confirmed_en",
-    "thank_you_declined_ar", "thank_you_declined_en",
-    "template_id", "monogram_text", "status",
-  ];
-  const out: Record<string, unknown> = {};
-  for (const key of keys) {
-    const value = formData.get(key);
-    out[key] = typeof value === "string" ? value : undefined;
-  }
-  // An empty select is "no template", not the string "".
-  if (!out.template_id) out.template_id = null;
-
-  // The schedule arrives as one hidden JSON field, because it is a list the operator builds rather
-  // than a set of inputs. Parsed here so a malformed value is a validation error, not a crash.
-  const rawSchedule = formData.get("schedule");
-  if (typeof rawSchedule === "string" && rawSchedule.trim().length > 0) {
-    try {
-      out.schedule = JSON.parse(rawSchedule);
-    } catch {
-      out.schedule = [];
-    }
-  } else {
-    out.schedule = [];
-  }
-
-  return out;
-}
 
 export async function createEventAction(formData: FormData): Promise<void> {
   const rawLocale = formData.get("locale");

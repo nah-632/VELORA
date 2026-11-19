@@ -7,6 +7,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { EventInputSchema, ScheduleSchema, eventChecklist, eventReadiness } from "../../src/features/events/schema.ts";
+import { EVENT_FORM_KEYS, SCHEDULE_FIELD, readEventForm, schemaFields } from "../../src/features/events/form-fields.ts";
 import { classifyMapUrl, mapButtonLabel } from "../../src/lib/maps.ts";
 
 const complete = {
@@ -143,4 +144,57 @@ test("a link with no maps in it is still a link, and is kept as one", () => {
   assert.equal(parsed.venue_map_url, "https://maps.apple.com/?ll=26.2,50.5");
   const empty = EventInputSchema.parse({ ...complete, venue_map_url: "" });
   assert.equal(empty.venue_map_url, null, "an empty field is absent, not an empty string");
+});
+
+test("every field the schema knows is read from the form", () => {
+  // This is the test that was missing when the new columns were added: the schema grew, the reader
+  // did not, and every save wrote null over what the operator had typed. A silent data loss with a
+  // green build — the failure mode this file exists to prevent.
+  const schema = schemaFields().filter((field) => field !== SCHEDULE_FIELD);
+  const read = new Set(EVENT_FORM_KEYS);
+  const missing = schema.filter((field) => !read.has(field));
+  assert.deepEqual(missing, [], `the form reader does not read: ${missing.join(", ")}`);
+
+  // And the reader must not read fields that are not in the schema either — that would write values
+  // nobody validated.
+  const unknown = [...read].filter((field) => !schema.includes(field));
+  assert.deepEqual(unknown, [], `the reader reads fields the schema does not have: ${unknown.join(", ")}`);
+});
+
+test("the reader turns a posted form into the event shape", () => {
+  const form = new FormData();
+  form.set("venue_address_ar", "المنامة، مجمع ٣٢٨");
+  form.set("parking_en", "Behind the hall");
+  form.set("sections_ar", "قاعة للرجال وقاعة للنساء");
+  form.set("schedule", JSON.stringify([{ time: "19:30", title_ar: "الاستقبال" }]));
+  form.set("status", "active");
+
+  const read = readEventForm(form);
+  assert.equal(read.venue_address_ar, "المنامة، مجمع ٣٢٨");
+  assert.equal(read.parking_en, "Behind the hall");
+  assert.equal(Array.isArray(read.schedule), true);
+  assert.equal(read.schedule[0].title_ar, "الاستقبال");
+
+  // A malformed programme is an empty one, not a crash.
+  const broken = new FormData();
+  broken.set("schedule", "{ not json");
+  assert.deepEqual(readEventForm(broken).schedule, []);
+  // And an oversized one is refused by the schema in the reader, not stored.
+  const huge = new FormData();
+  huge.set("schedule", JSON.stringify(Array.from({ length: 30 }, () => ({ time: "x" }))));
+  assert.deepEqual(readEventForm(huge).schedule, []);
+});
+
+test("the reader and the schema agree end to end", () => {
+  const form = new FormData();
+  form.set("groom_name_ar", "خالد");
+  form.set("bride_name_ar", "نور");
+  form.set("event_datetime", "2027-02-14T18:30");
+  form.set("venue_address_en", "Manama, Block 328");
+  form.set("template_id", "11111111-1111-1111-1111-111111111111");
+  form.set("status", "active");
+
+  const parsed = EventInputSchema.safeParse(readEventForm(form));
+  assert.equal(parsed.success, true, parsed.success ? "" : JSON.stringify(parsed.error.issues));
+  assert.equal(parsed.success && parsed.data.venue_address_en, "Manama, Block 328");
 });
