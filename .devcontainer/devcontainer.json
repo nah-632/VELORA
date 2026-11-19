@@ -1,25 +1,21 @@
 {
   "name": "VELORA — Next.js + PostgreSQL",
-  "dockerComposeFile": ["docker-compose.yml"],
-  "service": "app",
-  "workspaceFolder": "/workspaces/VELORA",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "forwardPorts": [3000, 5432],
   "portsAttributes": {
     "3000": { "label": "VELORA", "onAutoForward": "notify" },
     "5432": { "label": "PostgreSQL", "onAutoForward": "silent" }
   },
-  "postCreateCommand": "npm ci",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start-db.sh",
   "containerEnv": {
     "NEXT_PUBLIC_SITE_URL": "http://localhost:3000",
-    "DATABASE_URL": "postgresql://velora:velora@db:5432/velora",
+    "DATABASE_URL": "postgresql://velora@localhost:5432/velora",
     "SESSION_SECRET": "codespace-development-only-not-a-production-secret"
   },
   "customizations": {
     "vscode": {
-      "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss", "ms-azuretools.vscode-docker"],
+      "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss"],
       "settings": {
         "typescript.tsdk": "node_modules/typescript/lib",
         "editor.formatOnSave": false
