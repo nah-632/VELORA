@@ -238,3 +238,25 @@ Bahraini phone numbers in somebody else's hands.
 | `style-src 'unsafe-inline'` | 🟡 | Still allowed: React and the invitation renderer both write inline styles. Inline *style* injection can misdraw a page; it cannot read a session. Recorded as a gap |
 | CSP violation reporting | ❌ | No `report-to` endpoint, so a blocked script is visible only in a browser console. Worth adding |
 | QR code on the enrolment screen | ❌ | The secret and the `otpauth://` URI are shown as text, which can be typed. A scannable QR needs one more dependency and is a convenience, not a control |
+
+### Verified against production, in a browser
+
+Not assertions this time — the live deployment, performed as an operator would:
+
+| Step | Result |
+|---|---|
+| Start enrolment | the secret is shown; `/api/health` reports `totpEnrolled: false` while it is pending |
+| Confirm with a code from the secret | `?totp=on`, and health reports `totpEnrolled: true` |
+| Sign out, then sign in | the password lands on `/admin/totp`, **not** the dashboard — the challenge is real |
+| Enter a fresh code | the dashboard renders, and the attempt log records a successful sign-in |
+| Disable with the password | `?totp=off`; a wrong password refuses it |
+| The password-change label | renders `سيتم إلغاء 1 جلسة أخرى`, not the raw key |
+
+**One caution worth recording, because it cost an hour.** The first attempts at the enrolment confirmation
+were refused as "wrong code" — three times, with codes that the RFC's own vectors say are correct, from a
+secret read back out of the database, with the sandbox and the server agreeing on the time to within a
+second. The app was never wrong. The scripted interactions were: `input.value = …` followed by
+`button.click()` does not reliably drive React's server-action forms, so what arrived at the server was
+not what had been typed. A trusted click — a real one — worked first time. When a browser test and the
+server disagree, suspect the harness before the product.
+
