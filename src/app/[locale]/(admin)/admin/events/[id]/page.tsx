@@ -14,6 +14,7 @@ import { eventReadiness } from "@/features/events/schema";
 import { getEvent, listTemplateOptions } from "@/features/events/queries";
 import { updateEventAction } from "@/features/events/actions";
 import { formatPhone } from "@/lib/phone";
+import { wallClockIn } from "@/lib/time";
 
 /**
  * One event: its words, its guests, and their links.
@@ -67,19 +68,6 @@ export default async function EventPage({
       ? [event.groom_name_ar, event.bride_name_ar].filter(Boolean).join(" و ")
       : [event.groom_name_en, event.bride_name_en].filter(Boolean).join(" & ");
 
-  const localValue = (date: Date) => {
-    // `datetime-local` wants a wall-clock string in the event's own timezone, and the stored value
-    // is an instant. Formatting in `sv-SE` is the shortest way to get "YYYY-MM-DD HH:mm" out of
-    // Intl without hand-rolling the padding — and it respects the timezone instead of assuming
-    // Bahrain's UTC+3, which is only correct until the first event in another country.
-    const parts = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: event.timezone || "Asia/Bahrain",
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", hour12: false,
-    }).format(date);
-    return parts.replace(" ", "T").slice(0, 16);
-  };
-
   const MESSAGE_NOTE = locale === "ar"
     ? "الرابط رسالة واحدة لكل ضيف. اضغط زر واتساب ليفتح المحادثة مع الرسالة جاهزة، ثم علّم المُرسَل."
     : "One message per guest. The WhatsApp button opens the chat with the message ready — then mark it sent.";
@@ -123,7 +111,7 @@ export default async function EventPage({
               label={t("date")}
               name="event_datetime"
               type="datetime-local"
-              defaultValue={localValue(event.event_datetime)}
+              defaultValue={wallClockIn(event.event_datetime, event.timezone)}
               className="ltr-token"
               dir="ltr"
             />

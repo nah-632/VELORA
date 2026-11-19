@@ -6,6 +6,7 @@
  * statement is clearer here than three round trips assembled in TypeScript.
  */
 import { getSql } from "@/lib/db";
+import { zonedToUtc } from "@/lib/time";
 import { type EventInput } from "./schema";
 
 export interface EventListRow {
@@ -90,6 +91,11 @@ export async function listTemplateOptions(): Promise<TemplateOption[]> {
 }
 
 export async function createEvent(input: EventInput, slug: string): Promise<string> {
+  // The form sends a wall clock and the event carries a zone; the conversion is here, once, rather
+  // than in three places that could disagree.
+  const startsAt = input.event_datetime
+    ? zonedToUtc(input.event_datetime, input.timezone)
+    : new Date();
   const rows = await getSql()<{ id: string }[]>`
     insert into public.events (
       slug, bride_name_ar, bride_name_en, groom_name_ar, groom_name_en,
@@ -103,7 +109,7 @@ export async function createEvent(input: EventInput, slug: string): Promise<stri
     ) values (
       ${slug}, ${input.bride_name_ar ?? null}, ${input.bride_name_en ?? null},
       ${input.groom_name_ar ?? null}, ${input.groom_name_en ?? null},
-      ${input.event_datetime || new Date().toISOString()}, ${input.timezone}, ${input.hijri_date_text ?? null},
+      ${startsAt}, ${input.timezone}, ${input.hijri_date_text ?? null},
       ${input.venue_name_ar ?? null}, ${input.venue_name_en ?? null}, ${input.venue_map_url ?? null},
       ${input.quote_ar ?? null}, ${input.quote_en ?? null},
       ${input.notes_ar ?? null}, ${input.notes_en ?? null},
@@ -116,13 +122,16 @@ export async function createEvent(input: EventInput, slug: string): Promise<stri
 }
 
 export async function updateEvent(id: string, input: EventInput): Promise<void> {
+  const startsAt = input.event_datetime
+    ? zonedToUtc(input.event_datetime, input.timezone)
+    : new Date();
   await getSql()`
     update public.events set
       bride_name_ar = ${input.bride_name_ar ?? null},
       bride_name_en = ${input.bride_name_en ?? null},
       groom_name_ar = ${input.groom_name_ar ?? null},
       groom_name_en = ${input.groom_name_en ?? null},
-      event_datetime = ${input.event_datetime ? new Date(input.event_datetime) : new Date()},
+      event_datetime = ${startsAt},
       timezone = ${input.timezone},
       hijri_date_text = ${input.hijri_date_text ?? null},
       venue_name_ar = ${input.venue_name_ar ?? null},

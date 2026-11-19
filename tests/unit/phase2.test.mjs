@@ -11,6 +11,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { remaining, DEFAULT_DURATION_MINUTES } from "../../src/features/invitations/countdown.ts";
+import { wallClockIn, zonedToUtc, zoneOffsetMinutes } from "../../src/lib/time.ts";
 import {
   buildIcs,
   escapeIcsText,
@@ -161,4 +162,34 @@ test("UTC formatting is stable regardless of the server's timezone", () => {
   assert.equal(toIcsLocal(new Date("2027-02-14T15:30:00Z"), "+0300"), "20270214T183000");
   // A negative offset shifts the other way.
   assert.equal(toIcsLocal(new Date("2027-02-14T15:30:00Z"), "-0500"), "20270214T103000");
+});
+
+// ---------------------------------------------------------------------------------------------
+
+test("a wall clock in a named zone becomes the instant it means", () => {
+  // 18:30 on the day of the wedding, in Bahrain. The container runs in UTC, and reading the form's
+  // value as UTC is what put 21:30 on an invitation that was meant to say 18:30.
+  assert.equal(zonedToUtc("2027-02-14T18:30", "Asia/Bahrain").toISOString(), "2027-02-14T15:30:00.000Z");
+  assert.equal(zonedToUtc("2027-02-14T18:30:00", "Asia/Bahrain").toISOString(), "2027-02-14T15:30:00.000Z");
+  // The same wall clock in a different zone is a different instant — which is the whole point.
+  assert.equal(zonedToUtc("2027-02-14T18:30", "Europe/London").toISOString(), "2027-02-14T18:30:00.000Z");
+  assert.equal(zonedToUtc("2027-06-14T18:30", "Europe/London").toISOString(), "2027-06-14T17:30:00.000Z");
+});
+
+test("it round-trips, so what the operator typed is what the operator sees again", () => {
+  for (const zone of ["Asia/Bahrain", "Europe/London", "Asia/Dubai"]) {
+    for (const wall of ["2027-02-14T18:30", "2027-06-01T09:05", "2027-12-31T23:59"]) {
+      assert.equal(wallClockIn(zonedToUtc(wall, zone), zone), wall, `${wall} in ${zone}`);
+    }
+  }
+});
+
+test("nonsense in the field does not become a stored instant", () => {
+  assert.equal(Number.isNaN(zonedToUtc("not a date", "Asia/Bahrain").getTime()), true);
+});
+
+test("the offset is read from the zone, not assumed", () => {
+  assert.equal(zoneOffsetMinutes(new Date("2027-02-14T15:30:00Z"), "Asia/Bahrain"), 180);
+  assert.equal(zoneOffsetMinutes(new Date("2027-02-14T15:30:00Z"), "Europe/London"), 0);
+  assert.equal(zoneOffsetMinutes(new Date("2027-06-14T15:30:00Z"), "Europe/London"), 60);
 });
