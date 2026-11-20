@@ -47,6 +47,7 @@ export function WaxSeal({
   sessionKey,
   sealImprint,
   envelopeColor,
+  sealColor,
   liner,
 }: {
   children: ReactNode;
@@ -56,6 +57,8 @@ export function WaxSeal({
   palette: { ground: string; ink: string; accent: string };
   /** From the template: the envelope paper colour and its liner. */
   envelopeColor?: string;
+  /** The wax itself: burgundy for T1, from the template's seal spec rather than the design accent. */
+  sealColor?: string;
   liner?: "arabesque" | "plain" | "sadu" | "tiles";
   locale: "ar" | "en";
   animation: "wax_seal" | "curtain" | "none";
@@ -71,7 +74,7 @@ export function WaxSeal({
   // Stable ids: the gradients and filters are referenced by url(#id) and must not collide with a
   // second seal on the page.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
-  const wax = sealPalette(palette.accent);
+  const wax = sealPalette(sealColor ?? palette.accent);
   const shape = waxPath({ seed: 20260214 });
   const wedges = crackWedges();
 
@@ -227,21 +230,11 @@ export function WaxSeal({
                     <circle cx="60" cy="60" r="37.6" fill="none" stroke={wax.light} strokeWidth="0.9" strokeOpacity="0.32" />
                     {/* The imprint, pressed in: a star for T1, the monogram otherwise. */}
                     {imprint === "eight-star" ? (
-                      <g filter={`url(#wax-press-${uid})`}>
-                        <path
-                          d="M60 34l6.5 13.5L81 48l-10 10 2.4 15L60 66.5 46.6 73 49 58 39 48l14.5-.5z"
-                          fill={wax.emboss}
-                          fillOpacity="0.9"
-                          transform="translate(0 6)"
-                        />
-                        <path
-                          d="M60 34l6.5 13.5L81 48l-10 10 2.4 15L60 66.5 46.6 73 49 58 39 48l14.5-.5z"
-                          fill="none"
-                          stroke={palette.accent}
-                          strokeOpacity="0.55"
-                          strokeWidth="0.9"
-                          transform="translate(0 6) scale(0.98) translate(1.2 1.3)"
-                        />
+                      /* The khatam: two squares of equal size, one turned 45°. Eight points by
+                         construction, which is what the reference means by an eight-point star. */
+                      <g filter={`url(#wax-press-${uid})`} fill="none" stroke={wax.emboss} strokeOpacity="0.85" strokeWidth="2.4">
+                        <rect x="45" y="45" width="30" height="30" />
+                        <rect x="45" y="45" width="30" height="30" transform="rotate(45 60 60)" />
                       </g>
                     ) : (
                       <text

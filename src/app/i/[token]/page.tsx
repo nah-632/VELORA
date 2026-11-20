@@ -224,6 +224,9 @@ export default async function InvitationPage({
       sessionKey={`velora-seal-${token.slice(0, 12)}`}
       sealImprint={template?.seal.imprint}
       envelopeColor={template ? (template.envelope.paper === "emerald" ? template.palette.emerald : undefined) : undefined}
+      sealColor={template ? (template.palette as unknown as Record<string, string>)[
+        template.seal.wax === "burgundy" ? "burgundy" : template.seal.wax === "emerald" ? "emerald" : "gold"
+      ] : undefined}
       liner={template?.envelope.liner}
     >
       <main
