@@ -29,9 +29,10 @@
     "test:db:invitations": "node --import tsx tests/db/invitations.mjs",
     "test:db:security": "node --import tsx tests/db/security.mjs",
     "fonts:fallbacks": "python3 scripts/font-fallbacks.py",
-    "test:browser": "node tests/browser/layout-shift.mjs && node tests/browser/countdown-stability.mjs --ticks 130",
+    "test:browser": "node tests/browser/layout-shift.mjs && node tests/browser/venue-dialog.mjs && node tests/browser/countdown-stability.mjs --ticks 130",
     "test:browser:stability": "node tests/browser/countdown-stability.mjs --ticks 130",
-    "test:browser:shift": "node tests/browser/layout-shift.mjs"
+    "test:browser:shift": "node tests/browser/layout-shift.mjs",
+    "test:browser:dialog": "node tests/browser/venue-dialog.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
