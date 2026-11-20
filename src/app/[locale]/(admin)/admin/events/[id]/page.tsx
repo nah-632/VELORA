@@ -13,6 +13,8 @@ import { listGuests, whatsappForGuest } from "@/features/guests/queries";
 import { eventChecklist, eventReadiness } from "@/features/events/schema";
 import { ScheduleEditor } from "@/features/events/ScheduleEditor";
 import { VenuesEditor, type VenueFormValue } from "@/features/events/VenuesEditor";
+import { SendQueue } from "@/features/guests/SendQueue";
+import { markOneSentAction, reminderLinkAction } from "@/features/guests/actions";
 import { CopyEditor } from "@/features/events/CopyEditor";
 import { venueComplete } from "@/features/invitations/venues";
 import { getEvent, listTemplateOptions, listVenues } from "@/features/events/queries";
@@ -122,6 +124,56 @@ export default async function EventPage({
           <StatePanel kind="success" message={t("markedSent", { count: Number(searchParams.sent) })} />
         </div>
       ) : null}
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <a className={buttonClass("secondary")} href={`/${locale}/admin/events/${id}/rsvps`}>
+          {t("rsvpDashboard")}
+        </a>
+        <a className={buttonClass("quiet")} href={`/${locale}/admin/events/${id}/export`}>
+          {t("exportVenue")}
+        </a>
+      </div>
+
+      <SendQueue
+        guests={guests.map((guest) => ({
+          id: guest.id,
+          name: guest.full_name,
+          phone: guest.phone,
+          language: guest.language,
+          answered:
+            guest.response === "confirmed" || guest.response === "declined" ? guest.response : null,
+          sent: guest.send_status === "sent",
+          link: whatsappForGuest({
+            guest,
+            event,
+            venues: venues as never,
+            purpose: "invite",
+            overrides: messageTemplates,
+          }),
+        }))}
+        labels={{
+          title: t("queueTitle"),
+          hint: t("queueHint"),
+          progress: t("queueProgress"),
+          openWhatsapp: t("queueOpen"),
+          markSent: t("queueMarkSent"),
+          alreadySent: t("queueAlreadySent"),
+          skip: t("queueSkip"),
+          next: t("queueNext"),
+          done: t("queueDone"),
+          remaining: t("queueRemaining"),
+          purpose: t("queuePurpose"),
+          purposes: {
+            invite: t("queuePurposes.invite"),
+            reminder: t("queuePurposes.reminder"),
+            beforeEvent: t("queuePurposes.beforeEvent"),
+            afterEvent: t("queuePurposes.afterEvent"),
+          },
+          allSent: t("queueAllSent"),
+        }}
+        onMarkSent={markOneSentAction}
+        onRemind={reminderLinkAction}
+      />
 
       <Card className="mb-6">
         <h2 className="text-sm font-medium text-ink">{t("checklist")}</h2>

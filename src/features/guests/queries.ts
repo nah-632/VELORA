@@ -189,3 +189,48 @@ export function whatsappForGuest(input: {
     }),
   );
 }
+
+/**
+ * The `wa.me` link for one guest and one purpose, resolved from the database.
+ *
+ * The queue, the event page and any later sender all go through this, so the message a guest receives
+ * is the same whichever button was pressed to send it.
+ */
+export async function guestMessageHref(
+  eventId: string,
+  guestId: string,
+  purpose: WhatsappPurpose,
+): Promise<string | null> {
+  const sql = getSql();
+  const rows = await sql<{
+    full_name: string; phone: string; token: string; language: string; gender: string; audience: string | null;
+    bride_name_ar: string | null; bride_name_en: string | null;
+    groom_name_ar: string | null; groom_name_en: string | null;
+    event_datetime: Date; timezone: string;
+  }[]>`
+    select g.full_name, g.phone, g.token, g.language, g.gender, g.audience,
+           e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
+           e.event_datetime, e.timezone
+      from public.guests g join public.events e on e.id = g.event_id
+     where g.id = ${guestId} and g.event_id = ${eventId} limit 1`;
+  const row = rows[0];
+  if (!row) return null;
+
+  const venues = await getSql()<Venue[]>`
+    select * from public.event_venues where event_id = ${eventId} order by sort_order, kind`;
+  const settingsRow = await getSql()<{ message_templates: unknown }[]>`
+    select message_templates from public.settings limit 1`;
+  const overrides = (settingsRow[0]?.message_templates ?? {}) as Record<string, Record<string, string>>;
+
+  return whatsappForGuest({
+    guest: { full_name: row.full_name, phone: row.phone, token: row.token, language: row.language, gender: row.gender, audience: row.audience },
+    event: {
+      bride_name_ar: row.bride_name_ar, bride_name_en: row.bride_name_en,
+      groom_name_ar: row.groom_name_ar, groom_name_en: row.groom_name_en,
+      event_datetime: row.event_datetime, timezone: row.timezone,
+    },
+    venues,
+    purpose,
+    overrides,
+  });
+}

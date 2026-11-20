@@ -335,7 +335,27 @@
       "copyResetAll": "إرجاع كل النصوص",
       "copyChanged": "{count} نصًا معدّلًا",
       "copyDefault": "النص الافتراضي",
-      "copyPlaceholders": "المتغيّرات"
+      "copyPlaceholders": "المتغيّرات",
+      "rsvpDashboard": "لوحة الردود",
+      "exportVenue": "تصدير للقاعة",
+      "queueTitle": "إرسال الدعوات",
+      "queueHint": "واحدًا واحدًا: افتح واتساب، أرسل، ثم علّم كمُرسَل.",
+      "queueProgress": "{sent} من {total}",
+      "queueOpen": "افتح واتساب",
+      "queueMarkSent": "علّم كمُرسَل",
+      "queueAlreadySent": "أُرسلت",
+      "queueSkip": "تخطّي",
+      "queueNext": "أرسل هذه الرسالة",
+      "queueDone": "انتهى",
+      "queueRemaining": "لا مدعوين بعد.",
+      "queuePurpose": "نوع الرسالة",
+      "queuePurposes": {
+        "invite": "دعوة",
+        "reminder": "تذكير",
+        "beforeEvent": "تذكير قبل الحفل",
+        "afterEvent": "شكر"
+      },
+      "queueAllSent": "أُرسلت الدعوات للجميع."
     },
     "guests": {
       "title": "المدعوون",
@@ -434,6 +454,47 @@
       "messagesVariables": "المتغيّرات",
       "messagesReset": "رجوع للافتراضي",
       "messagesSaved": "حُفظت الرسائل."
+    },
+    "export": {
+      "name": "الاسم",
+      "hall": "القاعة",
+      "category": "الفئة",
+      "answer": "الرد",
+      "companions": "المرافقون",
+      "seats": "المقاعد",
+      "phone": "الجوال",
+      "personalLine": "سطر شخصي",
+      "totalSeats": "إجمالي المقاعد",
+      "totalGuests": "إجمالي المدعوين",
+      "audience": {
+        "women": "قاعة النساء",
+        "men": "قاعة الرجال",
+        "both": "الاثنتان"
+      },
+      "answers": {
+        "confirmed": "مؤكد",
+        "declined": "معتذر",
+        "none": "بلا رد"
+      }
+    },
+    "rsvp": {
+      "eyebrow": "الردود",
+      "title": "لوحة الردود",
+      "guests": "المدعوون",
+      "confirmed": "مؤكد",
+      "declined": "معتذر",
+      "waiting": "بلا رد",
+      "rate": "نسبة الرد",
+      "seatsWomen": "مقاعد النساء",
+      "seatsMen": "مقاعد الرجال",
+      "seatsBoth": "مقاعد مشتركة",
+      "exportShort": "تصدير للقاعة (Excel/CSV)",
+      "exportWithPhone": "تصدير مع أرقام الجوال",
+      "back": "رجوع للمناسبة",
+      "waitingTitle": "لم يردّوا بعد",
+      "waitingHint": "هؤلاء من يحتاج تذكيرًا.",
+      "nobodyWaiting": "الجميع ردّوا.",
+      "andMore": "و{count} آخرين"
     }
   }
 }

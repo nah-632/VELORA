@@ -335,7 +335,27 @@
       "copyResetAll": "Reset all texts",
       "copyChanged": "{count} edited",
       "copyDefault": "default",
-      "copyPlaceholders": "Variables"
+      "copyPlaceholders": "Variables",
+      "rsvpDashboard": "RSVP dashboard",
+      "exportVenue": "Export for the venue",
+      "queueTitle": "Send the invitations",
+      "queueHint": "One at a time: open WhatsApp, send, then mark it sent.",
+      "queueProgress": "{sent} of {total}",
+      "queueOpen": "Open WhatsApp",
+      "queueMarkSent": "Mark as sent",
+      "queueAlreadySent": "Sent",
+      "queueSkip": "Skip",
+      "queueNext": "Send this message",
+      "queueDone": "Done",
+      "queueRemaining": "No guests yet.",
+      "queuePurpose": "Message",
+      "queuePurposes": {
+        "invite": "Invitation",
+        "reminder": "Reminder",
+        "beforeEvent": "Day before",
+        "afterEvent": "Thank-you"
+      },
+      "queueAllSent": "Every invitation has been sent."
     },
     "guests": {
       "title": "Guests",
@@ -434,6 +454,47 @@
       "messagesVariables": "Variables",
       "messagesReset": "Reset to default",
       "messagesSaved": "Messages saved."
+    },
+    "export": {
+      "name": "Name",
+      "hall": "Hall",
+      "category": "Category",
+      "answer": "Answer",
+      "companions": "Companions",
+      "seats": "Seats",
+      "phone": "Phone",
+      "personalLine": "Personal line",
+      "totalSeats": "Total seats",
+      "totalGuests": "Total guests",
+      "audience": {
+        "women": "Women's hall",
+        "men": "Men's hall",
+        "both": "Both"
+      },
+      "answers": {
+        "confirmed": "Confirmed",
+        "declined": "Declined",
+        "none": "No answer"
+      }
+    },
+    "rsvp": {
+      "eyebrow": "Responses",
+      "title": "RSVP dashboard",
+      "guests": "Guests",
+      "confirmed": "Confirmed",
+      "declined": "Declined",
+      "waiting": "No answer",
+      "rate": "Response rate",
+      "seatsWomen": "Women's seats",
+      "seatsMen": "Men's seats",
+      "seatsBoth": "Shared seats",
+      "exportShort": "Export for the venue (Excel/CSV)",
+      "exportWithPhone": "Export with phone numbers",
+      "back": "Back to the event",
+      "waitingTitle": "Still to answer",
+      "waitingHint": "These are the guests who need a reminder.",
+      "nobodyWaiting": "Everyone has answered.",
+      "andMore": "and {count} more"
     }
   }
 }

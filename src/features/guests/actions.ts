@@ -12,10 +12,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import type { WhatsappPurpose } from "@/features/invitations/messages";
+
 import { isLocale } from "@/i18n/routing";
 import { assertSameOrigin, requireAdmin } from "@/features/admin/sessions";
 import { parseGuestList, type ParseResult } from "./import";
-import { addGuests, deleteGuest, markGuestsSent, updateGuest } from "./queries";
+import { addGuests, deleteGuest, guestMessageHref, markGuestsSent, updateGuest } from "./queries";
 
 export interface ImportPreview {
   status: "preview";
@@ -135,4 +137,44 @@ export async function deleteGuestAction(formData: FormData): Promise<void> {
   if (guestId && assertSameOrigin()) await deleteGuest(guestId);
   revalidatePath(`/${locale}/admin/events/${eventId}`);
   redirect(`/${locale}/admin/events/${eventId}?guest_deleted=1`);
+}
+
+/**
+ * Marks one guest as sent, from the queue.
+ *
+ * Separate from `markSentAction` (which takes a list) because the queue sends one at a time and the
+ * recorded fact should be the one the operator just confirmed — not a batch they ticked earlier.
+ */
+export async function markOneSentAction(formData: FormData): Promise<void> {
+  const guestId = String(formData.get("guest_id") ?? "");
+  const locale = String(formData.get("locale") ?? "ar");
+  const eventId = String(formData.get("event_id") ?? "");
+  if (!guestId) return;
+  await markGuestsSent([guestId]);
+  if (eventId) revalidatePath(`/${locale}/admin/events/${eventId}`);
+}
+
+/**
+ * The reminder, for the guest in front of the operator.
+ *
+ * It does not send anything: it returns the link for the purpose the operator chose, which the queue
+ * opens. Sending is still the operator's thumb, and the record of it is still their tick — the honest
+ * division until the Cloud API exists.
+ */
+export async function reminderLinkAction(formData: FormData): Promise<void> {
+  const rawPurpose = String(formData.get("purpose") ?? "reminder");
+  const purpose: WhatsappPurpose =
+    rawPurpose === "invite" || rawPurpose === "beforeEvent" || rawPurpose === "afterEvent"
+      ? rawPurpose
+      : "reminder";
+  const guestId = String(formData.get("guest_id") ?? "");
+  const locale = String(formData.get("locale") ?? "ar");
+  const eventId = String(formData.get("event_id") ?? "");
+  if (!guestId || !eventId) return;
+  const href = await guestMessageHref(eventId, guestId, purpose);
+  if (href) {
+    // The operator's window, opened deliberately, with the message already composed.
+    redirect(href);
+  }
+  revalidatePath(`/${locale}/admin/events/${eventId}`);
 }

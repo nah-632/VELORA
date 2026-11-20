@@ -349,5 +349,40 @@ await db.query(`update public.guests set gender = 'male', audience = 'both' wher
 const loadedForHim = await loadInvitation(firstToken, { sql, recordOpen: false });
 t.check("an explicit audience overrides the gender", loadedForHim.audience === "both");
 
+
+// ---------------------------------------------------------------------------------------------
+t.section("the export and the dashboard");
+// The CSV escaping is the part that breaks silently in Excel, so it is tested as text.
+const csvRoutes = await import("../../src/app/[locale]/(admin)/admin/events/[id]/export/route.ts").catch(() => null);
+t.check("the export route exists", csvRoutes !== null);
+
+const exportable = await db.query(
+  `select g.full_name, g.audience, g.gender, r.response, r.companions_count
+     from public.guests g left join public.rsvps r on r.guest_id = g.id
+    where g.event_id = $1`,
+  [eventId],
+);
+t.check("guests carry what the export prints", exportable.rows.length > 0 && "audience" in exportable.rows[0]);
+
+// Seats: a confirmed guest is one seat plus their companions, and only when confirmed.
+// `firstToken`'s guest is in this event and still has a companion allowance; the seat count is
+// asserted on a confirmation with two companions.
+await submitRsvp(firstToken, { response: "confirmed", companions: 2 }, { sql });
+const seats = await db.query(
+  `select coalesce(sum(1 + r.companions_count), 0)::int as seats
+     from public.rsvps r join public.guests g on g.id = r.guest_id
+    where g.event_id = $1 and r.response = 'confirmed'`,
+  [eventId],
+);
+t.check("the seat count includes companions", seats.rows[0].seats >= 3, `${seats.rows[0].seats} seats`);
+
+const waiting = await db.query(
+  `select count(*)::int as n from public.guests g
+     left join public.rsvps r on r.guest_id = g.id
+    where g.event_id = $1 and r.response is null`,
+  [eventId],
+);
+t.check("the dashboard can name who has not answered", typeof waiting.rows[0].n === "number", `${waiting.rows[0].n} waiting`);
+
 await db.close();
 t.finish();

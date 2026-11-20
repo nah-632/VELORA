@@ -199,3 +199,57 @@ test("a venue with no name still has a label a guest can read", () => {
   assert.equal(venueLabel({ ...men, name_ar: null, name_en: null }, "en"), "Men's Hall");
   assert.equal(venueLabel({ ...shared, name_ar: null, name_en: null }, "ar"), "مكان الحفل");
 });
+
+// ---------------------------------------------------------------------------------------------
+// Phase 3: the sender seam, and the export's escaping
+
+test("the manual provider composes a link and never claims it sent", async () => {
+  const { manualProvider, waLink, resolveProvider } = await import("../../src/features/whatsapp/provider.ts");
+  const result = await manualProvider.send({ to: "+973 3300 1234", body: "أهلًا يا خالد" });
+  assert.equal(result.sent, false, "opening WhatsApp is not sending");
+  assert.equal(result.link, waLink("+973 3300 1234", "أهلًا يا خالد"));
+  // wa.me needs digits only.
+  assert.match(result.link, /^https:\/\/wa\.me\/97333001234\?text=/);
+  assert.equal(result.link.includes("+"), false);
+  assert.equal(resolveProvider({}).id, "manual", "manual is the default");
+});
+
+test("the cloud provider reports what it is missing instead of pretending", async () => {
+  const { cloudProvider, resolveProvider } = await import("../../src/features/whatsapp/provider.ts");
+  const unconfigured = await cloudProvider({}).send({ to: "+97333001234", body: "x" });
+  assert.equal(unconfigured.sent, false);
+  assert.match(unconfigured.error, /not configured/);
+
+  const configured = await cloudProvider({ token: "t", phoneNumberId: "p" }).send({ to: "+97333001234", body: "x" });
+  assert.equal(configured.sent, false, "it does not claim to send what it cannot");
+  assert.match(configured.error, /approved template/);
+  assert.equal(resolveProvider({ WHATSAPP_PROVIDER: "cloud" }).id, "cloud");
+});
+
+test("the message a guest receives is the template for its purpose, in its language", async () => {
+  const { composeMessage } = await import("../../src/features/whatsapp/provider.ts");
+  const invite = composeMessage({
+    purpose: "invite",
+    locale: "ar",
+    variables: { guest_name: "خالد", groom: "خالد", bride: "نور", link: "https://x/i/t" },
+  });
+  assert.match(invite, /أهلًا يا خالد/);
+  assert.match(invite, /https:\/\/x\/i\/t/);
+
+  const reminderEn = composeMessage({
+    purpose: "reminder",
+    locale: "en",
+    variables: { guest_name: "Khalid", date: "14 February", link: "https://x/i/t" },
+  });
+  assert.match(reminderEn, /gentle reminder/);
+  assert.notEqual(invite, reminderEn, "the purposes are different messages");
+
+  // An override wins, and an empty one does not.
+  const overridden = composeMessage({
+    purpose: "invite",
+    locale: "ar",
+    variables: { guest_name: "خالد", link: "L" },
+    overrides: { invite: { ar: "رسالتي: {guest_name} {link}" } },
+  });
+  assert.equal(overridden, "رسالتي: خالد L");
+});
