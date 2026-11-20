@@ -531,3 +531,36 @@ Proven to fail: removing `0006` from the document makes it exit 1, naming it.
   the runner (`scripts/db-migrate.mjs`) enforces the order when it applies them.
 * **Which is why `db/RELEASE.md` has the three-step release command in it**, including the
   `schema_migrations` insert that stops the runner applying a hand-applied migration twice.
+
+---
+
+## S. Phase 3 — the dashboard, the export, and sending
+
+Live on **`K6eEenS3eRzt2meXrjZIg`**. `/api/health` reports `schema.ok: true`, `migrations.applied:
+0007_dual_venues.sql`.
+
+| Item | Status | Evidence |
+|---|---|---|
+| RSVP dashboard | ✅ | `/ar/admin/events/<id>/rsvps` — guests, confirmed, declined, waiting, response rate, and **seats per hall**, where a seat is the guest plus their companions and only when confirmed |
+| Excel/CSV export for the venue | ✅ | `/…/export` — verified in production: `text/csv`, `attachment`, **starts `ef bb bf`** (the UTF-8 BOM Excel needs), CRLF, Arabic header row, and no phone column unless `?phone=1` |
+| Sequential sending | ✅ | `SendQueue` — one guest, one link, one "mark as sent", then next. The reminder is a separate control because it is a different message |
+| Sender number | ✅ unchanged | `+97366661238` in `settings`, used to build every `wa.me` link |
+| Provider interface | ✅ | `manual` (ships) and `cloud` (a seam). `manual` returns `sent: false` **plus** the link, because opening WhatsApp is not sending — that is what keeps the "has not opened it" column honest. `cloud` reports the configuration and the approved templates it lacks instead of throwing |
+| Settings | ✅ (from the earlier slice) | `/ar/admin/settings`: password, TOTP, and the four WhatsApp messages in both languages |
+
+### What Phase 3 does not do yet
+
+| Not built | Why it matters |
+|---|---|
+| **Automated sending** | The Cloud API needs a verified business, an approved template per purpose and a token. The seam is written; the sending is not, and `cloud.send()` says so rather than pretending |
+| Per-guest send timestamp accuracy | "Mark as sent" records that the operator said so. A delivery receipt only exists once a provider transmits |
+| Dashboard filtering and bulk edit | The table shows everyone; filters by hall/answer and bulk audience changes are not built |
+| Real `.xlsx` | CSV with a BOM is what Excel reads correctly; a true workbook needs a spreadsheet dependency in the server bundle |
+
+### The deploy, one more time
+
+`nnY1wgzbHuugmil9hjw4z` **failed** after a green build — the log ends
+`✅ the CranL builder build completed` and the failure is in the rollout stage, not the build. A single
+retry (`K6eEenS3eRzt2meXrjZIg`) succeeded. The distinction matters: the 20-build failure earlier in
+this session was `npm ci` refusing an out-of-sync lockfile, which the new `check:lockfile` guard now
+catches in one second on this device instead of four deployments later.
