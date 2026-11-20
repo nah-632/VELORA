@@ -107,19 +107,25 @@ export function WaxSeal({
   }, [sessionKey]);
 
   /**
-   * The failsafe.
+   * The failsafe — armed by the tap, not by the passage of time.
    *
-   * It runs while the seal is sealed — not from the tap — so a guest who never taps still gets the
-   * invitation if something else goes wrong (a broken mask, a stalled animation frame). It is the
-   * same door the button opens, and it cannot fire twice thanks to the ref.
+   * What it guards is the *animation*: a stalled frame, a suspended tab, a browser that ignores the
+   * mask. Once the guest has pressed the seal they have asked to come in, so 2.5s later the
+   * invitation is open whether or not the sequence finished.
+   *
+   * It deliberately does **not** fire while the seal is untouched. An earlier version did, and it
+   * threw a guest into the invitation 2.5 seconds after the page loaded — while they were still
+   * deciding, or reading the envelope, or with the page open in a background tab. A wedding
+   * invitation waits to be opened; the watchdog starts when the guest asks.
    */
   useEffect(() => {
-    if (phase !== "sealed") return;
+    if (phase !== "opening") return;
     const timer = window.setTimeout(() => {
-      if (!opening.current) open();
+      setPhase("open");
+      window.scrollTo({ top: 0, behavior: "auto" });
     }, 2500);
     return () => window.clearTimeout(timer);
-  }, [phase, open]);
+  }, [phase]);
 
   return (
     <div className="seal-stage" data-phase={phase ?? "sealed"}>
