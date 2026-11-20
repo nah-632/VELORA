@@ -138,18 +138,44 @@
  * an advertisement: 2.4 seconds, a small scale and a soft ring, and it stops the moment the seal is
  * touched.
  */
-.seal {
+/*
+ * The button covers the whole envelope — that is the hit area, and it is 330×220 at 375px, far past
+ * the 72×72 floor. It has no visual of its own; every part of the envelope is inside it.
+ */
+.seal.envelope__open {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  /* 100ms of feedback on press, before anything else moves. */
+  transition: transform 100ms ease-out;
+}
+
+.seal.envelope__open:active {
+  transform: scale(0.985);
+}
+
+.seal.envelope__open:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+
+/* The disc inside the button: the seal itself. */
+.seal__disc {
   position: absolute;
   inset-inline-start: 50%;
   top: 52%;
   translate: -50% -50%;
   width: clamp(84px, 26vw, 116px);
   aspect-ratio: 1;
-  border: 0;
-  padding: 0;
-  background: none;
-  cursor: pointer;
+  display: block;
   animation: seal-pulse 2.4s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .seal__svg {
@@ -170,8 +196,12 @@
   transition: transform 620ms cubic-bezier(0.3, 0, 0.2, 1), opacity 620ms ease-out;
 }
 
-.seal[data-broken="true"] {
+.seal[data-broken="true"] .seal__disc {
   animation: none;
+  pointer-events: none;
+}
+
+.seal[data-broken="true"] {
   pointer-events: none;
 }
 
@@ -825,7 +855,8 @@
 
 .t1__name {
   font-family: var(--tpl-font-names);
-  font-size: clamp(1.9rem, 9vw, 2.9rem);
+  /* 44px at 375 (11.7vw), capped at 52px — the contract's range, measured. */
+  font-size: clamp(2.75rem, 11.7vw, 3.25rem);
   line-height: 1.35;
   /* Arabic does not take letter-spacing: it breaks the joins. */
   letter-spacing: 0;
@@ -834,14 +865,11 @@
 
 /* Gold foil: a gradient clipped to the glyphs, with a slow sheen that never changes the box. */
 .t1[data-foil="on"] .t1__name {
-  background-image: linear-gradient(
-    100deg,
-    var(--tpl-foil-c) 0%,
-    var(--tpl-foil-a) 28%,
-    var(--tpl-foil-b) 46%,
-    var(--tpl-foil-a) 62%,
-    var(--tpl-foil-c) 100%
-  );
+  /*
+   * The measured ramp: every stop clears 3:1 on ivory, which the ornament gold (#B8913A, 2.54:1)
+   * does not. The sheen band below is what still makes it read as metal.
+   */
+  background-image: linear-gradient(100deg, #6E531B 0%, #8A6A24 26%, #9A7729 44%, #8A6A24 62%, #6E531B 100%);
   background-size: 240% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -1028,4 +1056,123 @@
   text-align: center;
   margin-block-end: 0.9rem;
   max-inline-size: 30ch;
+}
+
+/* ============================================================================================
+ * Direction A · Pressed Wax
+ *
+ * The crack, then the mark unfurls under a mask edge while eight gold motes drift up, then the flap
+ * opens. Every property animated here is transform or opacity — except the mask rectangle, which
+ * moves the reveal and paints nothing.
+ * ========================================================================================== */
+
+/* The mark's reveal: a white edge travelling across the mask. */
+.mark-wipe {
+  transform: translateX(-34px);
+}
+
+.seal[data-broken="true"] .mark-wipe {
+  animation: mark-reveal 620ms cubic-bezier(0.22, 0.61, 0.36, 1) 140ms forwards;
+}
+
+@keyframes mark-reveal {
+  to { transform: translateX(0); }
+}
+
+/* The motes: eight, capped, each with its own drift and delay. */
+.seal__motes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.seal__mote {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 52%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--tpl-gold, #B8913A);
+  opacity: 0;
+  transform: translate(-50%, 0);
+}
+
+.seal[data-broken="true"] .seal__mote {
+  animation: mote-drift 700ms ease-out forwards;
+}
+
+/* Staggered, and each one drifts a different distance so they do not read as a curtain. */
+.seal__mote[data-i="0"] { animation-delay: 160ms; --dx: -22px; --dy: -54px; }
+.seal__mote[data-i="1"] { animation-delay: 200ms; --dx: 14px;  --dy: -62px; }
+.seal__mote[data-i="2"] { animation-delay: 240ms; --dx: -8px;  --dy: -70px; }
+.seal__mote[data-i="3"] { animation-delay: 270ms; --dx: 26px;  --dy: -48px; }
+.seal__mote[data-i="4"] { animation-delay: 300ms; --dx: -30px; --dy: -44px; }
+.seal__mote[data-i="5"] { animation-delay: 330ms; --dx: 6px;   --dy: -66px; }
+.seal__mote[data-i="6"] { animation-delay: 360ms; --dx: 20px;  --dy: -58px; }
+.seal__mote[data-i="7"] { animation-delay: 390ms; --dx: -16px; --dy: -52px; }
+
+@keyframes mote-drift {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+  25%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), var(--dy, -60px)) scale(1); }
+}
+
+/* Reduced motion: a 300ms cross-fade and nothing else. */
+@media (prefers-reduced-motion: reduce) {
+  .seal.envelope__open { transition: none; }
+  .seal__disc { animation: none; }
+  .seal[data-broken="true"] .seal__piece,
+  .seal[data-broken="true"] .seal__mote { animation: none; transition: none; opacity: 0; }
+  .mark-wipe { transform: translateX(0); }
+  .seal[data-broken="true"] .mark-wipe { animation: none; }
+  .seal-stage[data-phase="open"] .seal-stage__entrance {
+    transition: opacity 300ms ease-out, visibility 0s linear 300ms;
+  }
+  .invitation-reveal { transition: opacity 300ms ease-out; }
+}
+
+/*
+ * The sheen band.
+ *
+ * The ramp is deliberately dark enough to pass contrast, which alone can read as bronze. This is a
+ * separate, decorative highlight that travels across the glyphs — masked to a narrow band, so the
+ * letters keep their contrast at every instant while one edge of light moves over them.
+ *
+ * It is paint only (background-position), disabled under reduced motion, and sits *above* the ramp
+ * only in the band's own width, so a screenshot at any moment still has the 3:1 base underneath.
+ */
+.t1[data-foil="on"] .t1__name {
+  position: relative;
+  background-size: 220% 100%;
+  animation: foil-sheen 11s ease-in-out infinite;
+}
+
+.t1[data-foil="on"] .t1__name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(100deg, transparent 38%, rgba(255, 246, 214, 0.55) 48%, rgba(255, 246, 214, 0.75) 50%, rgba(255, 246, 214, 0.55) 52%, transparent 62%);
+  background-size: 260% 100%;
+  -webkit-mask-image: linear-gradient(#000, #000);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sheen-band 7s linear infinite;
+}
+
+@keyframes sheen-band {
+  0% { background-position: 190% 50%; }
+  55%, 100% { background-position: -90% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t1[data-foil="on"] .t1__name,
+  .t1[data-foil="on"] .t1__name::after {
+    animation: none;
+    background-position: 46% 50%;
+  }
+  .t1[data-foil="on"] .t1__name::after { opacity: 0.35; }
 }
