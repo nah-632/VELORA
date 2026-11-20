@@ -168,13 +168,9 @@
 /* The disc inside the button: the seal itself. */
 .seal__disc {
   position: absolute;
-  /* Auto margins centre it in either direction. `inset-inline-start: 50%` plus a physical
-     `translate: -50%` put the seal on the wrong side under RTL — the offset flips, the inset does
-     not. This has no direction to get wrong. */
-  inset-inline: 0;
-  margin-inline: auto;
-  inset-block-start: 52%;
-  translate: 0 -50%;
+  inset-inline-start: 50%;
+  top: 52%;
+  translate: -50% -50%;
   width: clamp(84px, 26vw, 116px);
   aspect-ratio: 1;
   display: block;

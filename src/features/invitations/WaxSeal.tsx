@@ -161,12 +161,12 @@ export function WaxSeal({
               </span>
             ) : null}
 
-            <span className="envelope__card" style={{ background: palette.ground, border: `1px solid ${palette.accent}` }} />
+            <span className="envelope__card" style={{ background: palette.ground, border: `1px solid ${wax.ring}` }} />
 
             <span
               className="envelope__flap"
               style={{
-                background: `linear-gradient(180deg, ${envelopeColor ?? palette.ground} 0%, ${palette.accent}26 100%)`,
+                background: `linear-gradient(180deg, ${envelopeColor ?? palette.ground} 0%, ${wax.light}22 100%)`,
                 borderBottom: `1px solid ${wax.ring}`,
               }}
             />
@@ -223,12 +223,12 @@ export function WaxSeal({
                       <circle cx="60" cy="60" r="37.6" fill="none" stroke={wax.light} strokeWidth="0.9" strokeOpacity="0.32" />
 
                       {/* The imprint: the brand mark, pressed. Geometry from public/brand/monogram.svg. */}
-                      <g transform="translate(37 38.5) scale(1.44)" filter={`url(#wax-press-${uid})`} opacity="1">
+                      <g transform="translate(37 38.5) scale(1.44)" filter={`url(#wax-press-${uid})`} opacity="0.9">
                         {imprint === "monogram" || imprint === "eight-star" ? (
                           <g mask={`url(#mark-mask-${uid})`}>
                             <g className="seal__brand">
-                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L22.96 4.67 L27.84 7.21 L17.33 27.34 L14.67 27.34 Z" fill={wax.light} fillOpacity="0.62" />
-                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L16 27.34 L14.67 27.34 Z" fill={wax.light} fillOpacity="0.85" />
+                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L22.96 4.67 L27.84 7.21 L17.33 27.34 L14.67 27.34 Z" fill={wax.emboss} fillOpacity="0.74" />
+                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L16 27.34 L14.67 27.34 Z" fill={wax.emboss} />
                             </g>
                           </g>
                         ) : (
