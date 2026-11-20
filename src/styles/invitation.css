@@ -709,3 +709,16 @@
     transition: none;
   }
 }
+
+/* The language switch inside the sheet: the page behind a modal is inert, so it needs its own. */
+.venue-sheet__lang {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ink-muted, #5b5f5c);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TemplateCanvas } from "@/components/invitation/TemplateCanvas";
@@ -181,6 +182,21 @@ export default async function InvitationPage({
     return query ? `?${query}` : "";
   };
 
+  /**
+   * The other language, as a client-side transition.
+   *
+   * A plain `<a>` would be a full document load: the sheet would close and the guest would lose their
+   * place. A soft navigation re-renders the server component and reconciles it, so the sheet stays
+   * open and its state survives — which is the behaviour the brief asks for.
+   */
+  const languageHref = (() => {
+    const params = new URLSearchParams();
+    params.set("lang", isArabic ? "en" : "ar");
+    if (searchParams.rsvp) params.set("rsvp", searchParams.rsvp);
+    if (searchParams.schedule) params.set("schedule", searchParams.schedule);
+    return `/i/${token}?${params.toString()}`;
+  })();
+
   return (
     <WaxSeal
       guestName={invitation.guestName}
@@ -196,13 +212,14 @@ export default async function InvitationPage({
         {/* The language switch: a link, so nothing is translated on the client and the sheet below
             survives the soft navigation. */}
         <nav className="mb-6 flex justify-end" aria-label={base.language.label}>
-          <a
+          <Link
             className="text-xs text-ink-muted underline underline-offset-4"
-            href={`?lang=${isArabic ? "en" : "ar"}${searchParams.rsvp ? `&rsvp=${searchParams.rsvp}` : ""}`}
+            href={languageHref}
             hrefLang={isArabic ? "en" : "ar"}
+            scroll={false}
           >
             {isArabic ? "English" : "العربية"}
-          </a>
+          </Link>
         </nav>
 
         <p className="text-center text-sm text-ink-muted">{text("greeting")}</p>
@@ -247,6 +264,8 @@ export default async function InvitationPage({
           variant={iconVariantFor(design)}
           labels={{ ...base.venues, venueOne: base.venues.venueOne }}
           accent={design.palette.accent}
+          languageHref={languageHref}
+          languageLabel={isArabic ? "English" : "العربية"}
         />
 
         {shown.length > 0 ? (

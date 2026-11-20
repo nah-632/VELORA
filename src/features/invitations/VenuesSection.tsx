@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { VenueIcon, type IconVariant } from "./VenueIcons";
@@ -65,17 +66,31 @@ export function VenuesSection({
   variant,
   labels,
   accent,
+  languageHref,
+  languageLabel,
 }: {
   venues: VenueCardData[];
   variant: IconVariant;
   labels: VenueLabels;
   accent: string;
+  /** The same page in the other language, as a client-side transition so the sheet survives it. */
+  languageHref: string;
+  languageLabel: string;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const touchStartY = useRef<number | null>(null);
+  /**
+   * The card that opened the sheet.
+   *
+   * A native `<dialog>` restores focus to whatever had it before `showModal()` — which is not
+   * reliably the card, because React re-renders the panel away before the dialog closes and focus
+   * falls to `<body>` when the element holding it is removed. Measured: focus ended on BODY. So the
+   * card is remembered and focus is handed back to it, rather than trusted to the platform.
+   */
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const open = venues.find((venue) => venue.id === openId) ?? null;
 
@@ -91,6 +106,12 @@ export function VenuesSection({
   const close = () => {
     setCopied(false);
     setOpenId(null);
+    const trigger = triggerRef.current;
+    if (trigger) {
+      // After the render that removes the panel, so the browser is not asked to focus a button that
+      // is still behind a closing dialog.
+      window.setTimeout(() => trigger.focus({ preventScroll: true }), 0);
+    }
   };
 
   // Swipe down to dismiss, on the handle only — a swipe anywhere would fight the content's own
@@ -131,7 +152,10 @@ export function VenuesSection({
             className="venue-card"
             data-emphasis={venue.emphasis ? "true" : "false"}
             style={{ ["--venue-accent" as string]: accent }}
-            onClick={() => setOpenId(venue.id)}
+            onClick={(event) => {
+              triggerRef.current = event.currentTarget;
+              setOpenId(venue.id);
+            }}
             aria-haspopup="dialog"
           >
             <span className="venue-card__ring" aria-hidden="true" />
@@ -170,6 +194,9 @@ export function VenuesSection({
               <h3 className="venue-sheet__title" id="venue-sheet-title">
                 {open.name}
               </h3>
+              <Link className="venue-sheet__lang" href={languageHref} hrefLang="en" scroll={false}>
+                {languageLabel}
+              </Link>
               <button type="button" className="venue-sheet__close" onClick={close} aria-label={labels.close}>
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
