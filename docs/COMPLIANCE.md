@@ -392,3 +392,64 @@ a specific mechanism that produces a shift, and the operator saw the result of t
 
 Both screenshots at 375 px are in the run above; the before is
 `screenshot_1795123660.jpg` and the after `screenshot_1795135544.jpg`.
+
+---
+
+## Q. Warmer copy, and two halls
+
+### The wording (Part A)
+
+| Item | Status | Evidence |
+|---|---|---|
+| Every text editable per event, with `{guest_name}` `{groom}` `{bride}` `{date}` `{venue}` `{map_url}` `{link}` | ✅ | `messages.ts` (defaults + `renderTemplate` + `resolveCopy`) and `CopyEditor`; 14 unit assertions |
+| Reset to default means *delete the override* | ✅ | Asserted: an empty override falls back to the default; overriding one slot leaves the others |
+| The operator's Arabic texts, verbatim | ✅ | Asserted character-for-character on the greeting, the opening, the body, the RSVP line and both buttons |
+| Guest gender (male / female / neutral, default neutral) with correct Arabic inflection | ✅ | `guests.gender` + a constraint; the confirm button has three forms and `confirmLabel` picks by the row |
+| Guest audience, derived from gender unless the operator overrides it | ✅ | `resolveAudience`; a family set to "both" stays "both" whatever its members are |
+| Import columns `gender` and `audience`, in Arabic or English | ✅ | `GENDER_WORDS` / `AUDIENCE_WORDS` in the importer; an empty audience cell means "work it out", not "both" |
+| Four WhatsApp messages, both languages, editable in Settings | ✅ | `DEFAULT_WHATSAPP` + `WhatsappEditor`; the sender resolves Settings → default per guest language |
+
+### The halls (Part B)
+
+| Item | Status | Evidence |
+|---|---|---|
+| `event_venues` with the fields asked for, and a unique kind per event | ✅ | `0007_dual_venues.sql`; 18 columns; two women's halls is refused by the database |
+| Existing single-venue data migrated to a shared hall | ✅ | Tested by putting the database back into its pre-migration state, re-running the migration, and asserting the name, address, map and parking note survived — and that a second run does not duplicate the row |
+| `{venue}` still works | ✅ | Resolves to the guest's hall, or both for a household |
+| Guest assignment: audience per guest, overridable, families "both" | ✅ | `guests.audience`, NULL meaning "derive"; shown and editable per row |
+| Both halls shown to every guest, the guest's own emphasised | ✅ | `venuesForGuest`; asserted that the other hall is never removed and that "both" emphasises neither |
+| Line-art icons in the template's idiom, no emoji, no raster | ✅ | `VenueIcons.tsx` — arched window with rose and crescent; majlis arch with dallah and eight-point star; four variants from `design.ornament`/`layout` |
+| Sheet: focus trap, `aria-modal`, labelled title, Escape, focus returns, reduced-motion fade | ✅ in code | Native `<dialog>` + `showModal()`, so the platform provides all five; `tests/browser/venue-dialog.mjs` asserts them |
+| Zero layout shift on open and close | ✅ in code | The top layer is outside the flow; `showModal()` prevents background scroll; `scrollbar-gutter: stable` is already on `html`; only transform and opacity animate |
+| Language switch with the sheet open | ✅ in code | `?lang=` soft-navigates; the sheet is a client component whose state survives it |
+| Schedule tagged by hall, filtered for the guest, with a "show all" toggle | ✅ | Items carry `audience`; the page filters and offers the toggle |
+| `.ics` uses the guest's own hall | ✅ | `venueForCalendar`; the address and both hall links go in the description, one address in LOCATION |
+
+### What is **not** verified — and why
+
+**The change is not live.** Three rollouts failed after green builds:
+
+| Deployment | Result |
+|---|---|
+| `E0Z_B6U5677lkCiDQEKU` | failed |
+| `eI8fZZVdoi6SW99qVhyKU` | failed |
+| `RLOOb6zKgyWdAnnkNg3nB` | failed |
+
+The build itself succeeds — `npm run build` returned exit 0 in the Codespace, and CranL's own log ends
+with "the CranL builder build completed" for each attempt, with `first_error: null`. This is the same
+post-build rollout failure that has recurred all session; it usually clears within two or three
+attempts, and it did not this time.
+
+Consequently:
+
+| Not verified | Why |
+|---|---|
+| The two hall icons on a real screen | not deployed |
+| The sheet opening, its focus trap, and CLS 0 across it | not deployed. The test exists (`tests/browser/venue-dialog.mjs`) and needs a running build |
+| The language switch with the sheet open | same |
+| After-screenshots at 375px | nothing to photograph |
+
+What *is* verified: the full gate green (110 unit, 183 database assertions including the migration
+and the hall resolution), the opening and closing of the sheet's *mechanism* — a native dialog in the
+top layer — and the arithmetic of the copy and the variables, which is where the three bugs of this
+change were caught.
