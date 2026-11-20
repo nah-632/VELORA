@@ -482,3 +482,52 @@ plausible.
 * **A physical iPhone or Android.** Everything above is Chromium at 320–390 px.
 * **Screen-reader output.** The dialog is `aria-modal` with a labelled title and the icons are
   `aria-hidden` inside labelled buttons, but no VoiceOver or TalkBack has read it.
+
+---
+
+## R. Deployment guards
+
+Two failures this session came from editing a configuration file rather than the application, and
+neither was visible to `npm run verify`:
+
+| Failure | What it cost | Now caught by |
+|---|---|---|
+| `playwright` added to `devDependencies` by hand, never installed, so `package-lock.json` never learned about it → `npm ci` refused to run | **four** dead deployments, all of them after a green build | `npm run check:lockfile` |
+| `0007_dual_venues.sql` needed by the new code but not applied before the rollout | a 500 waiting to happen on `/i/<token>` and the event console — the rollouts failed first, by luck | `npm run check:release-order` |
+
+Both run **first** in `verify`, before the type-check, so a broken install or an unrecorded migration
+stops the run in a second rather than after the slow suites.
+
+### `check:lockfile`
+
+Structural rather than `npm ci --dry-run`: deterministic, offline, and seconds instead of minutes on
+this device. It compares each declared dependency against the lockfile's `node_modules/<name>`, and
+each declared range against the lockfile's own root block — which is the comparison `npm ci` itself
+makes.
+
+**The rule, and it is the whole point: never edit `package.json` by hand.** `npm install <pkg>` writes
+both files; only one of them is guessable.
+
+Proven to fail: adding an invented dependency to `devDependencies` makes it exit 1, naming it.
+
+### `check:release-order`
+
+Checks that `db/RELEASE.md` exists, states "migrate first, then deploy", names **every** migration
+file in `db/migrations/`, and — for each migration whose objects the code actually reads — says so.
+
+It derives the readers rather than trusting a list: it parses each migration for
+`create table if not exists` and `add column if not exists`, then searches `src/` for those names.
+Written today, it found immediately that only `0007` had been recorded and six migrations had not —
+which is exactly the gap it exists to close. `db/RELEASE.md` now documents all seven, in order, with
+what each adds and who reads it.
+
+Proven to fail: removing `0006` from the document makes it exit 1, naming it.
+
+### What these do not cover
+
+* **That the migration was actually applied.** That is `/api/health`'s job — `checks.schema` reports
+  each object the code needs and whether it exists — and it is a runtime fact, not a repository one.
+* **Migrations applied out of order by hand.** The guard checks that the knowledge is written down;
+  the runner (`scripts/db-migrate.mjs`) enforces the order when it applies them.
+* **Which is why `db/RELEASE.md` has the three-step release command in it**, including the
+  `schema_migrations` insert that stops the runner applying a hand-applied migration twice.
