@@ -47,7 +47,7 @@ ramp whose lightest stop still clears 3:1:
 |---|---|---|
 | C1 | Seal **centred on the flap tip**, not offset into the card | computed centre of `.seal` vs the flap apex at 375px |
 | C2 | **Burgundy wax** (`#6B1E2E` family), not the design accent | computed fill of the wax shape |
-| C3 | Imprint is the **brand V-and-leaf mark** — crisp vector, no raster | DOM: an inline `<svg>` path set, no `<img>`; screenshot at 2× for crispness |
+| C3 | Imprint is the **brand mark** — a folded strip read as V (see `brand/monogram.mjs`; there is no leaf in the artwork) — crisp vector, no raster | DOM: an inline `<svg>` path set, no `<img>`; screenshot at 2× for crispness |
 | C4 | **Raised rim**, inner embossed ring, **specular highlight**, soft outer shadow | four distinct elements present in the DOM + screenshot |
 | C5 | Envelope is **emerald** with a gold **arabesque liner** revealed as the flap opens | screenshot mid-open and after |
 | C6 | Opens on **first tap**, on **double tap**, and on a **tap during the animation** — all three end revealed, none double-fires | three runs, each asserting the invitation is visible and the seal gone |

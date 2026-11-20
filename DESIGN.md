@@ -123,16 +123,24 @@ is elegant in the editor and illegible on a phone is a failed design.
 
 ## 7. The seal
 
-Both T1 and every later template use the **brand mark** — the V-and-leaf — as the imprint. It is
-drawn as vector paths inside the wax, not placed as an image, so it stays crisp at any size and
-inherits the wax's shading.
+Both T1 and every later template use the **brand mark** as the imprint. The mark is a single strip of
+card, folded once, read as the letter V — the construction and its reasoning are in
+`brand/monogram.mjs`, and the geometry is generated there, never drawn by hand. It is drawn as vector
+paths inside the wax, not placed as an image, so it stays crisp at any size and inherits the wax's
+shading.
+
+**There is no leaf in it.** `SPEC.md` records the alternative — a serif V carrying a botanical spray —
+as decision **D4**, and notes that it *conflicts with the brief*, which asks for "a folded invitation
+or refined paper geometry" and rules out excessive flourishes. The folded strip is what was built.
+This paragraph said "the V-and-leaf" until a G2 extraction showed the artwork has two paths and no
+leaf; the wording was the drift, not the drawing.
 
 | Part | Spec |
 |---|---|
 | wax body | irregular edge (seeded path, three soft drips), radial gradient from a light crown to a dark edge |
 | raised rim | stroke at 18% towards white, 2.2px |
 | inner ring | dark line 1.6px at 42% + light line 0.9px just inside it |
-| imprint | brand V-and-leaf, pressed: inner shadow, 88% opacity of the darkest wax tone |
+| imprint | brand mark (a folded strip, read as V), pressed: inner shadow, 88% opacity of the darkest wax tone |
 | highlight | off-centre ellipse at 36%/28%, white at 50% falling to 0 |
 | shadow | drop shadow, 3px y-offset, 3.2px blur, 42% of a warm brown-black |
 | crack | three wedges clipped from one drawing, so gradients and rings stay continuous until they part |
@@ -140,3 +148,41 @@ inherits the wax's shading.
 Colour variants: burgundy (T1), gold, emerald, rose gold, champagne, black. The wax is chosen by the
 template's seal spec — never by the palette accent, which is how a gold seal appeared on a burgundy
 template once already.
+
+---
+
+## 8. The reference image, and the directions
+
+**`assets/brand/reference/envelope-reference.jpg`** is the operator's target image for the opening.
+It lives under `assets/`, not `public/`: it is a thing to compare renders against, not an asset to
+serve to a guest's phone.
+
+It shows the **open** state — matte emerald cotton envelope, the flap folded back over a dark green
+botanical lining, an ivory card rising above the wings, burgundy wax at the wing junction with two
+thin gold sprigs beside it, soft light from the top left. It is the target for **materials, lighting,
+proportions and ornament**. It is **not** a colour specification — colours come from `tokens.css` and
+the contrast rules — and it is **not** the sealed state. The sealed state is derived from it: the same
+envelope and materials, the flap closed over the front, the seal at the closed flap tip.
+
+Its seal carries a serif **V with a leaf spray**. The brand mark is not that, and
+`SPEC.md` D4 is where that was decided. **Do not copy the placeholder mark from the image.**
+
+| Direction | State |
+|---|---|
+| **A — Pressed Wax** | **approved.** The seal rebuilt as pressed wax; flap, lining and card given real materials; the mark revealed by wiping its own lit plane. See §9 for the decisions taken under it. |
+| **B** | recorded, not chosen |
+| **C — Palace Gate** | recorded as a **future template only**. Its brief has not been written down here and nothing is built; no current decision depends on it. |
+
+---
+
+## 9. Decisions taken under Direction A
+
+Recorded as taken, with the evidence that forced them. Where a decision contradicts an earlier
+document, the earlier document is corrected rather than left to disagree.
+
+| # | Decision | Why |
+|---|---|---|
+| A-1 | The envelope and seal layers are **direction-neutral** — physical offsets or an explicit `direction: ltr` on `.envelope`, never a logical inset with a physical offset | `/i/` is an RTL document even when `?lang=en`; only the invitation canvas goes LTR. `inset-inline-start: 50%` with `translate: -50%` put the seal 97.5px off-centre in **both** languages. Fixed in `b623464`, measured delta 0.00px in AR and EN |
+| A-2 | Every decorative layer stays **inside** the seal button; the disc keeps `pointer-events: none` | The button is `inset: 0` and wraps the whole envelope, so the topmost hit target is always one of its own children. A decorative layer placed outside it silently kills the touch — which is what happened before `01eb103` |
+| A-3 | The reference image is filed under `assets/`, and the brand geometry stays in `public/brand/*.svg` + `brand/monogram.mjs` | There is no `assets/brand/` source directory in this repository. `public/` is for things that are served; the reference is not |
+| A-4 | The mark's reveal is a **mask wipe over its own paths**, not a stroke draw and not a leaf unfurl | The brand file is filled geometry with no `stroke`, so `stroke-dashoffset` would require re-outlining it. And there is no leaf to unfurl — see §7 |
