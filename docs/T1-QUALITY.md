@@ -52,6 +52,8 @@ ramp whose lightest stop still clears 3:1:
 | C5 | Envelope is **emerald** with a gold **arabesque liner** revealed as the flap opens | screenshot mid-open and after |
 | C6 | Opens on **first tap**, on **double tap**, and on a **tap during the animation** — all three end revealed, none double-fires | three runs, each asserting the invitation is visible and the seal gone |
 
+| C7 | In `phase=sealed`, `document.elementFromPoint` **at the seal centre returns the seal button or a child of it** | a browser check run on **every release** — not a one-off probe. Against the deployed URL at 375px, AR and EN. Written after the seal turned out to be unreachable by touch for the layer above it (`opacity: 0` still hit-tests); the button was 330×220, focusable, and dead |
+
 ## D. Movement and stability
 
 | # | Criterion | How it is proved |
