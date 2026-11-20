@@ -86,6 +86,7 @@ export function MihrabArch({
     <svg
       className={`mihrab ${draw ? "mihrab--draw" : ""} ${className}`}
       viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
       aria-hidden="true"
       focusable="false"
       fill="none"

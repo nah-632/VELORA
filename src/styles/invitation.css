@@ -762,9 +762,19 @@
 
 .t1 {
   position: relative;
-  background: var(--tpl-ivory, var(--ground));
+  /* No background of its own: the paper is `.t1__paper`, a fixed layer, so the invitation cannot
+     appear as a lighter rectangle narrower than the page. */
+  background: transparent;
   color: var(--tpl-ink, var(--ink));
   font-family: var(--tpl-font-body, var(--font-body));
+}
+
+.t1__paper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--tpl-ivory, var(--ground));
+  pointer-events: none;
 }
 
 /* The khatam field: texture, not pattern. Fixed, so it never scrolls into an obvious grid. */
@@ -813,16 +823,20 @@
   position: relative;
   display: grid;
   place-items: center;
-  margin-block: 2rem 2.5rem;
-  padding: 3.5rem 1.5rem;
+  /* The arch's own ratio (260:340). The box and the drawing agree, so `inset: 0` cannot distort the
+     curve, and the names are geometrically inside it rather than approximately. */
+  aspect-ratio: 260 / 340;
+  width: min(80vw, 300px);
+  margin-inline: auto;
+  margin-block: 1.5rem 2rem;
+  padding: 2.5rem 1rem;
 }
 
 .mihrab {
   position: absolute;
   inset: 0;
-  margin: auto;
-  width: min(78vw, 300px);
-  height: auto;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 

@@ -42,6 +42,10 @@ export function GoldenPalace({
 
   return (
     <div className="t1" style={style} {...attrs} lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
+      {/* The paper is a fixed layer under everything, so the invitation has no visible edge: a box
+          the width of a column, floating on a slightly different page colour, is the defect this
+          replaces. Fixed also means it cannot be a scroll artefact. */}
+      <div className="t1__paper" aria-hidden="true" />
       {ornaments.includes("khatam-tessellation") ? (
         <div className="t1__field" aria-hidden="true">
           <KhatamField opacity={0.07} size={68} />
