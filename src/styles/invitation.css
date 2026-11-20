@@ -168,9 +168,21 @@
 /* The disc inside the button: the seal itself. */
 .seal__disc {
   position: absolute;
-  inset-inline-start: 50%;
-  top: 52%;
-  translate: -50% -50%;
+  /*
+   * Auto margins centre it in either direction.
+   *
+   * `inset-inline-start: 50%` is logical and `translate: -50%` is physical: under RTL the inset
+   * flips and the offset does not, so the disc landed a half-width off in the wrong direction.
+   * And the English page is still an RTL document — only the invitation canvas goes LTR — so it was
+   * off-centre in both languages, not just in Arabic.
+   *
+   * Measured at 375px before this change: disc centre 88.5 vs envelope centre 186, delta 97.5px,
+   * identical in AR and EN. This has no direction to get wrong.
+   */
+  inset-inline: 0;
+  margin-inline: auto;
+  inset-block-start: 52%;
+  translate: 0 -50%;
   width: clamp(84px, 26vw, 116px);
   aspect-ratio: 1;
   display: block;
