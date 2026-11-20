@@ -30,6 +30,29 @@ export async function GET() {
     applied: null,
     pendingCheck: "not_checked",
   };
+  /**
+   * The schema the running code needs, checked explicitly.
+   *
+   * A deployment is a code change and a schema change, and they arrive separately: the container is
+   * replaced on deploy, the migration is applied by a release step. If the release step is skipped,
+   * the container is running code that queries tables which do not exist — and the first sign of it
+   * is a 500 on the page a guest opened. This reports the mismatch by name while everything else
+   * carries on serving.
+   *
+   * It never changes the status code: a database that is up and a schema that is behind is a
+   * *deployment* state, not an outage, and a health endpoint that fails for it would take the whole
+   * site down over a missing column.
+   */
+  let schema: {
+    lastApplied: string | null;
+    expects: string;
+    objects: Record<string, boolean>;
+    ok: boolean;
+  } | null = null;
+
+  const REQUIRED = {
+    event_venues: "0007_dual_venues.sql",
+  };
   let adminAccounts: number | null = null;
   let adminSessions: number | null = null;
   let totpEnrolled: boolean | null = null;
@@ -50,6 +73,30 @@ export async function GET() {
       adminAccounts = rows[0]?.n ?? 0;
     } catch {
       adminAccounts = null;
+    }
+
+    try {
+      const rows = await getSql()<{ halls: boolean; guest_gender: boolean; guest_audience: boolean }[]>`
+        select
+          to_regclass('public.event_venues') is not null as halls,
+          exists (select 1 from information_schema.columns
+                   where table_schema = 'public' and table_name = 'guests' and column_name = 'gender') as guest_gender,
+          exists (select 1 from information_schema.columns
+                   where table_schema = 'public' and table_name = 'guests' and column_name = 'audience') as guest_audience`;
+      const row = rows[0];
+      const objects = {
+        event_venues: row?.halls ?? false,
+        "guests.gender": row?.guest_gender ?? false,
+        "guests.audience": row?.guest_audience ?? false,
+      };
+      schema = {
+        lastApplied: migrations.applied,
+        expects: REQUIRED.event_venues,
+        objects,
+        ok: Object.values(objects).every(Boolean),
+      };
+    } catch {
+      schema = null;
     }
 
     // Counts and a boolean, never a name or an address. This is what makes an authentication
@@ -79,6 +126,8 @@ export async function GET() {
         ...(database.latencyMs !== undefined ? { latencyMs: database.latencyMs } : {}),
       },
       migrations,
+      // Names, not rows: the objects the code needs and whether they are there.
+      schema,
       // Tells an operator whether this installation has been seeded yet. A number, not a name:
       // a health endpoint should never become a way to enumerate accounts.
       admin: { accounts: adminAccounts, sessions: adminSessions, totpEnrolled },

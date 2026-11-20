@@ -153,7 +153,7 @@ export async function loadInvitation(
    */
   if (options.recordOpen === false) {
     const rows = await sql<Row[]>`
-      select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en, g.gender, g.audience, g.gender, g.audience,
+      select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en, g.gender, g.audience,
              g.first_opened_at,
              e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
              e.event_datetime, e.timezone, e.hijri_date_text,
@@ -315,7 +315,7 @@ export async function previewInvitationForGuest(
 ): Promise<PublicInvitation | null> {
   const sql = options.sql ?? getSql();
   const rows = await sql<Row[]>`
-    select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en, g.gender, g.audience, g.gender, g.audience,
+    select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en, g.gender, g.audience,
            g.first_opened_at,
            e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
            e.event_datetime, e.timezone, e.hijri_date_text,
