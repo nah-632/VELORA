@@ -46,6 +46,93 @@
   width: min(88vw, 380px);
   aspect-ratio: 3 / 2;
   perspective: 1200px;
+
+  /*
+   * The envelope's own material, as variables the template can set.
+   *
+   * Everything below derives from `--env-paper`, so a template changes one value and the wings, the
+   * fold highlights and the grain tone follow. The defaults are T1's palette, and they exist so this
+   * block reads correctly even before a template sets anything.
+   */
+  --env-paper: #0f3d3e;
+  --env-paper-lit: color-mix(in oklab, var(--env-paper), #ffffff 9%);
+  --env-paper-shade: color-mix(in oklab, var(--env-paper), #000000 11%);
+  --env-paper-shadow: color-mix(in oklab, var(--env-paper), #000000 22%);
+  --env-gold: var(--tpl-gold, #b99b6c);
+  --env-light: rgba(255, 255, 255, 0.13);
+  --env-seam: rgba(0, 0, 0, 0.30);
+
+  /* Where the wings' fold edges meet: the closure point, in envelope coordinates. */
+  --env-closure-x: 50%;
+  --env-closure-y: 60.5%;
+  --env-wing-start-y: 41%;
+}
+
+/*
+ * Paper grain, with no file to fetch.
+ *
+ * `feTurbulence` inlined as a data URI: a few hundred bytes of markup instead of a texture, and it
+ * scales to any envelope size. `overlay` at low opacity is what keeps it reading as cotton rather
+ * than as noise on a photograph.
+ */
+.envelope__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.42'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* The side wings, folded in. Each is a triangle whose hypotenuse is the fold edge. */
+.envelope__wing {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--env-paper-shade);
+}
+
+.envelope__wing--left {
+  clip-path: polygon(-1% 40.5%, 50.7% var(--env-closure-y), -1% 80.5%);
+}
+
+.envelope__wing--right {
+  clip-path: polygon(101% 40.5%, 49.3% var(--env-closure-y), 101% 80.5%);
+}
+
+/* The bottom panel, under both wings: the region the reference leaves plainest. */
+.envelope__front {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--env-paper);
+  clip-path: polygon(-1% 80.5%, 50% var(--env-closure-y), 101% 80.5%, 101% 101%, -1% 101%);
+}
+
+/* Light from the top left, over the whole envelope. One layer, not one per panel. */
+.envelope__light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(137deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(317deg, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0) 38%);
+}
+
+/* The fold edges themselves: 1px, crisp, drawn rather than bordered. */
+.envelope__edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.envelope__edges svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
 }
 
 .envelope__body {
@@ -98,15 +185,38 @@
   to   { opacity: 1; -webkit-mask-position: 100% 0; mask-position: 100% 0; }
 }
 
-/* The flap: a triangle that pivots on its top edge. */
+/*
+ * The flap: **opaque**, with its lower edge a shallow V through the closure point.
+ *
+ * It used to be a deep triangle with a translucent gradient whose lower stop was 13% alpha — over
+ * the ivory card that mixes to grey, which is why the flap read slate. Opaque paper, lit from the
+ * top left, is what the reference shows. The element spans the whole envelope and is *clipped* to
+ * the flap rather than sized to it, so the fold edge can sit anywhere on the box.
+ */
 .envelope__flap {
   position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 62%;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  inset: 0;
+  clip-path: polygon(-1% -1%, 101% -1%, 101% 40.5%, 50% 61.5%, -1% 40.5%);
   transform-origin: top center;
   transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--env-paper), #ffffff 6%) 0%, var(--env-paper) 34%, var(--env-paper-shade) 100%);
+  /* The shadow the flap casts on the panel below it. Follows the clip, unlike a box-shadow. */
+  filter: drop-shadow(0 2.5px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* The flap's own edge: gold hairline on the fold, highlight just inside it. */
+.envelope__flap-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.envelope__flap-edges svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
 }
 
 .envelope[data-phase="opening"] .envelope__flap,
@@ -124,6 +234,18 @@
   transform: translateY(6%) scale(0.98);
   transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 180ms;
   box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * A closed envelope does not show its card.
+ *
+ * It did. The card spans `top: 12%` and `height: 92%`, so 4% of it hung below the flap and the
+ * sealed envelope showed a band of ivory where the reference shows emerald and two gold fold lines.
+ * The card is paper *inside* the envelope: it has no business being visible until the flap lifts.
+ */
+.envelope[data-phase="sealed"] .envelope__card {
+  opacity: 0;
+  transition: none;
 }
 
 .envelope[data-phase="opening"] .envelope__card,

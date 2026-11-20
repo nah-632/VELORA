@@ -199,3 +199,25 @@ document, the earlier document is corrected rather than left to disagree.
 | A-2 | Every decorative layer stays **inside** the seal button; the disc keeps `pointer-events: none` | The button is `inset: 0` and wraps the whole envelope, so the topmost hit target is always one of its own children. A decorative layer placed outside it silently kills the touch — which is what happened before `01eb103` |
 | A-3 | The reference image is filed under `assets/`, and the brand geometry stays in `public/brand/*.svg` + `brand/monogram.mjs` | There is no `assets/brand/` source directory in this repository. `public/` is for things that are served; the reference is not |
 | A-4 | The mark's reveal is a **mask wipe over its own paths**, not a stroke draw and not a leaf unfurl | The brand file is filled geometry with no `stroke`, so `stroke-dashoffset` would require re-outlining it. And there is no leaf to unfurl — see §7 |
+| A-5 | The two gold botanical sprigs are **ornament around the seal only**. The mark itself stays the folded strip | The operator's decision on the G2 gate. The sprigs are what R7 and `docs/TEMPLATES.md` call ornament, so they can be drawn fresh; the identity of the mark does not move because a reference photograph of a concept contained one |
+
+### 9.1 The build order for G3 — one layer, one screenshot, before the next
+
+Written down so it cannot become a blind rewrite, and because the alternative — writing the whole
+engine at once — is exactly how a regression ships unseen.
+
+| # | Layer | Proved by |
+|---|---|---|
+| 1 | the box: body, wings, front panel, the fold lines | harness screenshot at 375px; `.envelope` still 330×220 |
+| 2 | the flap: opaque, shallow-V lower edge, lit edge, gold hairline, shadow onto the panel | ditto, plus `clip-path` read back from the computed style |
+| 3 | the lining: the flap's inner face, botanical print, gold frame | screenshot with the flap at 180° |
+| 4 | the card: ivory cotton, colourless emboss, gold star on a rule | screenshot, card at 0% and at 50% |
+| 5 | the seal: pressed wax, the original mark in muted gold | screenshot at 2×; the mark measured as a share of the inner disc |
+| 6 | the ornament: the two sprigs flanking the seal | screenshot at 2× |
+| 7 | the sequence: timing, the leaf-free mark wipe, particles, reduced motion | state-by-state screenshots, then the timing table |
+
+The iteration environment is not the app: this sandbox cannot run Next.js. It is a static page that
+loads the **real** `invitation.css` and mirrors the component's DOM exactly, and it prints what it
+measured (stylesheet loaded, rule count, `.envelope` box) so a broken link cannot be mistaken for a
+styling choice. A layer is not done because the harness likes it — it is done when the same markup is
+in `WaxSeal.tsx` and the deployed page agrees.

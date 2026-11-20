@@ -145,6 +145,31 @@ export function WaxSeal({
           >
             <span className="envelope__body" style={{ background: envelopeColor ?? palette.ground, borderColor: wax.ring }} />
 
+            {/* The side wings, folded in: each a triangle whose hypotenuse is the fold edge. */}
+            <span className="envelope__wing envelope__wing--left" />
+            <span className="envelope__wing envelope__wing--right" />
+            <span className="envelope__front" />
+
+            {/*
+              The fold edges of the wings — the *lower* arms only. The upper arms belong to the flap
+              and live inside it: they have to rotate away with it, and a copy left behind here would
+              stay on the panel after the envelope opened.
+              Drawn, not bordered: a 1px border cannot follow a diagonal. Geometry is in the
+              envelope's own coordinates (330×220) so it scales with the box.
+            */}
+            <span className="envelope__edges" aria-hidden="true">
+              <svg viewBox="0 0 330 220" preserveAspectRatio="none" fill="none">
+                <g strokeLinecap="round">
+                  <path d="M167.3 133.1 L330 177.1" stroke="var(--env-gold)" strokeOpacity="0.62" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  <path d="M162.7 133.1 L0 177.1" stroke="var(--env-gold)" strokeOpacity="0.62" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                </g>
+              </svg>
+            </span>
+
+            {/* Directional light from the top left, and the paper's grain — no image files. */}
+            <span className="envelope__light" />
+            <span className="envelope__grain" />
+
             {liner === "arabesque" ? (
               <span className="envelope__liner" aria-hidden="true">
                 <svg viewBox="0 0 300 200" fill="none">
@@ -163,13 +188,16 @@ export function WaxSeal({
 
             <span className="envelope__card" style={{ background: palette.ground, border: `1px solid ${wax.ring}` }} />
 
-            <span
-              className="envelope__flap"
-              style={{
-                background: `linear-gradient(180deg, ${envelopeColor ?? palette.ground} 0%, ${wax.light}22 100%)`,
-                borderBottom: `1px solid ${wax.ring}`,
-              }}
-            />
+            <span className="envelope__flap">
+              <span className="envelope__flap-edges" aria-hidden="true">
+                <svg viewBox="0 0 330 220" preserveAspectRatio="none" fill="none">
+                  <g strokeLinecap="round">
+                    <path d="M-3.3 89.1 L165 135.3 L333.3 90.2" stroke="var(--env-gold)" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                    <path d="M-3.3 90.4 L165 136.6 L333.3 91.5" stroke="var(--env-light)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  </g>
+                </svg>
+              </span>
+            </span>
 
             <span className="envelope__name" style={{ color: palette.ink }} dir={isArabic ? "rtl" : "ltr"}>
               {guestName}
