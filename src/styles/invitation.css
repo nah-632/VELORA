@@ -298,6 +298,21 @@
   transform: translateY(12px);
 }
 
+/*
+ * While the envelope is sealed, the invitation is invisible but still *there* — deliberately, so a
+ * screen reader, a crawler and a JS-off browser still get it. Invisible is not untouchable: an
+ * `opacity: 0` box still hit-tests, and this one sits at `z-index: 10` over the whole envelope, so
+ * it swallowed every tap meant for the seal. Measured against production: `elementFromPoint` at the
+ * seal disc's own centre returned the invitation's text, not the button — so the seal could not be
+ * pressed at all.
+ *
+ * `pointer-events: none` rather than `visibility: hidden`, which would undo the accessibility
+ * decision above — and only while sealed, so the opened invitation stays fully interactive.
+ */
+.seal-stage[data-phase="sealed"] .invitation-reveal {
+  pointer-events: none;
+}
+
 .seal-stage[data-phase="open"] .invitation-reveal {
   opacity: 1;
   transform: none;
