@@ -355,7 +355,21 @@
         "beforeEvent": "تذكير قبل الحفل",
         "afterEvent": "شكر"
       },
-      "queueAllSent": "أُرسلت الدعوات للجميع."
+      "queueAllSent": "أُرسلت الدعوات للجميع.",
+      "pickerTitle": "القالب",
+      "pickerHint": "اختر قالبًا، ثم عدّل الألوان والخطوط لهذه المناسبة فقط.",
+      "pickerPreview": "المعاينة على هاتف بعرض ٣٢٠ بكسل",
+      "pickerOverrides": "تخصيص لهذه المناسبة",
+      "pickerOverridesHint": "الألوان الخمسة وخطّا الأسماء والآية. خطوط النص تبقى من القالب حتى تظل مقروءة.",
+      "pickerReset": "إرجاع القالب كما هو",
+      "pickerNamesFont": "خط الأسماء",
+      "pickerVerseFont": "خط الآية",
+      "pickerSaveHint": "احفظ لتطبيق التغييرات. صفحة الدعوة نفسها تُظهر النتيجة لكل ضيف.",
+      "paletteIvory": "العاجي",
+      "paletteGold": "الذهب",
+      "paletteEmerald": "الزمردي",
+      "paletteBurgundy": "العنابي",
+      "paletteInk": "الحبر"
     },
     "guests": {
       "title": "المدعوون",

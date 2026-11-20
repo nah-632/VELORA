@@ -83,6 +83,7 @@ export interface EventDetail extends EventListRow {
   dress_code_ar: string | null;
   dress_code_en: string | null;
   copy_templates: unknown;
+  theme_override: unknown;
   quote_ar: string | null;
   quote_en: string | null;
   notes_ar: string | null;

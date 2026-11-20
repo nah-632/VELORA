@@ -31,6 +31,9 @@ export interface PublicInvitation {
   venues: import("./venues").Venue[];
   /** How this design opens. 'none' still renders the invitation, just without an entrance. */
   animation: "wax_seal" | "curtain" | "none";
+  /** Which template built this invitation, and what the operator changed for this event. */
+  templateSlug: string | null;
+  themeOverride: unknown;
   personalLine: string | null;
   blocks: InvitationBlocks;
   design: DesignConfig;
@@ -109,6 +112,8 @@ interface Row {
   thank_you_declined_en: string | null;
   design_config: unknown;
   opening_animation_type: string | null;
+  template_slug: string | null;
+  theme_override: unknown;
   copy_templates: unknown;
   venues: unknown;
 }
@@ -167,7 +172,8 @@ export async function loadInvitation(
              e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
              e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
              e.thank_you_declined_ar, e.thank_you_declined_en,
-             t.design_config, t.opening_animation_type
+             t.design_config, t.opening_animation_type, t.slug as template_slug,
+             e.theme_override
         from public.guests g
         join public.events e on e.id = g.event_id
         left join public.templates t on t.id = e.template_id
@@ -198,7 +204,8 @@ export async function loadInvitation(
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
-           t.design_config, t.opening_animation_type
+           t.design_config, t.opening_animation_type, t.slug as template_slug,
+           e.theme_override
       from opened o
       join public.events e on e.id = o.event_id
       left join public.templates t on t.id = e.template_id
@@ -236,6 +243,8 @@ function toInvitation(row: Row): PublicInvitation | null {
     guestName: row.full_name,
     language,
     animation,
+    templateSlug: row.template_slug,
+    themeOverride: row.theme_override,
     gender,
     audience,
     copyByLocale,
@@ -329,7 +338,8 @@ export async function previewInvitationForGuest(
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
-           t.design_config, t.opening_animation_type
+           t.design_config, t.opening_animation_type, t.slug as template_slug,
+           e.theme_override
       from public.guests g
       join public.events e on e.id = g.event_id
       left join public.templates t on t.id = e.template_id

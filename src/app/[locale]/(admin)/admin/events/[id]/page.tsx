@@ -16,6 +16,7 @@ import { VenuesEditor, type VenueFormValue } from "@/features/events/VenuesEdito
 import { SendQueue } from "@/features/guests/SendQueue";
 import { markOneSentAction, reminderLinkAction } from "@/features/guests/actions";
 import { CopyEditor } from "@/features/events/CopyEditor";
+import { TemplatePicker } from "@/features/events/TemplatePicker";
 import { venueComplete } from "@/features/invitations/venues";
 import { getEvent, listTemplateOptions, listVenues } from "@/features/events/queries";
 import { updateEventAction } from "@/features/events/actions";
@@ -65,6 +66,9 @@ export default async function EventPage({
       select message_templates, whatsapp_number from public.settings limit 1`,
   ]);
   const messageTemplates = (settingsRow[0]?.message_templates ?? {}) as Record<string, Record<string, string>>;
+  // A sample personal line for the preview, taken from the first guest rather than invented.
+  const guestLineSample =
+    (locale === "ar" ? guests[0]?.personal_line_ar : guests[0]?.personal_line_en) ?? null;
 
   const readinessFields = {
     bride_name_ar: event.bride_name_ar,
@@ -266,6 +270,35 @@ export default async function EventPage({
                 <option value="ended">ended</option>
               </select>
             </label>
+
+            <div className="sm:col-span-2">
+              <TemplatePicker
+                initialSlug={templates.find((option) => option.id === event.template_id)?.slug ?? null}
+                initialOverride={(event.theme_override ?? {}) as never}
+                locale={locale === "en" ? "en" : "ar"}
+                sample={{
+                  groom: event.groom_name_ar ?? event.groom_name_en ?? "خالد",
+                  bride: event.bride_name_ar ?? event.bride_name_en ?? "نور",
+                  verse: "وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا",
+                  greeting: guestLineSample ?? "",
+                }}
+                labels={{
+                  title: t("pickerTitle"),
+                  hint: t("pickerHint"),
+                  preview: t("pickerPreview"),
+                  overrides: t("pickerOverrides"),
+                  overridesHint: t("pickerOverridesHint"),
+                  reset: t("pickerReset"),
+                  palette: {
+                    ivory: t("paletteIvory"), gold: t("paletteGold"), emerald: t("paletteEmerald"),
+                    burgundy: t("paletteBurgundy"), ink: t("paletteInk"),
+                  },
+                  namesFont: t("pickerNamesFont"),
+                  verseFont: t("pickerVerseFont"),
+                  saveHint: t("pickerSaveHint"),
+                }}
+              />
+            </div>
 
             <div className="sm:col-span-2">
               <VenuesEditor

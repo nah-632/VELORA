@@ -17,7 +17,7 @@ import { isLocale } from "@/i18n/routing";
 import { assertSameOrigin, requireAdmin } from "@/features/admin/sessions";
 import { EventInputSchema, buildEventSlug, eventReadiness, type EventInput } from "./schema";
 // The reader lives in its own module so a test can prove it covers the schema. See form-fields.ts.
-import { readEventForm } from "./form-fields";
+import { readEventForm, readThemeFields } from "./form-fields";
 import { saveVenues } from "./queries";
 import { VenuesInputSchema, CopyOverridesSchema } from "./schema";
 import { createEvent, getEvent, updateEvent } from "./queries";
@@ -71,6 +71,17 @@ export async function updateEventAction(formData: FormData): Promise<void> {
   if (copyOverrides.success) {
     await getSql()`
       update public.events set copy_templates = ${JSON.stringify(copyOverrides.data)}::text::jsonb where id = ${id}`;
+  }
+
+  // The template the operator picked (by slug, resolved to its row) and their per-event changes.
+  const slug = String(formData.get("template_slug") ?? "");
+  const { theme_override } = readThemeFields(formData);
+  if (slug) {
+    await getSql()`
+      update public.events
+         set template_id = (select id from public.templates where slug = ${slug}),
+             theme_override = ${JSON.stringify(theme_override)}::text::jsonb
+       where id = ${id}`;
   }
 
   // Readiness is recomputed after the write, from what is actually stored, and the page is told

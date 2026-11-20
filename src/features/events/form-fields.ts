@@ -10,6 +10,7 @@
  * here. Adding a column and forgetting this list is a failing test rather than a silent data loss.
  */
 import { CopyOverridesSchema, ScheduleSchema, VenuesInputSchema, EventInputSchema } from "./schema";
+import { ThemeOverrideSchema } from "@/lib/templates/schema";
 
 /**
  * Every field the event form submits, other than `schedule`, which arrives as one JSON value.
@@ -82,6 +83,24 @@ export function readEventForm(formData: FormData): Record<string, unknown> {
   }
 
   return out;
+}
+
+/**
+ * The template picker's two values.
+ *
+ * The slug is checked against the `templates` table by the action; the override is validated here,
+ * strictly, so an unknown key is rejected rather than stored and rendered later. The operator may
+ * change five palette roles and two display faces — the schema is the boundary that says so.
+ */
+export function readThemeFields(formData: FormData): { theme_override: unknown } {
+  const raw = formData.get("theme_override");
+  if (typeof raw !== "string" || raw.trim().length === 0) return { theme_override: {} };
+  try {
+    const parsed = ThemeOverrideSchema.safeParse(JSON.parse(raw));
+    return { theme_override: parsed.success ? parsed.data : {} };
+  } catch {
+    return { theme_override: {} };
+  }
 }
 
 export const VENUES_FIELD = "venues";

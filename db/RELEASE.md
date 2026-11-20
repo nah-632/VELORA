@@ -46,6 +46,8 @@ file exists here and is not named below.
 | 0006 | `0006_event_details.sql` | `venue_address_*`, `parking_*`, `entrance_*`, `sections_*`, `schedule` on `events` | the event editor, the public page and the `.ics` generator | **Yes** |
 | 0007 | `0007_dual_venues.sql` | `event_venues`, `guests.gender`, `guests.audience`, `events.copy_templates` | `/i/<token>` (selects the halls), the event console (`listVenues`, `saveVenues`), the WhatsApp sender | **Yes** — see below |
 
+| 0008 | `0008_theme_override.sql` | `events.theme_override` (jsonb, default `{}`), and the Golden Palace row in `templates` | the invitation page reads the slug and the override; the editor's template picker lists the row | **Yes** |
+
 ## The 0007 case, which is why this file exists
 
 `0007_dual_venues.sql` was additive — it creates a table, adds two columns with defaults, and moves

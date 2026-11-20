@@ -253,3 +253,77 @@ test("the message a guest receives is the template for its purpose, in its langu
   });
   assert.equal(overridden, "رسالتي: خالد L");
 });
+
+// ---------------------------------------------------------------------------------------------
+// The template token system
+
+test("T1 carries the reference's five palette values and nothing invented", async () => {
+  const { GOLDEN_PALACE } = await import("../../src/lib/templates/registry.ts");
+  // docs/TEMPLATES.md §3, T1 — read off the document, not chosen here.
+  assert.deepEqual(GOLDEN_PALACE.palette, {
+    ivory: "#F6EEDC",
+    gold: "#B8913A",
+    emerald: "#0F3D3E",
+    burgundy: "#6B1E2E",
+    ink: "#2B1B12",
+  });
+  assert.equal(GOLDEN_PALACE.slug, "golden-palace");
+  assert.equal(GOLDEN_PALACE.idiom, "Moorish");
+});
+
+test("T1's fonts are the reference's pairing, per script", async () => {
+  const { GOLDEN_PALACE } = await import("../../src/lib/templates/registry.ts");
+  assert.deepEqual(GOLDEN_PALACE.fonts.ar, {
+    names: "aref", verse: "amiri", label: "reemkufi", body: "notonaskh",
+  });
+  assert.deepEqual(GOLDEN_PALACE.fonts.en, {
+    names: "cormorant", verse: "cormorant", label: "cinzel", body: "cormorant",
+  });
+});
+
+test("T1's seal, envelope and ornaments are the ones the document describes", async () => {
+  const { GOLDEN_PALACE } = await import("../../src/lib/templates/registry.ts");
+  assert.equal(GOLDEN_PALACE.seal.wax, "burgundy");
+  assert.equal(GOLDEN_PALACE.seal.imprint, "eight-star");
+  assert.equal(GOLDEN_PALACE.envelope.paper, "emerald");
+  assert.equal(GOLDEN_PALACE.envelope.liner, "arabesque");
+  for (const ornament of ["khatam-tessellation", "mihrab-arch", "muqarnas-corners", "zellige-strip"]) {
+    assert.ok(GOLDEN_PALACE.layout.ornaments.includes(ornament), ornament);
+  }
+});
+
+test("overrides change what they say and leave the rest alone", async () => {
+  const { GOLDEN_PALACE } = await import("../../src/lib/templates/registry.ts");
+  const { resolveTheme, themeToCssVars } = await import("../../src/lib/templates/css-vars.ts");
+
+  const themed = resolveTheme(GOLDEN_PALACE, { palette: { gold: "#C9A24B" }, fonts: { ar: { names: "amiri" } } });
+  assert.equal(themed.palette.gold, "#C9A24B");
+  assert.equal(themed.palette.ivory, "#F6EEDC", "an untouched value stays the template's");
+  assert.equal(themed.fonts.ar.names, "amiri");
+  assert.equal(themed.fonts.ar.body, "notonaskh", "the body face is not overridable");
+
+  // No override → the template itself, unchanged.
+  assert.deepEqual(resolveTheme(GOLDEN_PALACE, null), GOLDEN_PALACE);
+});
+
+test("the CSS variables carry the palette and a real font stack per script", async () => {
+  const { GOLDEN_PALACE } = await import("../../src/lib/templates/registry.ts");
+  const { themeToCssVars, themeDataAttributes } = await import("../../src/lib/templates/css-vars.ts");
+
+  const ar = themeToCssVars(GOLDEN_PALACE, "ar");
+  assert.equal(ar["--tpl-ivory"], "#F6EEDC");
+  assert.equal(ar["--tpl-burgundy"], "#6B1E2E");
+  assert.match(ar["--tpl-font-names"], /Aref Ruqaa/);
+  assert.match(ar["--tpl-font-verse"], /Amiri/);
+  assert.match(ar["--tpl-font-label"], /Reem Kufi/);
+  assert.match(ar["--tpl-font-body"], /Noto Naskh Arabic/);
+
+  const en = themeToCssVars(GOLDEN_PALACE, "en");
+  assert.match(en["--tpl-font-names"], /Cormorant Garamond/);
+  assert.match(en["--tpl-font-label"], /Cinzel/);
+
+  // Every family named is one this product self-hosts: no stack may fall back to an unloaded face
+  // as its first choice.
+  assert.equal(themeDataAttributes(GOLDEN_PALACE)["data-template"], "golden-palace");
+  assert.equal(themeDataAttributes(GOLDEN_PALACE)["data-countdown"], "framed");
+});

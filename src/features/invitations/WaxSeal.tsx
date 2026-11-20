@@ -45,16 +45,24 @@ export function WaxSeal({
   animation,
   labels,
   sessionKey,
+  sealImprint,
+  envelopeColor,
+  liner,
 }: {
   children: ReactNode;
   guestName: string;
   monogram: string | null;
   coupleNames: { groom: string | null; bride: string | null };
   palette: { ground: string; ink: string; accent: string };
+  /** From the template: the envelope paper colour and its liner. */
+  envelopeColor?: string;
+  liner?: "arabesque" | "plain" | "sadu" | "tiles";
   locale: "ar" | "en";
   animation: "wax_seal" | "curtain" | "none";
   labels: { prompt: string; skip: string };
   sessionKey: string;
+  /** From the template's seal spec: `eight-star` for T1, `monogram` otherwise. */
+  sealImprint?: "eight-star" | "monogram" | "diamond";
 }) {
   // `null` until mounted: the server must not guess whether this browser has seen the entrance.
   const [phase, setPhase] = useState<"sealed" | "opening" | "open" | null>(null);
@@ -97,13 +105,42 @@ export function WaxSeal({
   }, [sessionKey]);
 
   const letter = sealMonogram(monogram, coupleNames);
+  /**
+   * The imprint, from the template's seal spec.
+   *
+   * T1 presses a gold eight-point star into burgundy wax (docs/TEMPLATES.md §3). The monogram is
+   * still available — a template that wants the couple's initials uses it — and the star is drawn
+   * here rather than as a glyph so it stays crisp at any size.
+   */
+  const imprint = sealImprint ?? "monogram";
   const isArabic = locale === "ar";
 
   return (
     <div className="seal-stage" data-phase={phase ?? "sealed"}>
       <div className="seal-stage__entrance" aria-hidden="true">
         <div className="envelope" data-phase={phase ?? "sealed"}>
-          <div className="envelope__body" style={{ background: palette.ground, borderColor: wax.ring }} />
+          <div
+            className="envelope__body"
+            style={{
+              background: envelopeColor ?? palette.ground,
+              borderColor: wax.ring,
+            }}
+          />
+
+          {/* The liner: gold arabesque, drawn as strokes so it scales without an image. */}
+          {liner === "arabesque" ? (
+            <svg className="envelope__liner" viewBox="0 0 300 200" aria-hidden="true" focusable="false" fill="none">
+              <g stroke="var(--tpl-gold)" strokeOpacity="0.55" strokeWidth="1">
+                {Array.from({ length: 5 }, (_, row) =>
+                  Array.from({ length: 8 }, (_, col) => {
+                    const x = col * 38 + (row % 2 ? 19 : 0) + 8;
+                    const y = row * 34 + 14;
+                    return <path key={`${row}-${col}`} d={`M${x} ${y}c6-9 20-9 26 0c-6 9-20 9-26 0zM${x + 13} ${y - 7}v14`} />;
+                  }),
+                )}
+              </g>
+            </svg>
+          ) : null}
 
           {/* The guest's name, written on the paper, revealed by a wipe across it — right to left in
               Arabic, left to right in English. The font is the calligraphic display face. */}
@@ -188,21 +225,40 @@ export function WaxSeal({
                     {/* Inner embossed ring: a dark line with a light one just inside it. */}
                     <circle cx="60" cy="60" r="40" fill="none" stroke={wax.emboss} strokeWidth="1.6" strokeOpacity="0.42" />
                     <circle cx="60" cy="60" r="37.6" fill="none" stroke={wax.light} strokeWidth="0.9" strokeOpacity="0.32" />
-                    {/* The monogram, pressed in. */}
-                    <text
-                      x="60"
-                      y="61"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fill={wax.emboss}
-                      fillOpacity="0.88"
-                      fontSize={letter.length > 2 ? 24 : 30}
-                      fontWeight="600"
-                      filter={`url(#wax-press-${uid})`}
-                      style={{ fontFamily: isArabic ? "var(--font-display-ar)" : "var(--font-display-en)" }}
-                    >
-                      {letter}
-                    </text>
+                    {/* The imprint, pressed in: a star for T1, the monogram otherwise. */}
+                    {imprint === "eight-star" ? (
+                      <g filter={`url(#wax-press-${uid})`}>
+                        <path
+                          d="M60 34l6.5 13.5L81 48l-10 10 2.4 15L60 66.5 46.6 73 49 58 39 48l14.5-.5z"
+                          fill={wax.emboss}
+                          fillOpacity="0.9"
+                          transform="translate(0 6)"
+                        />
+                        <path
+                          d="M60 34l6.5 13.5L81 48l-10 10 2.4 15L60 66.5 46.6 73 49 58 39 48l14.5-.5z"
+                          fill="none"
+                          stroke={palette.accent}
+                          strokeOpacity="0.55"
+                          strokeWidth="0.9"
+                          transform="translate(0 6) scale(0.98) translate(1.2 1.3)"
+                        />
+                      </g>
+                    ) : (
+                      <text
+                        x="60"
+                        y="61"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill={wax.emboss}
+                        fillOpacity="0.88"
+                        fontSize={letter.length > 2 ? 24 : 30}
+                        fontWeight="600"
+                        filter={`url(#wax-press-${uid})`}
+                        style={{ fontFamily: isArabic ? "var(--tpl-font-names)" : "var(--tpl-font-names)" }}
+                      >
+                        {letter}
+                      </text>
+                    )}
                   </g>
                 ))}
 

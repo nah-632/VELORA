@@ -355,7 +355,21 @@
         "beforeEvent": "Day before",
         "afterEvent": "Thank-you"
       },
-      "queueAllSent": "Every invitation has been sent."
+      "queueAllSent": "Every invitation has been sent.",
+      "pickerTitle": "Template",
+      "pickerHint": "Pick a template, then adjust its colours and faces for this event only.",
+      "pickerPreview": "Preview at a 320px phone width",
+      "pickerOverrides": "Changes for this event",
+      "pickerOverridesHint": "The five colours and the names/verse faces. Body faces stay as the template sets them, so the invitation stays readable.",
+      "pickerReset": "Reset to the template",
+      "pickerNamesFont": "Names face",
+      "pickerVerseFont": "Verse face",
+      "pickerSaveHint": "Save to apply. The invitation page itself shows the result to each guest.",
+      "paletteIvory": "Ivory",
+      "paletteGold": "Gold",
+      "paletteEmerald": "Emerald",
+      "paletteBurgundy": "Burgundy",
+      "paletteInk": "Ink"
     },
     "guests": {
       "title": "Guests",

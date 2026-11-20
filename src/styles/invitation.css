@@ -722,3 +722,310 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+/* ============================================================================================
+ * T1 · Golden Palace
+ *
+ * Everything here reads the token variables (`themeToCssVars`), so the same rules serve any template
+ * that sets them. Nothing hard-codes T1's colours.
+ * ========================================================================================== */
+
+.t1 {
+  position: relative;
+  background: var(--tpl-ivory, var(--ground));
+  color: var(--tpl-ink, var(--ink));
+  font-family: var(--tpl-font-body, var(--font-body));
+}
+
+/* The khatam field: texture, not pattern. Fixed, so it never scrolls into an obvious grid. */
+.t1__field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  color: var(--tpl-gold);
+  pointer-events: none;
+}
+
+.t1__content {
+  position: relative;
+  z-index: 1;
+}
+
+/* The royal double frame: two hairlines inset from the paper edge. */
+.t1[data-frame="royal-double"] .t1__frame {
+  position: fixed;
+  inset: 10px;
+  border: 1px solid var(--tpl-gold);
+  pointer-events: none;
+  z-index: 2;
+}
+.t1[data-frame="royal-double"] .t1__frame::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid color-mix(in oklab, var(--tpl-gold) 55%, transparent);
+}
+
+/* Muqarnas corners sit inside the frame, one per corner. */
+.muqarnas {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  color: var(--tpl-gold);
+  opacity: 0.55;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ---- The names, inside the mihrab arch -------------------------------------------------- */
+
+.t1__names {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-block: 2rem 2.5rem;
+  padding: 3.5rem 1.5rem;
+}
+
+.mihrab {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(78vw, 300px);
+  height: auto;
+  pointer-events: none;
+}
+
+/*
+ * The arch draws itself: one dash as long as the path (pathLength=1 makes that exact), offset by the
+ * same amount and animated to zero. `stroke-dashoffset` is a paint property — it cannot reflow.
+ */
+.mihrab--draw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: mihrab-draw 1400ms cubic-bezier(0.22, 0.61, 0.36, 1) 240ms forwards;
+}
+
+.mihrab--draw path + path {
+  animation-delay: 420ms;
+}
+
+@keyframes mihrab-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.t1__couple {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  text-align: center;
+}
+
+.t1__name {
+  font-family: var(--tpl-font-names);
+  font-size: clamp(1.9rem, 9vw, 2.9rem);
+  line-height: 1.35;
+  /* Arabic does not take letter-spacing: it breaks the joins. */
+  letter-spacing: 0;
+  color: var(--tpl-ink);
+}
+
+/* Gold foil: a gradient clipped to the glyphs, with a slow sheen that never changes the box. */
+.t1[data-foil="on"] .t1__name {
+  background-image: linear-gradient(
+    100deg,
+    var(--tpl-foil-c) 0%,
+    var(--tpl-foil-a) 28%,
+    var(--tpl-foil-b) 46%,
+    var(--tpl-foil-a) 62%,
+    var(--tpl-foil-c) 100%
+  );
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: foil-sheen 9s ease-in-out infinite;
+}
+
+@keyframes foil-sheen {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.t1__amp {
+  font-family: var(--tpl-font-label);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tpl-gold);
+  margin-block: 0.35rem;
+}
+
+.t1__eyebrow {
+  font-family: var(--tpl-font-label);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tpl-gold);
+  text-align: center;
+}
+
+/* ---- Verse, personal line --------------------------------------------------------------- */
+
+.t1__verse {
+  font-family: var(--tpl-font-verse);
+  font-size: 0.98rem;
+  line-height: 2.1;
+  text-align: center;
+  color: var(--tpl-ink);
+  max-inline-size: 34ch;
+  margin: 1.75rem auto 0;
+}
+
+.t1__personal {
+  font-family: var(--tpl-font-verse);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: color-mix(in oklab, var(--tpl-ink) 78%, var(--tpl-ivory));
+  text-align: center;
+  margin-block-start: 0.75rem;
+}
+
+/* ---- Zellige dividers ------------------------------------------------------------------- */
+
+.zellige {
+  display: block;
+  width: min(72vw, 260px);
+  height: 22px;
+  margin: 2rem auto;
+  color: var(--tpl-gold);
+  opacity: 0.8;
+}
+
+.divider {
+  display: block;
+  width: 160px;
+  height: 16px;
+  margin: 1.5rem auto;
+  color: var(--tpl-gold);
+}
+
+/* ---- Countdown, framed --------------------------------------------------------------- */
+
+.t1[data-countdown="framed"] .countdown__unit {
+  border: 1px solid color-mix(in oklab, var(--tpl-gold) 50%, transparent);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--tpl-ivory) 92%, var(--tpl-gold));
+}
+
+.t1[data-countdown="framed"] .countdown__value {
+  font-family: var(--tpl-font-label);
+  color: var(--tpl-ink);
+}
+
+.t1 .countdown__label {
+  font-family: var(--tpl-font-label);
+  color: color-mix(in oklab, var(--tpl-ink) 65%, var(--tpl-ivory));
+}
+
+/* ---- Labels and headings --------------------------------------------------------------- */
+
+.t1__label {
+  font-family: var(--tpl-font-label);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tpl-gold);
+}
+
+.t1__section-title {
+  font-family: var(--tpl-font-label);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  color: var(--tpl-ink);
+  text-align: center;
+}
+
+/* ---- RSVP ------------------------------------------------------------------------------- */
+
+.t1[data-rsvp="solid"] .t1__submit {
+  background: var(--tpl-gold);
+  color: var(--tpl-ivory);
+  border: 1px solid var(--tpl-gold);
+  font-family: var(--tpl-font-label);
+  letter-spacing: 0.06em;
+}
+
+/* ---- Reduced motion: everything settles, nothing travels --------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .mihrab--draw path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .t1[data-foil="on"] .t1__name {
+    animation: none;
+    background-position: 46% 50%;
+  }
+}
+
+/* Muqarnas corners: two, on the top edge, one mirrored — the reference's stepped squinch profile. */
+.t1__corners {
+  position: fixed;
+  inset-block-start: 10px;
+  inset-inline: 10px;
+  z-index: 3;
+  pointer-events: none;
+}
+.t1__corner--start {
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  inset-inline-end: auto;
+  inset-block-end: auto;
+}
+.t1__corner--end {
+  inset-inline-end: 0;
+  inset-block-start: 0;
+  inset-inline-start: auto;
+  inset-block-end: auto;
+  transform: rotate(90deg);
+}
+
+/* The gold rules and star divider inherited from the older stylesheet pick up the token colours. */
+.t1 .timeline__marker { background: var(--tpl-gold); }
+.t1 .timeline__item::before { background: color-mix(in oklab, var(--tpl-gold) 40%, transparent); }
+.t1 .venues__title,
+.t1 .timeline__title { font-family: var(--tpl-font-label); }
+.t1 .venue-card__label { font-family: var(--tpl-font-label); }
+
+/* The liner sits under the flap, revealed as it opens: a gold arabesque on the envelope paper. */
+.envelope__liner {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 500ms ease-out 260ms;
+  pointer-events: none;
+}
+
+.envelope[data-phase="opening"] .envelope__liner,
+.envelope[data-phase="open"] .envelope__liner {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .envelope__liner { transition: none; opacity: 0.4; }
+}
+
+/* The greeting sits above the names, small, in the label face. */
+.t1__greeting {
+  font-family: var(--tpl-font-label);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: color-mix(in oklab, var(--tpl-ink) 72%, var(--tpl-ivory));
+  text-align: center;
+  margin-block-end: 0.9rem;
+  max-inline-size: 30ch;
+}

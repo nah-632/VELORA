@@ -22,6 +22,10 @@ import {
   venuesForGuest,
 } from "@/features/invitations/venues";
 import { classifyMapUrl, mapButtonLabel } from "@/lib/maps";
+import { GoldenPalace, T1Divider } from "@/lib/templates/GoldenPalace";
+import { getTemplateBySlug } from "@/lib/templates/registry";
+import { themeToCssVars } from "@/lib/templates/css-vars";
+import type { ThemeOverride } from "@/lib/templates/schema";
 
 /**
  * A guest's invitation.
@@ -156,6 +160,17 @@ export default async function InvitationPage({
     phone: venue.contact_phone,
   }));
 
+  /**
+   * The template, if this event uses one of the token-system designs.
+   *
+   * The slug comes from the `templates` row the operator picked, and the override from the event.
+   * When the slug has no token template the page renders exactly as it did before — the older
+   * `design_config` path — so no existing invitation changes.
+   */
+  const template = getTemplateBySlug(invitation.templateSlug);
+  const override = (invitation.themeOverride ?? {}) as ThemeOverride;
+  const themeVars = template ? themeToCssVars(template, language) : undefined;
+
   const initial = remaining(Date.now(), event.eventDatetime.getTime());
   const couple =
     isArabic
@@ -207,8 +222,16 @@ export default async function InvitationPage({
       animation={invitation.animation}
       labels={base.seal}
       sessionKey={`velora-seal-${token.slice(0, 12)}`}
+      sealImprint={template?.seal.imprint}
+      envelopeColor={template ? (template.envelope.paper === "emerald" ? template.palette.emerald : undefined) : undefined}
+      liner={template?.envelope.liner}
     >
-      <main className="mx-auto flex w-full max-w-[520px] flex-col px-5 py-10" lang={language} dir={isArabic ? "rtl" : "ltr"}>
+      <main
+        className="mx-auto flex w-full max-w-[520px] flex-col px-5 py-10"
+        lang={language}
+        dir={isArabic ? "rtl" : "ltr"}
+        style={themeVars}
+      >
         {/* The language switch: a link, so nothing is translated on the client and the sheet below
             survives the soft navigation. */}
         <nav className="mb-6 flex justify-end" aria-label={base.language.label}>
@@ -222,7 +245,30 @@ export default async function InvitationPage({
           </Link>
         </nav>
 
-        <p className="text-center text-sm text-ink-muted">{text("greeting")}</p>
+        {template ? (
+          <GoldenPalace
+            template={template}
+            override={override}
+            locale={language}
+            eyebrow={isArabic ? "دعوة زفاف" : "Wedding Invitation"}
+            groom={groom ?? ""}
+            bride={bride ?? ""}
+            names={
+              <div className="t1__couple">
+                <p className="t1__greeting">{text("greeting")}</p>
+                <span className="t1__name">{groom}</span>
+                <span className="t1__amp">{isArabic ? "و" : "&"}</span>
+                <span className="t1__name">{bride}</span>
+              </div>
+            }
+          >
+            <p className="t1__verse">{text("body")}</p>
+            {copy.verse && copy.verse.trim() ? <p className="t1__verse">{renderTemplate(copy.verse, variables)}</p> : null}
+            {invitation.personalLine ? <p className="t1__personal">{invitation.personalLine}</p> : null}
+          </GoldenPalace>
+        ) : null}
+
+        <p className={`text-center text-sm text-ink-muted ${template ? "sr-only" : ""}`}>{text("greeting")}</p>
 
         {invitation.personalLine ? (
           <p className="mt-2 text-center text-sm italic text-ink-muted">{invitation.personalLine}</p>
@@ -232,7 +278,7 @@ export default async function InvitationPage({
           <p className="text-sm text-ink-muted">{text("opening")}</p>
         </div>
 
-        <div className="mt-6">
+        <div className={template ? "hidden" : "mt-6"}>
           <TemplateCanvas
             design={design}
             blocks={invitation.blocks}
@@ -241,9 +287,11 @@ export default async function InvitationPage({
           />
         </div>
 
-        <p className="mt-6 text-center text-sm text-ink">{text("body")}</p>
+        {template ? <T1Divider kind={template.layout.divider} /> : null}
 
-        {copy.verse && copy.verse.trim() ? (
+        <p className={`text-center text-sm text-ink ${template ? "sr-only" : "mt-6"}`}>{text("body")}</p>
+
+        {!template && copy.verse && copy.verse.trim() ? (
           <p className="mt-5 text-center text-sm text-ink-muted">{renderTemplate(copy.verse, variables)}</p>
         ) : null}
 
