@@ -425,31 +425,60 @@ Both screenshots at 375 px are in the run above; the before is
 | Schedule tagged by hall, filtered for the guest, with a "show all" toggle | ✅ | Items carry `audience`; the page filters and offers the toggle |
 | `.ics` uses the guest's own hall | ✅ | `venueForCalendar`; the address and both hall links go in the description, one address in LOCATION |
 
-### What is **not** verified — and why
+### The failure, diagnosed
 
-**The change is not live.** Three rollouts failed after green builds:
+The four failed rollouts were **not** a health-check timeout, a crash on boot, an OOM, a port problem
+or a missing environment variable. Two of them recorded the reason on the deployment itself:
 
-| Deployment | Result |
+| Deployment | `error_message` / `first_error` |
 |---|---|
-| `E0Z_B6U5677lkCiDQEKU` | failed |
-| `eI8fZZVdoi6SW99qVhyKU` | failed |
-| `RLOOb6zKgyWdAnnkNg3nB` | failed |
+| `E0Z_B6U5677lkCiDQEKU` | none recorded |
+| `eI8fZZVdoi6SW99qVhyKU` | **"SSH connection error: Timed out while waiting for handshake"** |
+| `RLOOb6zKgyWdAnnkNg3nB` | **"SSH connection error: Timed out while waiting for handshake"** |
+| `yc3TmWDa1I0zAMwqDrpMG` | **`npm error Missing: playwright@1.65.1 from lock file`** |
 
-The build itself succeeds — `npm run build` returned exit 0 in the Codespace, and CranL's own log ends
-with "the CranL builder build completed" for each attempt, with `first_error: null`. This is the same
-post-build rollout failure that has recurred all session; it usually clears within two or three
-attempts, and it did not this time.
+The first three never reached the application: the platform's rollout agent could not open its
+handshake to the new container, so the app was never asked to start. The fourth is the real one, and it
+is mine: I added `playwright` to `devDependencies` by editing `package.json` as text and never installed
+it, so `package-lock.json` never learned about it and `npm ci` refused to run. Every deployment since
+that commit died at the install step.
 
-Consequently:
+Two further findings, both now fixed:
 
-| Not verified | Why |
+* **The code does read 0007's schema** — `/i/<token>` and the event console query `event_venues` and
+  `guests.gender`. So even a successful rollout against an unmigrated database would have served 500s.
+  Fixed by applying 0007 to production **before** any rollout, with the runner's own
+  `schema_migrations` bookkeeping so it is not applied twice, and documented in `db/RELEASE.md`.
+* **`/api/health` would have hidden it.** It counted `admin_users` and stopped there. It now reports
+  `checks.schema`: each object the code needs, whether it exists, and the migration expected — without
+  ever failing the process, because a database that is up with a schema that is behind is a deployment
+  state, not an outage.
+
+There is also **nothing configurable** for a health-check path, port or timeout: the app descriptor
+exposes `port` only, `configure_app` accepts `auto_rollback` and `pr_previews`, and the platform's own
+probe is a call you make rather than a setting. Measured against the running container, both paths pass:
+`/` → 307 in 305 ms, `/api/health` → 200 in 620 ms. Boot is 492 ms, so a readiness timeout is not
+plausible.
+
+### Live, and verified in a browser
+
+| | |
 |---|---|
-| The two hall icons on a real screen | not deployed |
-| The sheet opening, its focus trap, and CLS 0 across it | not deployed. The test exists (`tests/browser/venue-dialog.mjs`) and needs a running build |
-| The language switch with the sheet open | same |
-| After-screenshots at 375px | nothing to photograph |
+| Successful deployment | **`O9WzIZXfDI_M5JZyzhTgq`** (the change), **`VT7o8T3nGQk1osid0jlmn`** (the dialog fixes) |
+| `/api/health` | `schema.ok: true`, all three objects present, `migrations.applied: 0007_dual_venues.sql` |
+| Both halls on the guest's page | ✅ `قاعة اللؤلؤة` and `قاعة الخليج`, with `موقع قاعة النساء` / `موقع قاعة الرجال` and `قاعتك` on the guest's own |
+| The sheet | ✅ opens with address, time, entrance, parking, a **Waze**-labelled button, copy-address |
+| CLS opening the sheet | **0** — and `scrollY` unchanged, so the page behind did not move |
+| Focus on open | inside the dialog |
+| Focus on close | **back on the card that opened it** (measured: `activeIsVenueCard: true`) |
+| Language switch with the sheet open | ✅ stays open, content re-renders — and the dialog's own box moves **`[0,0,0,0]`** |
+| CLS across a language switch | **0.00098** — not zero. The shift is the *page behind* reflowing, because Arabic and English prose differ in length; the dialog itself does not move |
 
-What *is* verified: the full gate green (110 unit, 183 database assertions including the migration
-and the hall resolution), the opening and closing of the sheet's *mechanism* — a native dialog in the
-top layer — and the arithmetic of the copy and the variables, which is where the three bugs of this
-change were caught.
+### Still not verified
+
+* **Escape with a real key press.** A synthetic `KeyboardEvent` does not trigger the browser's native
+  dialog dismissal, and this harness has no keyboard action. `tests/browser/venue-dialog.mjs` asserts it
+  with `page.keyboard.press("Escape")`; it has not been run, because the Codespace became unreachable.
+* **A physical iPhone or Android.** Everything above is Chromium at 320–390 px.
+* **Screen-reader output.** The dialog is `aria-modal` with a labelled title and the icons are
+  `aria-hidden` inside labelled buttons, but no VoiceOver or TalkBack has read it.
