@@ -159,13 +159,26 @@ serve to a guest's phone.
 
 It shows the **open** state — matte emerald cotton envelope, the flap folded back over a dark green
 botanical lining, an ivory card rising above the wings, burgundy wax at the wing junction with two
-thin gold sprigs beside it, soft light from the top left. It is the target for **materials, lighting,
-proportions and ornament**. It is **not** a colour specification — colours come from `tokens.css` and
-the contrast rules — and it is **not** the sealed state. The sealed state is derived from it: the same
-envelope and materials, the flap closed over the front, the seal at the closed flap tip.
+thin gold sprigs beside it, soft light from the top left. There are three of them, and together they are the three states G3 has to build:
 
-Its seal carries a serif **V with a leaf spray**. The brand mark is not that, and
-`SPEC.md` D4 is where that was decided. **Do not copy the placeholder mark from the image.**
+| File | State | What it settles |
+|---|---|---|
+| `envelope-reference-sealed.jpg` | **sealed** | the closed composition: flap down over the front, its two edges meeting at the seal, gold hairline along every fold edge, the two sprigs lying along the flap edges, the seal on the vertical axis at the closure point |
+| `envelope-reference-opening.jpg` | **opening** | the flap standing at 180°, the lining fully revealed with its gold botanical print and frame, the card risen about half way, the wax in **three broken wedges resting on the front panel**, and the particles rising above where the seal was |
+| `envelope-reference.jpg` | **open / final** | the card out above the wings, the lining behind it, the ornament at rest |
+
+All three are the target for **materials, lighting, proportions and ornament**. None is a colour
+specification — colours come from `tokens.css` and the contrast rules.
+
+Two geometry notes to carry into G3. In the sealed reference the flap's lower edge is a **shallow V**
+across the upper half of the envelope, not the deep triangle the current build draws
+(`clip-path: polygon(0 0, 100% 0, 50% 100%)`, whose apex reaches the flap's own bottom) — the seal
+sits where that shallow V meets the vertical axis, a little above the envelope's midline. And in the
+opening reference the broken wax stays **on the front panel** rather than falling away; the current
+build animates the three pieces down and out to `opacity: 0`.
+
+The seal in all three carries a serif **V with a leaf spray**. The brand mark is not that, and
+`SPEC.md` D4 is where that was decided. **Do not copy the placeholder mark from any of them.**
 
 | Direction | State |
 |---|---|
