@@ -158,6 +158,73 @@ FONTS = [
         "licence": None,
         "licence_name": None,
     },
+    # ---------------------------------------------------------------------------------------
+    # The template system's first four extra faces.
+    #
+    # Added because T1 Golden Palace names them in docs/TEMPLATES.md §2: Reem Kufi for labels, Amiri
+    # for the verse, Noto Naskh for body, Cinzel for English headings. Rendering T1 with the four
+    # faces that happened to exist would have been a template that says one thing and looks like
+    # another.
+    #
+    # A licence per family, fetched and committed beside the others: the OFL requires the notice to
+    # travel with the font, and seven licences already live in public/fonts/licenses/.
+    # ---------------------------------------------------------------------------------------
+    {
+        "id": "reemkufi",
+        "css_family": "Reem Kufi",
+        "role": "labels-arabic",
+        "variable": True,
+        "weight_range": "400 700",
+        "src": f"{BASE}/reemkufi/ReemKufi%5Bwght%5D.ttf",
+        "cache_name": "ReemKufi[wght].ttf",
+        "profile": "arabic",
+        "out": "reemkufi-arabic-var",
+        "above_fold": False,
+        "licence": f"{BASE}/reemkufi/OFL.txt",
+        "licence_name": "ReemKufi-OFL.txt",
+    },
+    {
+        "id": "amiri-regular",
+        "css_family": "Amiri",
+        "role": "verse-arabic",
+        "variable": False,
+        "weight": 400,
+        "src": f"{BASE}/amiri/Amiri-Regular.ttf",
+        "cache_name": "Amiri-Regular.ttf",
+        "profile": "arabic",
+        "out": "amiri-arabic-400",
+        "above_fold": False,
+        "licence": f"{BASE}/amiri/OFL.txt",
+        "licence_name": "Amiri-OFL.txt",
+    },
+    {
+        "id": "notonaskh",
+        "css_family": "Noto Naskh Arabic",
+        "role": "body-arabic",
+        "variable": True,
+        "weight_range": "400 700",
+        "src": f"{BASE}/notonaskharabic/NotoNaskhArabic%5Bwght%5D.ttf",
+        "cache_name": "NotoNaskhArabic[wght].ttf",
+        "profile": "arabic",
+        "out": "notonaskh-arabic-var",
+        "above_fold": False,
+        "licence": f"{BASE}/notonaskharabic/OFL.txt",
+        "licence_name": "NotoNaskhArabic-OFL.txt",
+    },
+    {
+        "id": "cinzel",
+        "css_family": "Cinzel",
+        "role": "labels-latin",
+        "variable": True,
+        "weight_range": "400 700",
+        "src": f"{BASE}/cinzel/Cinzel%5Bwght%5D.ttf",
+        "cache_name": "Cinzel[wght].ttf",
+        "profile": "latin",
+        "out": "cinzel-latin-var",
+        "above_fold": False,
+        "licence": f"{BASE}/cinzel/OFL.txt",
+        "licence_name": "Cinzel-OFL.txt",
+    },
 ]
 
 

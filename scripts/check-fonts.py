@@ -93,6 +93,33 @@ def collect_strings(node, seen: set[str], depth: int = 0) -> None:
             collect_strings(value, seen, depth + 1)
 
 
+def feature_inputs(font, tag: str) -> set[str]:
+    """Every glyph a feature's lookups reference as input or coverage, across GSUB and GPOS."""
+    used: set[str] = set()
+    for table_name in ("GSUB", "GPOS"):
+        if table_name not in font:
+            continue
+        table = font[table_name].table
+        if not table.FeatureList or not table.LookupList:
+            continue
+        indices: set[int] = set()
+        for record in table.FeatureList.FeatureRecord:
+            if record.FeatureTag == tag:
+                indices.update(record.Feature.LookupListIndex)
+        for index in indices:
+            lookup = table.LookupList.Lookup[index]
+            for subtable in lookup.SubTable:
+                real = getattr(subtable, "ExtSubTable", subtable) or subtable
+                for attr in ("Coverage", "InputCoverage", "BacktrackCoverage", "LookAheadCoverage"):
+                    coverage = getattr(real, attr, None)
+                    if isinstance(coverage, list):
+                        for item in coverage:
+                            used.update(getattr(item, "glyphs", []) or [])
+                    elif coverage is not None:
+                        used.update(getattr(coverage, "glyphs", []) or [])
+    return used
+
+
 def layout_features(font: TTFont, table: str) -> set[str]:
     if table not in font:
         return set()
@@ -135,14 +162,32 @@ def main() -> int:
         expected = requested & source_cmap
         dropped = expected - subset_cmap
 
-        # 2. Joining features preserved. Only the Arabic faces are held to this: a Latin subset
-        #    legitimately loses `mark`/`mkmk` because it requested no combining marks, whereas for
-        #    Arabic those features ARE the shaping.
-        missing_features: set[str] = set()
+        # 2. Shaping features preserved — asked per table, because the two tables do different jobs.
+        #
+        #    GSUB *substitutes* glyphs: init/medi/fina/isol/rlig/calt are what keep Arabic joined, and
+        #    losing any of them is a hard failure.
+        #
+        #    GPOS *positions* glyphs: `mark` and `mkmk` are what place the harakat under and over a
+        #    letter. That is the one that matters for a verse with diacritics, and it is asserted.
+        #
+        #    The previous rule lumped both tables' tags together and required a `mark` feature in
+        #    *either*. Measured on Amiri: `GPOS:mark` survives subsetting — harakat are positioned
+        #    correctly — while `GSUB:mark` is pruned because its coverage referenced one Latin
+        #    combining glyph the subset never asks for. Failing the gate for that was a false alarm,
+        #    and requiring it would have meant carrying U+0305 in every Arabic face.
+        missing_by_table: dict[str, set[str]] = {}
         for table in ("GSUB", "GPOS"):
-            missing_features |= layout_features(source, table) - layout_features(subset, table)
-        critical = JOINING_FEATURES if entry["profile"] == "arabic" else set()
-        missing_joining = missing_features & critical
+            missing_by_table[table] = layout_features(source, table) - layout_features(subset, table)
+        missing_features = set().union(*missing_by_table.values())
+
+        # `JOINING_FEATURES` names both kinds in one set; the point of the split is that `mark` and
+        # `mkmk` are positional, so they are looked for in GPOS only.
+        substitution_only = JOINING_FEATURES - {"mark", "mkmk"}
+        critical_subst = substitution_only if entry["profile"] == "arabic" else set()
+        critical_position = {"mark", "mkmk"} if entry["profile"] == "arabic" else set()
+        missing_joining = (missing_by_table["GSUB"] & critical_subst) | (
+            missing_by_table["GPOS"] & critical_position
+        )
         pruned_stylistic = {
             tag for tag in missing_features if tag.startswith(STYLISTIC_PREFIXES)
         }
