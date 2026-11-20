@@ -28,7 +28,9 @@
     "check:native": "node scripts/check-native-deps.mjs",
     "test:db:invitations": "node --import tsx tests/db/invitations.mjs",
     "test:db:security": "node --import tsx tests/db/security.mjs",
-    "fonts:fallbacks": "python3 scripts/font-fallbacks.py"
+    "fonts:fallbacks": "python3 scripts/font-fallbacks.py",
+    "test:browser": "node tests/browser/countdown-stability.mjs --ticks 130 && node tests/browser/measure.mjs",
+    "test:browser:stability": "node tests/browser/countdown-stability.mjs --ticks 130"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
@@ -52,6 +54,7 @@
     "postcss": "8.4.49",
     "tailwindcss": "3.4.19",
     "tsx": "^4.23.15",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "playwright": "^1.49.0"
   }
 }

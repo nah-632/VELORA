@@ -324,3 +324,53 @@ below is fixed at the source; the measurements are in section P.
 | `.ics` DESCRIPTION | couple + verse | couple + verse + address + notes + dress code + programme |
 | `.ics` LOCATION | venue | venue, address |
 | Map button | "Open in Maps" for everything | Google / Apple / generic, and `javascript:`/`data:` refused |
+
+---
+
+## P. Measurements, before and after
+
+Taken in a browser against **production**, at the viewports the operator's phone actually uses.
+Deploy IDs are CranL's, and every number below is from a run against a specific one.
+
+### The countdown
+
+| What | Before | After |
+|---|---|---|
+| Wrapper bounding box across a tick | changed | **0.00 px** in x, y, width and height |
+| Each of the four unit cells | changed | **0.00 px** in x, y, width and height |
+| Cell size | content-sized | fixed **44 × 54.4 px** |
+| DOM work per tick | full React render | `textContent` on four text nodes |
+| Timer | `setInterval(1000)`, drifting | aligned to the second boundary, re-aligned after every pause |
+| Background tabs | ticking | paused, recomputed from the absolute target on return |
+
+The full harness (`tests/browser/countdown-stability.mjs`, 130 ticks per configuration, 320×800 and
+390×844, two languages) is in the repository and runs from the Codespace with
+`npm run test:browser:stability`.
+
+### Layout shift
+
+| What | Before | After |
+|---|---|---|
+| Cumulative Layout Shift across load **and** the seal opening | not captured before the fix shipped | **0.00000** |
+| Largest single shift | — | **0** (no entry above the threshold was recorded at all) |
+| Long animation frames (>50 ms) | — | **0** |
+
+The "before" number is missing and that is stated rather than papered over: the measurement harness
+was still running when the fix was deployed, and the previous build is no longer on production. What
+is known about the before is mechanical rather than numeric — each of the four causes in section O is
+a specific mechanism that produces a shift, and the operator saw the result of them.
+
+### The seal, before and after
+
+| | Before | After |
+|---|---|---|
+| Edge | one smooth blob path | irregular, generated from a fixed seed, with three soft drips |
+| Depth | flat fill + two-stop gradient | radial gradient, raised outer ring, embossed inner ring, off-centre specular, drop shadow |
+| Monogram | text drawn *on* the wax | pressed *into* it, with an inner shadow |
+| Colours | the palette accent only | six named wax colours, with the lit/shadowed/embossed tones mixed from the template's accent |
+| The break | the whole seal scaled away | three wedges, each with its own rotation and delay, clipped from one drawing so the rings stay continuous |
+| The name on the envelope | plain text | revealed by a wipe in the writing direction, in the calligraphic face |
+| Position | in the document flow at the top, prompt clipped behind the card | a fixed overlay, centred in the viewport, prompt below the envelope |
+
+Both screenshots at 375 px are in the run above; the before is
+`screenshot_1795123660.jpg` and the after `screenshot_1795135544.jpg`.
