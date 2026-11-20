@@ -11,6 +11,13 @@
 import { getSql } from "@/lib/db";
 import { publicEnv } from "@/lib/env";
 import { newGuestToken } from "@/features/admin/credentials";
+import {
+  DEFAULT_WHATSAPP,
+  renderTemplate,
+  resolveAudience,
+  type WhatsappPurpose,
+} from "@/features/invitations/messages";
+import { venueVariables, venuesForGuest, type Venue } from "@/features/invitations/venues";
 import { type GccCode } from "@/lib/phone";
 import { type ParsedGuest } from "./import";
 
@@ -28,6 +35,8 @@ export interface GuestRow {
   open_count: number;
   personal_line_ar: string | null;
   personal_line_en: string | null;
+  gender: string;
+  audience: string | null;
   response: string | null;
   companions_count: number | null;
 }
@@ -36,7 +45,7 @@ export async function listGuests(eventId: string): Promise<GuestRow[]> {
   return getSql()<GuestRow[]>`
     select g.id, g.full_name, g.phone, g.category, g.language, g.max_companions, g.token,
            g.send_status, g.sent_at, g.first_opened_at, g.open_count,
-           g.personal_line_ar, g.personal_line_en,
+           g.personal_line_ar, g.personal_line_en, g.gender, g.audience,
            r.response, r.companions_count
       from public.guests g
       left join public.rsvps r on r.guest_id = g.id
@@ -67,10 +76,11 @@ export async function addGuests(
   for (const row of rows) {
     await getSql()`
       insert into public.guests (event_id, full_name, phone, category, language, max_companions,
-                                 token, personal_line_ar, personal_line_en)
+                                 token, personal_line_ar, personal_line_en, gender, audience)
       values (${eventId}, ${row.fullName}, ${row.phone}, ${row.category},
               ${options.language ?? "ar"}, ${row.maxCompanions},
-              ${newGuestToken()}, ${row.personalLineAr}, ${row.personalLineEn})`;
+              ${newGuestToken()}, ${row.personalLineAr}, ${row.personalLineEn},
+              ${row.gender ?? "neutral"}, ${row.audience ?? null})`;
     inserted += 1;
   }
   return inserted;
@@ -87,14 +97,23 @@ export async function markGuestsSent(ids: string[]): Promise<number> {
 
 export async function updateGuest(
   id: string,
-  fields: { category?: string; maxCompanions?: number; personalLineAr?: string | null; personalLineEn?: string | null },
+  fields: {
+    category?: string;
+    maxCompanions?: number;
+    personalLineAr?: string | null;
+    personalLineEn?: string | null;
+    gender?: string;
+    audience?: string | null;
+  },
 ): Promise<void> {
   await getSql()`
     update public.guests set
       category = coalesce(${fields.category ?? null}, category),
       max_companions = coalesce(${fields.maxCompanions ?? null}, max_companions),
       personal_line_ar = ${fields.personalLineAr ?? null},
-      personal_line_en = ${fields.personalLineEn ?? null}
+      personal_line_en = ${fields.personalLineEn ?? null},
+      gender = coalesce(${fields.gender ?? null}, gender),
+      audience = ${fields.audience ?? null}
     where id = ${id}`;
 }
 
@@ -115,57 +134,58 @@ export function whatsappUrl(phone: string, message: string): string {
   return `https://wa.me/${phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(message)}`;
 }
 
-export interface MessageContext {
-  guestName: string;
-  link: string;
-  coupleNames: string;
-  date: string;
-  venue: string;
-}
-
 /**
- * The message the operator sends. `{guest_name}` and `{link}` are the brief's variables; the rest
- * are conveniences so the operator does not retype the couple's names into 50 messages.
+ * The WhatsApp deep link for one guest.
+ *
+ * Three things it knows that the first version did not:
+ *
+ *   - **which hall**, from the guest's audience. `{venue_name_for_guest}` is the guest's own hall, and
+ *     both halls only for a household — a message addressed to one person should say where that
+ *     person is expected, not offer them a choice.
+ *   - **which message**, from Settings, falling back to the shipped default for that purpose and that
+ *     language. The operator edits four messages once and all 50 sends use them.
+ *   - **the guest's language**, from their row.
  */
-export const DEFAULT_MESSAGES = {
-  ar: "أهلاً {guest_name}،\nيسعدنا دعوتكم إلى حفل زفاف {couple_names}.\nالدعوة الخاصة بكم:\n{link}",
-  en: "Dear {guest_name},\nWe would be delighted to have you at the wedding of {couple_names}.\nYour invitation:\n{link}",
-} as const;
+export function whatsappForGuest(input: {
+  guest: { full_name: string; phone: string; token: string; language: string; gender: string; audience: string | null };
+  event: {
+    bride_name_ar: string | null; bride_name_en: string | null;
+    groom_name_ar: string | null; groom_name_en: string | null;
+    event_datetime: Date; timezone: string;
+  };
+  venues: Venue[];
+  purpose?: WhatsappPurpose;
+  overrides?: Record<string, Record<string, string>> | null;
+}): string {
+  const { guest, event } = input;
+  const locale: "ar" | "en" = guest.language === "en" ? "en" : "ar";
+  const purpose = input.purpose ?? "invite";
 
-export function buildMessage(template: string, context: MessageContext): string {
-  return template
-    .replaceAll("{guest_name}", context.guestName)
-    .replaceAll("{couple_names}", context.coupleNames)
-    .replaceAll("{date}", context.date)
-    .replaceAll("{venue}", context.venue)
-    .replaceAll("{link}", context.link);
-}
+  const view = venuesForGuest(
+    input.venues,
+    resolveAudience((guest.gender as "male" | "female" | "neutral") ?? "neutral", guest.audience),
+  );
+  const hallVars = venueVariables(view, locale);
 
-/** The WhatsApp deep link for one guest, in the language that guest's invitation opens in. */
-export function guestWhatsappLink(
-  guest: { full_name: string; phone: string; token: string; language: string },
-  event: { bride_name_ar: string | null; bride_name_en: string | null; groom_name_ar: string | null; groom_name_en: string | null; event_datetime: Date; venue_name_ar: string | null; venue_name_en: string | null },
-  options: { template?: string; locale?: "ar" | "en"; defaultCountry?: GccCode } = {},
-): string {
-  const locale = options.locale ?? (guest.language === "en" ? "en" : "ar");
-  const couple =
-    locale === "ar"
-      ? [event.groom_name_ar, event.bride_name_ar].filter(Boolean).join(" و ")
-      : [event.groom_name_en, event.bride_name_en].filter(Boolean).join(" & ");
-  const venue = (locale === "ar" ? event.venue_name_ar : event.venue_name_en) ?? "";
+  // The couple's names, preferring the guest's own script and falling back to the other.
+  const first = (ar: string | null, en: string | null) => (locale === "ar" ? ar ?? en ?? "" : en ?? ar ?? "");
   const date = new Intl.DateTimeFormat(locale === "ar" ? "ar-BH" : "en-BH", {
-    dateStyle: "long",
+    dateStyle: "full",
     timeStyle: "short",
-    timeZone: "Asia/Bahrain",
+    timeZone: event.timezone || "Asia/Bahrain",
   }).format(event.event_datetime);
 
-  const message = buildMessage(options.template ?? DEFAULT_MESSAGES[locale], {
-    guestName: guest.full_name,
-    link: inviteUrl(guest.token),
-    coupleNames: couple,
-    date,
-    venue,
-  });
+  const template = input.overrides?.[purpose]?.[locale]?.trim() || DEFAULT_WHATSAPP[purpose][locale];
 
-  return whatsappUrl(guest.phone, message);
+  return whatsappUrl(
+    guest.phone,
+    renderTemplate(template, {
+      guest_name: guest.full_name,
+      groom: first(event.groom_name_ar, event.groom_name_en),
+      bride: first(event.bride_name_ar, event.bride_name_en),
+      date,
+      link: inviteUrl(guest.token),
+      ...hallVars,
+    }),
+  );
 }

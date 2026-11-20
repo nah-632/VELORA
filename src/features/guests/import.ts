@@ -22,6 +22,9 @@ import { normalizePhone, phoneErrorText, type GccCode, type PhoneResult } from "
 export const GUEST_CATEGORIES = ["family", "friends", "work", "other"] as const;
 export type GuestCategory = (typeof GUEST_CATEGORIES)[number];
 
+export type GuestGender = "male" | "female" | "neutral";
+export type GuestAudience = "women" | "men" | "both";
+
 export interface ParsedGuest {
   line: number;
   fullName: string;
@@ -30,7 +33,24 @@ export interface ParsedGuest {
   maxCompanions: number;
   personalLineAr: string | null;
   personalLineEn: string | null;
+  gender: GuestGender;
+  /** Null means "work it out from the gender", which is what most imports want. */
+  audience: GuestAudience | null;
 }
+
+/** The words an operator actually writes in that column, in either language. */
+const GENDER_WORDS: Record<string, GuestGender> = {
+  m: "male", male: "male", man: "male", ذكر: "male", رجل: "male",
+  f: "female", female: "female", woman: "female", أنثى: "female", انثى: "female", امرأة: "female", سيدة: "female",
+  n: "neutral", neutral: "neutral", "": "neutral", محايد: "neutral",
+};
+
+const AUDIENCE_WORDS: Record<string, GuestAudience> = {
+  women: "women", w: "women", ladies: "women", "women's": "women",
+  نساء: "women", النساء: "women", "قاعة النساء": "women",
+  men: "men", m: "men", gents: "men", mens: "men", رجال: "men", الرجال: "men", "قاعة الرجال": "men",
+  both: "both", "": "both", الكل: "both", الاثنين: "both", together: "both",
+};
 
 export interface RejectedRow {
   line: number;
@@ -53,6 +73,8 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   companions: ["companions", "max companions", "guests", "plus ones", "المرافقون", "عدد المرافقين", "مرافقين"],
   personalAr: ["personal_line_ar", "personal ar", "arabic line", "رسالة عربية", "سطر عربي"],
   personalEn: ["personal_line_en", "personal en", "english line", "رسالة إنجليزية", "سطر إنجليزي"],
+  gender: ["gender", "sex", "الجنس", "التذكير والتأنيث"],
+  audience: ["audience", "hall", "section", "القاعة", "الجمهور"],
 };
 
 const CATEGORY_WORDS: Record<string, GuestCategory> = {
@@ -150,9 +172,14 @@ export function parseGuestList(
 
   const detectedColumns = hasHeader
     ? firstCells.filter((_, position) => headerKeys[position])
-    : ["name", "phone", "category", "companions", "personal_line_ar", "personal_line_en"].slice(0, 2);
+    : ["name", "phone", "category", "companions"].slice(0, 2);
 
   const dataLines = hasHeader ? lines.slice(1) : lines;
+  // The default column layout for a headerless paste: name, phone, then the optional columns in the
+  // order the brief lists them, including the two new ones.
+  if (!hasHeader) {
+    index = { name: 0, phone: 1, category: 2, companions: 3, gender: 4, audience: 5, personalAr: 6, personalEn: 7 };
+  }
 
   dataLines.forEach((line, offset) => {
     // Line numbers are 1-based and refer to the text the operator pasted, header included, so the
@@ -196,6 +223,13 @@ export function parseGuestList(
     const personalLineAr = index.personalAr !== undefined ? trim(cells[index.personalAr]) : null;
     const personalLineEn = index.personalEn !== undefined ? trim(cells[index.personalEn]) : null;
 
+    const genderCell = index.gender !== undefined ? (cells[index.gender] ?? "").trim().toLowerCase() : "";
+    const gender: GuestGender = GENDER_WORDS[genderCell] ?? "neutral";
+
+    const audienceCell = index.audience !== undefined ? (cells[index.audience] ?? "").trim().toLowerCase() : "";
+    // An empty audience cell is not "both": it means the operator did not say, and the gender decides.
+    const audience: GuestAudience | null = audienceCell ? (AUDIENCE_WORDS[audienceCell] ?? null) : null;
+
     const firstLine = seen.get(phone.e164);
     if (firstLine !== undefined) {
       duplicates.push({ line: lineNumber, phone: phone.e164, firstLine });
@@ -211,6 +245,8 @@ export function parseGuestList(
       maxCompanions,
       personalLineAr,
       personalLineEn,
+      gender,
+      audience,
     });
   });
 

@@ -14,6 +14,8 @@ import {
   startTotpAction,
 } from "@/features/admin/actions";
 import { totpState } from "@/features/admin/totp";
+import { WhatsappEditor } from "@/features/admin/WhatsappEditor";
+import { getSql } from "@/lib/db";
 
 /**
  * Settings: the operator's own password, and their second factor.
@@ -41,6 +43,7 @@ export default async function SettingsPage({
   params: { locale: string };
   searchParams: {
     changed?: string;
+    messages?: string;
     enrolling?: string;
     totp?: string;
     error?: string;
@@ -53,6 +56,9 @@ export default async function SettingsPage({
   const t = await getTranslations("admin.settings");
   const state = await totpState(admin.id);
   const sessions = await activeSessionCount();
+  const settingsRow = await getSql()<{ message_templates: unknown }[]>`
+    select message_templates from public.settings limit 1`;
+  const templates = (settingsRow[0]?.message_templates ?? {}) as Record<string, Record<string, string>>;
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-12">
@@ -73,6 +79,11 @@ export default async function SettingsPage({
       {searchParams.totp === "off" ? (
         <div className="mb-6">
           <StatePanel kind="empty" message={t("totpDisabled")} />
+        </div>
+      ) : null}
+      {searchParams.messages ? (
+        <div className="mb-6">
+          <StatePanel kind="success" message={t("messagesSaved")} />
         </div>
       ) : null}
       {searchParams.error ? (
@@ -145,6 +156,17 @@ export default async function SettingsPage({
             <Button type="submit">{t("start")}</Button>
           </form>
         )}
+      </Card>
+
+      <Card className="mt-4">
+        <WhatsappEditor
+          initial={templates}
+          labels={{
+            title: t("messagesTitle"), hint: t("messagesHint"),
+            arabic: t("messagesArabic"), english: t("messagesEnglish"),
+            save: t("messagesSave"), variables: t("messagesVariables"), reset: t("messagesReset"),
+          }}
+        />
       </Card>
 
       <p className="mt-6 text-xs text-ink-muted">{t("lostDevice")}</p>

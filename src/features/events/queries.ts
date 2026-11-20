@@ -10,7 +10,7 @@ import { zonedToUtc } from "@/lib/time";
 
 /** The database handle, injectable so the writers can be driven against PGlite in tests. */
 type Sql = ReturnType<typeof getSql>;
-import { type EventInput } from "./schema";
+import { type EventInput, type VenueInput } from "./schema";
 
 export interface EventListRow {
   id: string;
@@ -82,6 +82,7 @@ export interface EventDetail extends EventListRow {
   sections_en: string | null;
   dress_code_ar: string | null;
   dress_code_en: string | null;
+  copy_templates: unknown;
   quote_ar: string | null;
   quote_en: string | null;
   notes_ar: string | null;
@@ -112,6 +113,72 @@ export interface TemplateOption {
   slug: string;
   name_ar: string;
   name_en: string;
+}
+
+export interface VenueRow {
+  id: string;
+  kind: string;
+  sort_order: number;
+  name_ar: string | null;
+  name_en: string | null;
+  address_ar: string | null;
+  address_en: string | null;
+  map_url: string | null;
+  start_time: string | null;
+  entrance_ar: string | null;
+  entrance_en: string | null;
+  parking_ar: string | null;
+  parking_en: string | null;
+  dress_code_ar: string | null;
+  dress_code_en: string | null;
+  notes_ar: string | null;
+  notes_en: string | null;
+  contact_phone: string | null;
+}
+
+export async function listVenues(eventId: string, options: { sql?: Sql } = {}): Promise<VenueRow[]> {
+  const sql = options.sql ?? getSql();
+  return sql<VenueRow[]>`
+    select * from public.event_venues where event_id = ${eventId}
+     order by sort_order, kind`;
+}
+
+/**
+ * Replace the halls of an event with exactly this set.
+ *
+ * Delete-then-insert rather than a diff: there are at most three rows, they are edited as a set (the
+ * mode switch can remove a hall entirely), and a diff would have to decide what to do with a row whose
+ * kind no longer exists. In one transaction, so a failure leaves the previous set in place.
+ */
+export async function saveVenues(
+  eventId: string,
+  venues: VenueInput[],
+  options: { sql?: Sql } = {},
+): Promise<void> {
+  const sql = options.sql ?? getSql();
+  await sql.begin(async (tx) => {
+    await tx`delete from public.event_venues where event_id = ${eventId}`;
+    let order = 0;
+    for (const venue of venues) {
+      await tx`
+        insert into public.event_venues (
+          event_id, kind, sort_order, name_ar, name_en, address_ar, address_en, map_url, start_time,
+          entrance_ar, entrance_en, parking_ar, parking_en, dress_code_ar, dress_code_en,
+          notes_ar, notes_en, contact_phone
+        ) values (
+          ${eventId}, ${venue.kind}, ${order},
+          ${venue.name_ar ?? null}, ${venue.name_en ?? null},
+          ${venue.address_ar ?? null}, ${venue.address_en ?? null},
+          ${venue.map_url ?? null}, ${venue.start_time ?? null},
+          ${venue.entrance_ar ?? null}, ${venue.entrance_en ?? null},
+          ${venue.parking_ar ?? null}, ${venue.parking_en ?? null},
+          ${venue.dress_code_ar ?? null}, ${venue.dress_code_en ?? null},
+          ${venue.notes_ar ?? null}, ${venue.notes_en ?? null},
+          ${venue.contact_phone ?? null}
+        )`;
+      order += 1;
+    }
+  });
 }
 
 export async function listTemplateOptions(): Promise<TemplateOption[]> {

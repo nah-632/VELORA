@@ -10,7 +10,7 @@
  * anchor element.
  */
 
-export type MapKind = "google" | "apple" | "other";
+export type MapKind = "google" | "apple" | "waze" | "other";
 
 export interface MapClassification {
   ok: boolean;
@@ -31,6 +31,9 @@ const GOOGLE_HOSTS = [
 ];
 
 const APPLE_HOSTS = ["maps.apple.com", "apple.co"];
+
+// Waze share links arrive as waze.com/ul/… and are what a lot of people here send.
+const WAZE_HOSTS = ["waze.com", "waze.app.link"];
 
 function hostMatches(host: string, candidates: string[]): boolean {
   return candidates.some((candidate) => host === candidate || host.endsWith(`.${candidate}`));
@@ -62,7 +65,9 @@ export function classifyMapUrl(input: string | null | undefined): MapClassificat
     ? "google"
     : hostMatches(host, APPLE_HOSTS)
       ? "apple"
-      : "other";
+      : hostMatches(host, WAZE_HOSTS)
+        ? "waze"
+        : "other";
 
   return { ok: true, kind, href: url.toString() };
 }
@@ -71,9 +76,12 @@ export function classifyMapUrl(input: string | null | undefined): MapClassificat
 export function mapButtonLabel(kind: MapKind, locale: "ar" | "en"): string {
   if (locale === "ar") {
     if (kind === "apple") return "افتح في خرائط آبل";
+    if (kind === "waze") return "افتح في ويز";
+    if (kind === "google") return "افتح في خرائط جوجل";
     return "افتح الموقع في الخرائط";
   }
   if (kind === "apple") return "Open in Apple Maps";
+  if (kind === "waze") return "Open in Waze";
   if (kind === "google") return "Open in Google Maps";
   return "Open in Maps";
 }

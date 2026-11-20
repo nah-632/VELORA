@@ -9,7 +9,24 @@
  * It supports the one form the application uses: `sql\`select … ${value}\``.
  */
 export function pgliteSql(db) {
-  return async function sql(strings, ...values) {
+  /**
+   * `sql.begin(fn)` — the transaction the venue writer uses, so the tests drive the shipping code
+   * rather than a simplified version of it. A rollback on throw is the whole point: half a set of
+   * halls is worse than none.
+   */
+  async function begin(fn) {
+    await db.exec("begin");
+    try {
+      const result = await fn(pgliteSql(db));
+      await db.exec("commit");
+      return result;
+    } catch (error) {
+      await db.exec("rollback");
+      throw error;
+    }
+  }
+
+  const sql = async function sql(strings, ...values) {
     let text = "";
     const params = [];
     for (let i = 0; i < strings.length; i += 1) {
@@ -22,4 +39,6 @@ export function pgliteSql(db) {
     const result = await db.query(text, params);
     return result.rows;
   };
+  sql.begin = begin;
+  return sql;
 }

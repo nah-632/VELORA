@@ -17,11 +17,18 @@
  */
 import { getSql } from "@/lib/db";
 import { DesignConfigSchema, type DesignConfig } from "@/features/catalogue/design-config";
+import { resolveAudience, resolveCopy } from "./messages";
 import { type InvitationBlocks } from "@/features/studio/blocks";
 
 export interface PublicInvitation {
   guestName: string;
   language: "ar" | "en";
+  /** What the copy and the Arabic buttons inflect for. */
+  gender: "male" | "female" | "neutral";
+  /** Which hall this guest is expected in: what the operator set, or what the gender implies. */
+  audience: "women" | "men" | "both";
+  copyByLocale: { ar: Record<string, string>; en: Record<string, string> };
+  venues: import("./venues").Venue[];
   /** How this design opens. 'none' still renders the invitation, just without an entrance. */
   animation: "wax_seal" | "curtain" | "none";
   personalLine: string | null;
@@ -68,6 +75,8 @@ interface Row {
   personal_line_ar: string | null;
   personal_line_en: string | null;
   first_opened_at: Date | null;
+  gender: string;
+  audience: string | null;
   bride_name_ar: string | null;
   bride_name_en: string | null;
   groom_name_ar: string | null;
@@ -100,6 +109,8 @@ interface Row {
   thank_you_declined_en: string | null;
   design_config: unknown;
   opening_animation_type: string | null;
+  copy_templates: unknown;
+  venues: unknown;
 }
 
 /**
@@ -142,13 +153,17 @@ export async function loadInvitation(
    */
   if (options.recordOpen === false) {
     const rows = await sql<Row[]>`
-      select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en,
+      select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en, g.gender, g.audience, g.gender, g.audience,
              g.first_opened_at,
              e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
              e.event_datetime, e.timezone, e.hijri_date_text,
              e.venue_name_ar, e.venue_name_en, e.venue_address_ar, e.venue_address_en, e.venue_map_url,
            e.parking_ar, e.parking_en, e.entrance_ar, e.entrance_en, e.sections_ar, e.sections_en,
-           e.dress_code_ar, e.dress_code_en, e.schedule,
+           e.dress_code_ar, e.dress_code_en, e.schedule, e.copy_templates,
+             coalesce((select jsonb_agg(to_jsonb(v) order by v.sort_order, v.kind)
+                         from public.event_venues v where v.event_id = e.id), '[]'::jsonb) as venues, e.copy_templates,
+           coalesce((select jsonb_agg(to_jsonb(v) order by v.sort_order, v.kind)
+                       from public.event_venues v where v.event_id = e.id), '[]'::jsonb) as venues,
              e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
              e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
              e.thank_you_declined_ar, e.thank_you_declined_en,
@@ -167,15 +182,19 @@ export async function loadInvitation(
          set first_opened_at = coalesce(first_opened_at, now()),
              open_count = open_count + 1
        where token = ${token}
-       returning id, full_name, language, personal_line_ar, personal_line_en, first_opened_at, event_id
+       returning id, full_name, language, personal_line_ar, personal_line_en, gender, audience, first_opened_at, event_id
     )
     select o.id as guest_id, o.full_name, o.language, o.personal_line_ar, o.personal_line_en,
-           o.first_opened_at,
+           o.gender, o.audience, o.first_opened_at,
            e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
            e.event_datetime, e.timezone, e.hijri_date_text,
            e.venue_name_ar, e.venue_name_en, e.venue_address_ar, e.venue_address_en, e.venue_map_url,
            e.parking_ar, e.parking_en, e.entrance_ar, e.entrance_en, e.sections_ar, e.sections_en,
-           e.dress_code_ar, e.dress_code_en, e.schedule,
+           e.dress_code_ar, e.dress_code_en, e.schedule, e.copy_templates,
+             coalesce((select jsonb_agg(to_jsonb(v) order by v.sort_order, v.kind)
+                         from public.event_venues v where v.event_id = e.id), '[]'::jsonb) as venues, e.copy_templates,
+           coalesce((select jsonb_agg(to_jsonb(v) order by v.sort_order, v.kind)
+                       from public.event_venues v where v.event_id = e.id), '[]'::jsonb) as venues,
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
@@ -203,10 +222,24 @@ function toInvitation(row: Row): PublicInvitation | null {
       ? row.opening_animation_type
       : "wax_seal";
 
+  const gender: "male" | "female" | "neutral" =
+    row.gender === "male" || row.gender === "female" ? row.gender : "neutral";
+  const audience = resolveAudience(gender, row.audience);
+  const venues = (Array.isArray(row.venues) ? row.venues : []) as import("./venues").Venue[];
+  const overrides = (row.copy_templates ?? {}) as { ar?: Record<string, string>; en?: Record<string, string> };
+  const copyByLocale = {
+    ar: resolveCopy("ar", overrides, gender) as unknown as Record<string, string>,
+    en: resolveCopy("en", overrides, gender) as unknown as Record<string, string>,
+  };
+
   return {
     guestName: row.full_name,
     language,
     animation,
+    gender,
+    audience,
+    copyByLocale,
+    venues,
     personalLine: language === "ar" ? row.personal_line_ar : row.personal_line_en,
     design: design.data,
     blocks: blocksFromEvent(row, language),
@@ -282,13 +315,17 @@ export async function previewInvitationForGuest(
 ): Promise<PublicInvitation | null> {
   const sql = options.sql ?? getSql();
   const rows = await sql<Row[]>`
-    select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en,
+    select g.id as guest_id, g.full_name, g.language, g.personal_line_ar, g.personal_line_en, g.gender, g.audience, g.gender, g.audience,
            g.first_opened_at,
            e.bride_name_ar, e.bride_name_en, e.groom_name_ar, e.groom_name_en,
            e.event_datetime, e.timezone, e.hijri_date_text,
            e.venue_name_ar, e.venue_name_en, e.venue_address_ar, e.venue_address_en, e.venue_map_url,
            e.parking_ar, e.parking_en, e.entrance_ar, e.entrance_en, e.sections_ar, e.sections_en,
-           e.dress_code_ar, e.dress_code_en, e.schedule,
+           e.dress_code_ar, e.dress_code_en, e.schedule, e.copy_templates,
+             coalesce((select jsonb_agg(to_jsonb(v) order by v.sort_order, v.kind)
+                         from public.event_venues v where v.event_id = e.id), '[]'::jsonb) as venues, e.copy_templates,
+           coalesce((select jsonb_agg(to_jsonb(v) order by v.sort_order, v.kind)
+                       from public.event_venues v where v.event_id = e.id), '[]'::jsonb) as venues,
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,

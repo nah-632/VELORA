@@ -101,6 +101,43 @@ export type EventInput = z.infer<typeof EventInputSchema>;
 
 export type ScheduleItem = z.infer<typeof ScheduleItemSchema>;
 
+/**
+ * One hall.
+ *
+ * `kind` is the identity of the row, not a property to be edited freely: an event has at most one
+ * women's hall, one men's hall and one shared venue, and the database says so with a unique key. The
+ * editor therefore decides *which* rows exist — by the mode switch — and this schema validates what
+ * is in them.
+ */
+export const VenueInputSchema = z.object({
+  kind: z.enum(["women", "men", "shared"]),
+  name_ar: optionalText(120),
+  name_en: optionalText(120),
+  address_ar: optionalText(300),
+  address_en: optionalText(300),
+  map_url: optionalText(600),
+  start_time: optionalText(40),
+  entrance_ar: optionalText(200),
+  entrance_en: optionalText(200),
+  parking_ar: optionalText(300),
+  parking_en: optionalText(300),
+  dress_code_ar: optionalText(120),
+  dress_code_en: optionalText(120),
+  notes_ar: optionalText(400),
+  notes_en: optionalText(400),
+  contact_phone: optionalText(40),
+});
+
+export const VenuesInputSchema = z.array(VenueInputSchema).max(3);
+
+export type VenueInput = z.infer<typeof VenueInputSchema>;
+
+/** The per-event wording overrides: `{ ar: { slot: text }, en: { … } }`. */
+export const CopyOverridesSchema = z.record(
+  z.enum(["ar", "en"]),
+  z.record(z.string().max(40), trimmed(1200)),
+);
+
 export interface EventRecord {
   id: string;
   slug: string;
@@ -136,6 +173,8 @@ export interface ReadinessFields {
   sections_en?: string | null;
   schedule?: unknown[] | null;
   template_id: string | null;
+  /** The halls, for the checklist: a hall with no name, address or link is an invitation half-sent. */
+  venues?: { name: boolean; address: boolean; map: boolean }[] | null;
 }
 
 export type ChecklistItem = {
@@ -162,10 +201,28 @@ export function eventChecklist(fields: ReadinessFields): ChecklistItem[] {
   return [
     { key: "coupleNames", required: true, done: (Boolean(fields.bride_name_ar) && Boolean(fields.groom_name_ar)) || (Boolean(fields.bride_name_en) && Boolean(fields.groom_name_en)) },
     { key: "date", required: true, done: Boolean(fields.event_datetime) },
-    { key: "venue", required: true, done: any(fields.venue_name_ar, fields.venue_name_en) },
+    // "venue" now means: at least one hall, with a name. The older single-venue columns still count,
+    // so an event created before halls existed is not reported as broken.
+    {
+      key: "venue",
+      required: true,
+      done: any(fields.venue_name_ar, fields.venue_name_en) || (fields.venues ?? []).some((venue) => venue.name),
+    },
+    {
+      key: "venueAddress",
+      required: false,
+      done:
+        Boolean(any(fields.venue_address_ar, fields.venue_address_en)) ||
+        ((fields.venues ?? []).length > 0 && (fields.venues ?? []).every((venue) => !venue.name || venue.address)),
+    },
+    {
+      key: "venueMap",
+      required: false,
+      done:
+        Boolean(fields.venue_map_url) ||
+        ((fields.venues ?? []).length > 0 && (fields.venues ?? []).every((venue) => !venue.name || venue.map)),
+    },
     { key: "template", required: true, done: Boolean(fields.template_id) },
-    { key: "address", required: false, done: any(fields.venue_address_ar, fields.venue_address_en) },
-    { key: "map", required: false, done: Boolean(fields.venue_map_url) },
     { key: "notes", required: false, done: any(fields.notes_ar, fields.notes_en) },
     { key: "dressCode", required: false, done: any(fields.dress_code_ar, fields.dress_code_en) },
     { key: "parking", required: false, done: any(fields.parking_ar, fields.parking_en) },

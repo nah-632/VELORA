@@ -285,7 +285,9 @@
         "dressCode": "الزي المطلوب",
         "parking": "المواقف",
         "sections": "تقسيم القاعات",
-        "schedule": "برنامج الحفل"
+        "schedule": "برنامج الحفل",
+        "venueAddress": "Full address",
+        "venueMap": "Map link"
       },
       "addressAr": "العنوان الكامل (عربي)",
       "addressEn": "العنوان الكامل (إنجليزي)",
@@ -309,7 +311,31 @@
       "scheduleUp": "أعلى",
       "scheduleDown": "أسفل",
       "scheduleEmpty": "لا أسطر بعد.",
-      "scheduleItem": "سطر"
+      "scheduleItem": "سطر",
+      "venuesTitle": "القاعات",
+      "venuesHint": "قاعتان منفصلتان، أو قاعة واحدة تستقبل الجميع.",
+      "venuesSeparate": "قاعة للنساء وقاعة للرجال",
+      "venuesShared": "قاعة واحدة مشتركة",
+      "venuesWomen": "قاعة النساء",
+      "venuesMen": "قاعة الرجال",
+      "venuesSharedHall": "القاعة المشتركة",
+      "venuesCopy": "انسخ التفاصيل من القاعة الأخرى",
+      "venuesNameAr": "اسم القاعة (عربي)",
+      "venuesNameEn": "اسم القاعة (إنجليزي)",
+      "venuesMapHint": "رابط خرائط جوجل أو آبل أو ويز",
+      "venuesOpenTest": "افتح للتجربة",
+      "venuesTime": "وقت القاعة (اختياري)",
+      "venuesPhone": "هاتف للتواصل (اختياري)",
+      "copyTitle": "نصوص الدعوة",
+      "copyHint": "كل نص قابل للتعديل لهذه المناسبة. اتركه فارغًا ليعود إلى النص الافتراضي.",
+      "copyLanguage": "اللغة",
+      "copyArabic": "العربية",
+      "copyEnglish": "English",
+      "copyReset": "رجوع للافتراضي",
+      "copyResetAll": "إرجاع كل النصوص",
+      "copyChanged": "{count} نصًا معدّلًا",
+      "copyDefault": "النص الافتراضي",
+      "copyPlaceholders": "المتغيّرات"
     },
     "guests": {
       "title": "المدعوون",
@@ -345,7 +371,20 @@
       "previewBanner": "هذه معاينة لما يراه الضيف — لا تُحتسب كفتح",
       "hasPersonalLine": "له سطر شخصي",
       "noPersonalLine": "بلا سطر شخصي",
-      "backToEvent": "رجوع إلى المناسبة"
+      "backToEvent": "رجوع إلى المناسبة",
+      "genderLabel": "الصيغة",
+      "audienceLabel": "القاعة",
+      "gender": {
+        "neutral": "بلا تذكير",
+        "male": "مخاطب",
+        "female": "مخاطبة"
+      },
+      "audience": {
+        "derived": "حسب الصيغة",
+        "women": "قاعة النساء",
+        "men": "قاعة الرجال",
+        "both": "الاثنتان"
+      }
     },
     "totp": {
       "eyebrow": "خطوة ثانية",
@@ -386,7 +425,15 @@
       "enrolManual": "أو استخدم الرابط: otpauth (تجده في تعليمات التطبيق). المفتاح نفسه، بلا رمز QR بعد.",
       "enrolCode": "الرمز من التطبيق",
       "passwordToDisable": "كلمة المرور لتعطيله",
-      "lostDevice": "استعادة الوصول عند فقدان الجهاز: scripts/seed-admin.mjs --reset --disable-totp"
+      "lostDevice": "استعادة الوصول عند فقدان الجهاز: scripts/seed-admin.mjs --reset --disable-totp",
+      "messagesTitle": "رسائل الواتساب",
+      "messagesHint": "الرسائل الأربع التي ترسلها. اتركها فارغة لتعود إلى النص الافتراضي.",
+      "messagesArabic": "العربية",
+      "messagesEnglish": "English",
+      "messagesSave": "حفظ الرسائل",
+      "messagesVariables": "المتغيّرات",
+      "messagesReset": "رجوع للافتراضي",
+      "messagesSaved": "حُفظت الرسائل."
     }
   }
 }

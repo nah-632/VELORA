@@ -9,6 +9,8 @@
  */
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
+
+import { getSql } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 import { isLocale } from "@/i18n/routing";
@@ -16,6 +18,8 @@ import { assertSameOrigin, requireAdmin } from "@/features/admin/sessions";
 import { EventInputSchema, buildEventSlug, eventReadiness, type EventInput } from "./schema";
 // The reader lives in its own module so a test can prove it covers the schema. See form-fields.ts.
 import { readEventForm } from "./form-fields";
+import { saveVenues } from "./queries";
+import { VenuesInputSchema, CopyOverridesSchema } from "./schema";
 import { createEvent, getEvent, updateEvent } from "./queries";
 
 export async function createEventAction(formData: FormData): Promise<void> {
@@ -24,7 +28,8 @@ export async function createEventAction(formData: FormData): Promise<void> {
   await requireAdmin(locale);
   if (!assertSameOrigin()) redirect(`/${locale}/admin/events?error=origin`);
 
-  const parsed = EventInputSchema.safeParse(readEventForm(formData));
+  const raw = readEventForm(formData);
+  const parsed = EventInputSchema.safeParse(raw);
   if (!parsed.success) {
     redirect(`/${locale}/admin/events?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "invalid")}`);
   }
@@ -36,6 +41,9 @@ export async function createEventAction(formData: FormData): Promise<void> {
   });
 
   const id = await createEvent(parsed.data as EventInput, slug);
+  // The halls are their own rows, so they are written after the event exists.
+  const venues = VenuesInputSchema.safeParse((raw as { venues?: unknown }).venues);
+  if (venues.success && venues.data.length > 0) await saveVenues(id, venues.data);
   revalidatePath(`/${locale}/admin/events`);
   redirect(`/${locale}/admin/events/${id}`);
 }
@@ -47,12 +55,23 @@ export async function updateEventAction(formData: FormData): Promise<void> {
   await requireAdmin(locale);
   if (!assertSameOrigin()) redirect(`/${locale}/admin/events/${id}?error=origin`);
 
-  const parsed = EventInputSchema.safeParse(readEventForm(formData));
+  const raw = readEventForm(formData);
+  const parsed = EventInputSchema.safeParse(raw);
   if (!parsed.success) {
     redirect(`/${locale}/admin/events/${id}?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "invalid")}`);
   }
 
   await updateEvent(id, parsed.data as EventInput);
+
+  // Halls and wording are replaced as a set; deleting the last one is a legitimate edit now that
+  // "one shared venue" exists.
+  const venues = VenuesInputSchema.safeParse((raw as { venues?: unknown }).venues);
+  if (venues.success) await saveVenues(id, venues.data);
+  const copyOverrides = CopyOverridesSchema.safeParse((raw as { copy_templates?: unknown }).copy_templates);
+  if (copyOverrides.success) {
+    await getSql()`
+      update public.events set copy_templates = ${JSON.stringify(copyOverrides.data)}::text::jsonb where id = ${id}`;
+  }
 
   // Readiness is recomputed after the write, from what is actually stored, and the page is told
   // exactly which fields are still missing — "saved" and "ready to send" are different answers.

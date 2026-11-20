@@ -9,12 +9,16 @@ import { isLocale } from "@/i18n/routing";
 import { requireAdmin } from "@/features/admin/sessions";
 import { deleteGuestAction, markSentAction, updateGuestAction } from "@/features/guests/actions";
 import { ImportForm } from "@/features/guests/ImportForm";
-import { guestWhatsappLink, listGuests } from "@/features/guests/queries";
+import { listGuests, whatsappForGuest } from "@/features/guests/queries";
 import { eventChecklist, eventReadiness } from "@/features/events/schema";
 import { ScheduleEditor } from "@/features/events/ScheduleEditor";
-import { getEvent, listTemplateOptions } from "@/features/events/queries";
+import { VenuesEditor, type VenueFormValue } from "@/features/events/VenuesEditor";
+import { CopyEditor } from "@/features/events/CopyEditor";
+import { venueComplete } from "@/features/invitations/venues";
+import { getEvent, listTemplateOptions, listVenues } from "@/features/events/queries";
 import { updateEventAction } from "@/features/events/actions";
 import { formatPhone } from "@/lib/phone";
+import { getSql } from "@/lib/db";
 import { wallClockIn } from "@/lib/time";
 
 /**
@@ -51,7 +55,14 @@ export default async function EventPage({
 
   const t = await getTranslations("admin.events");
   const g = await getTranslations("admin.guests");
-  const [guests, templates] = await Promise.all([listGuests(id), listTemplateOptions()]);
+  const [guests, templates, venues, settingsRow] = await Promise.all([
+    listGuests(id),
+    listTemplateOptions(),
+    listVenues(id),
+    getSql()<{ message_templates: unknown; whatsapp_number: string }[]>`
+      select message_templates, whatsapp_number from public.settings limit 1`,
+  ]);
+  const messageTemplates = (settingsRow[0]?.message_templates ?? {}) as Record<string, Record<string, string>>;
 
   const readinessFields = {
     bride_name_ar: event.bride_name_ar,
@@ -74,6 +85,7 @@ export default async function EventPage({
     sections_en: event.sections_en,
     schedule: Array.isArray(event.schedule) ? event.schedule : [],
     template_id: event.template_id,
+    venues: venues.map((venue) => venueComplete(venue as never)),
   };
   const readiness = eventReadiness(readinessFields);
   const checklist = eventChecklist(readinessFields);
@@ -204,6 +216,46 @@ export default async function EventPage({
             </label>
 
             <div className="sm:col-span-2">
+              <VenuesEditor
+                initial={venues.map((venue): VenueFormValue => ({
+                  kind: venue.kind as VenueFormValue["kind"],
+                  name_ar: venue.name_ar ?? "", name_en: venue.name_en ?? "",
+                  address_ar: venue.address_ar ?? "", address_en: venue.address_en ?? "",
+                  map_url: venue.map_url ?? "", start_time: venue.start_time ?? "",
+                  entrance_ar: venue.entrance_ar ?? "", entrance_en: venue.entrance_en ?? "",
+                  parking_ar: venue.parking_ar ?? "", parking_en: venue.parking_en ?? "",
+                  dress_code_ar: venue.dress_code_ar ?? "", dress_code_en: venue.dress_code_en ?? "",
+                  notes_ar: venue.notes_ar ?? "", notes_en: venue.notes_en ?? "",
+                  contact_phone: venue.contact_phone ?? "",
+                }))}
+                labels={{
+                  title: t("venuesTitle"), hint: t("venuesHint"),
+                  modeSeparate: t("venuesSeparate"), modeShared: t("venuesShared"),
+                  womenHall: t("venuesWomen"), menHall: t("venuesMen"), sharedHall: t("venuesSharedHall"),
+                  copyFromOther: t("venuesCopy"), nameAr: t("venuesNameAr"), nameEn: t("venuesNameEn"),
+                  addressAr: t("addressAr"), addressEn: t("addressEn"),
+                  mapUrl: t("mapUrl"), mapHint: t("venuesMapHint"), openToTest: t("venuesOpenTest"),
+                  startTime: t("venuesTime"), entranceAr: t("entranceAr"), entranceEn: t("entranceEn"),
+                  parkingAr: t("parkingAr"), parkingEn: t("parkingEn"),
+                  dressAr: t("dressCodeAr"), dressEn: t("dressCodeEn"),
+                  notesAr: t("notesAr"), notesEn: t("notesEn"), phone: t("venuesPhone"),
+                }}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <CopyEditor
+                initial={(event.copy_templates ?? {}) as { ar?: Record<string, string>; en?: Record<string, string> }}
+                labels={{
+                  title: t("copyTitle"), hint: t("copyHint"), language: t("copyLanguage"),
+                  arabic: t("copyArabic"), english: t("copyEnglish"), reset: t("copyReset"),
+                  resetAll: t("copyResetAll"), changed: t("copyChanged"),
+                  defaultLabel: t("copyDefault"), placeholders: t("copyPlaceholders"),
+                }}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
               <h3 className="text-sm font-medium text-ink">{t("schedule")}</h3>
               <p className="mb-3 text-xs text-ink-muted">{t("scheduleHint")}</p>
               <ScheduleEditor
@@ -279,7 +331,13 @@ export default async function EventPage({
             sending slice, where it can be built as one form with checkboxes and no nesting.
           */}
           {guests.map((guest) => {
-            const waLink = guestWhatsappLink(guest, event, { locale: guest.language === "en" ? "en" : "ar" });
+            const waLink = whatsappForGuest({
+              guest,
+              event,
+              venues: venues as never,
+              purpose: "invite",
+              overrides: messageTemplates,
+            });
             const personalLine = locale === "ar" ? guest.personal_line_ar : guest.personal_line_en;
             return (
               <Card key={guest.id} className="p-4">
@@ -290,6 +348,14 @@ export default async function EventPage({
                   </span>
                   <span className="rounded-full border border-line px-2 py-0.5 text-xs text-ink-muted">
                     {guest.category}
+                  </span>
+                  {guest.gender !== "neutral" ? (
+                    <span className="rounded-full border border-line px-2 py-0.5 text-xs text-ink-muted">
+                      {g(`gender.${guest.gender}`)}
+                    </span>
+                  ) : null}
+                  <span className="rounded-full border border-line px-2 py-0.5 text-xs text-ink-muted">
+                    {g(`audience.${guest.audience ?? "derived"}`)}
                   </span>
                   <span className="text-xs text-ink-muted">
                     {guest.max_companions > 0 ? g("companions", { count: guest.max_companions }) : g("noCompanions")}
@@ -341,6 +407,31 @@ export default async function EventPage({
                         <option value="friends">friends</option>
                         <option value="work">work</option>
                         <option value="other">other</option>
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-sm font-medium text-ink">{g("genderLabel")}</span>
+                      <select
+                        name="gender"
+                        defaultValue={guest.gender}
+                        className="min-h-11 rounded-md border border-line bg-ground-paper px-3 text-sm text-ink"
+                      >
+                        <option value="neutral">{g("gender.neutral")}</option>
+                        <option value="male">{g("gender.male")}</option>
+                        <option value="female">{g("gender.female")}</option>
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-sm font-medium text-ink">{g("audienceLabel")}</span>
+                      <select
+                        name="audience"
+                        defaultValue={guest.audience ?? "derived"}
+                        className="min-h-11 rounded-md border border-line bg-ground-paper px-3 text-sm text-ink"
+                      >
+                        <option value="derived">{g("audience.derived")}</option>
+                        <option value="women">{g("audience.women")}</option>
+                        <option value="men">{g("audience.men")}</option>
+                        <option value="both">{g("audience.both")}</option>
                       </select>
                     </label>
                     <Field

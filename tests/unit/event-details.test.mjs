@@ -51,9 +51,11 @@ test("a thin invitation is sendable, and the checklist says what is thin", () =>
 
   assert.equal(required.every((item) => item.done), true);
   assert.equal(optional.every((item) => !item.done), true, "nothing optional was filled in");
+  // The venue's address and map are checked per hall (`venueAddress`, `venueMap`), which also cover
+  // an event created before halls existed — so there is no separate `address`/`map` item.
   assert.deepEqual(
     optional.map((item) => item.key),
-    ["address", "map", "notes", "dressCode", "parking", "sections", "schedule"],
+    ["venueAddress", "venueMap", "notes", "dressCode", "parking", "sections", "schedule"],
   );
 });
 
@@ -65,7 +67,7 @@ test("each optional detail lights up on its own, in either language", () => {
     schedule: [{ time: "20:30" }],
   });
   const done = Object.fromEntries(withExtras.map((item) => [item.key, item.done]));
-  assert.equal(done.address, true);
+  assert.equal(done.venueAddress, true);
   assert.equal(done.parking, true);
   assert.equal(done.schedule, true);
   assert.equal(done.dressCode, false);

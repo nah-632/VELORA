@@ -231,6 +231,39 @@ export async function disableTotpAction(formData: FormData): Promise<void> {
   redirect(`/${locale}/admin/settings?totp=off`);
 }
 
+/**
+ * The WhatsApp message templates.
+ *
+ * Stored on the single settings row; an empty slot means "use the default", so an operator who clears
+ * a message gets the shipped wording back rather than an empty one being sent.
+ */
+export async function saveWhatsappTemplatesAction(formData: FormData): Promise<void> {
+  const locale = localeFrom(formData);
+  const admin = await requireAdmin(locale);
+  if (!assertSameOrigin()) redirect(`/${locale}/admin/settings?error=origin`);
+
+  const raw = String(formData.get("message_templates") ?? "");
+  let parsed: Record<string, Record<string, string>> = {};
+  try {
+    const candidate = JSON.parse(raw) as Record<string, Record<string, string>>;
+    for (const [purpose, langs] of Object.entries(candidate)) {
+      parsed[purpose] = {};
+      for (const lang of ["ar", "en"] as const) {
+        const value = langs?.[lang];
+        if (typeof value === "string" && value.trim().length > 0) parsed[purpose][lang] = value.slice(0, 1200);
+      }
+    }
+  } catch {
+    redirect(`/${locale}/admin/settings?error=invalid`);
+  }
+
+  await getSql()`
+    update public.settings set message_templates = ${JSON.stringify(parsed)}::text::jsonb where id = true`;
+
+  revalidatePath(`/${locale}/admin/settings`);
+  redirect(`/${locale}/admin/settings?messages=1`);
+}
+
 /** Used by the settings page to show whether the session in front of it is the only one. */
 export async function activeSessionCount(): Promise<number> {
   const admin = await getCurrentAdmin();

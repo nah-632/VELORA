@@ -8,22 +8,39 @@ import { WaxSeal } from "@/features/invitations/WaxSeal";
 import { copyFor, fill } from "@/features/invitations/copy";
 import { DEFAULT_DURATION_MINUTES, remaining } from "@/features/invitations/countdown";
 import { googleCalendarUrl } from "@/features/invitations/ics";
+import { confirmLabel, renderTemplate, resolveCopy } from "@/features/invitations/messages";
 import { submitRsvpAction } from "@/features/invitations/actions";
-import { rsvpForToken, thankYou } from "@/features/invitations/rsvp";
+import { rsvpForToken } from "@/features/invitations/rsvp";
+import { VenuesSection, type VenueCardData } from "@/features/invitations/VenuesSection";
+import { iconVariantFor } from "@/features/invitations/VenueIcons";
+import {
+  venueForCalendar,
+  venueLabel,
+  venueText,
+  venueVariables,
+  venuesForGuest,
+} from "@/features/invitations/venues";
 import { classifyMapUrl, mapButtonLabel } from "@/lib/maps";
-import { LIMITS, clientAddress, consume, pruneRateLimits, requestKey } from "@/features/invitations/rate-limit";
 
 /**
  * A guest's invitation.
  *
- * The order on the page is the order a guest experiences it: the seal, their name, the couple, when
- * and where, how long is left, and the question. The answer comes back to the same page rather than
- * to a thank-you screen, so a guest who wants to change it can — which the brief requires and which
- * is also how people behave.
+ * The order is the order a guest experiences it: the seal, their name, the couple, when and where,
+ * how long is left, the halls, and the question.
  *
- * What is not here, and will not be: any other guest, any phone number, any count, any id. The
- * loader returns one guest's row and nothing else, and the assertions in tests/db/invitations.mjs
- * check that by looking for the other guest's name in the rendered data.
+ * Three things about this page are load-bearing.
+ *
+ *   **The wording is data.** Every text comes from `resolveCopy` — the operator's override if there is
+ *   one, the default otherwise — and every text is rendered through `renderTemplate`, so `{guest_name}`
+ *   is the guest's name and not a placeholder somebody forgot to replace.
+ *
+ *   **The language is a query parameter over the guest's stored choice.** `?lang=en` re-renders the
+ *   page; nothing is translated on the client and nothing has to be kept in sync. The sheet stays open
+ *   across it because it is a client component whose state survives the soft navigation — which is the
+ *   behaviour that matters: a guest reading the address does not want the dialog to close under them.
+ *
+ *   **Both halls are shown to everyone.** The icons are never filtered; the guest's own carries the
+ *   ring. See `venuesForGuest`.
  */
 export const dynamic = "force-dynamic";
 
@@ -34,61 +51,109 @@ export default async function InvitationPage({
   searchParams,
 }: {
   params: { token: string };
-  searchParams: { rsvp?: string };
+  searchParams: { rsvp?: string; lang?: string; schedule?: string };
 }) {
-  // Before anything is read: a link that has been leaked can still be hammered, and this is the
-  // cheapest place to stop it. A refused request records no open, so the operator's counts stay true.
-  const decision = await consume(requestKey("invite", { token, address: clientAddress() }), LIMITS.invitation);
-  if (!decision.allowed) {
-    const copy = copyFor("ar");
-    return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-[520px] flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-xl font-semibold text-ink">{copy.busy.title}</h1>
-        <p className="mt-3 text-sm text-ink-muted">{copy.busy.body}</p>
-      </main>
-    );
-  }
-  if (decision.used % 20 === 0) await pruneRateLimits();
-
   const invitation = await loadInvitationOnce(token);
 
   // An unknown, malformed or revoked token is a 404 — the same response for every kind of "no".
   if (!invitation) notFound();
 
-  const copy = copyFor(invitation.language);
-  const isArabic = invitation.language === "ar";
+  const language: "ar" | "en" =
+    searchParams.lang === "ar" || searchParams.lang === "en" ? searchParams.lang : invitation.language;
+  const isArabic = language === "ar";
+  const base = copyFor(language);
+  const copy = (invitation.copyByLocale[language] ?? resolveCopy(language, null, invitation.gender)) as Record<string, string>;
   const { event, design } = invitation;
 
-  // The answer, and the thank-you. Read without recording an open — the guest already opened the
-  // page to get here, and counting this query would double every visit.
-  const rsvp = await rsvpForToken(token);
-  const answerFromUrl = RSVP_KEYS.includes((searchParams.rsvp ?? "") as (typeof RSVP_KEYS)[number])
-    ? searchParams.rsvp
-    : undefined;
-  const answered = rsvp?.response ?? null;
+  // What the guest reads, in their language, with their name in it.
+  const groom = isArabic ? event.groomNameAr ?? event.groomNameEn : event.groomNameEn ?? event.groomNameAr;
+  const bride = isArabic ? event.brideNameAr ?? event.brideNameEn : event.brideNameEn ?? event.brideNameAr;
 
-  const pick = (ar: string | null, en: string | null) => ((isArabic ? ar : en) ?? ar ?? en ?? "").trim();
-  const venue = pick(event.venueNameAr, event.venueNameEn);
-  const address = pick(event.venueAddressAr, event.venueAddressEn);
-  const notes = pick(event.notesAr, event.notesEn);
-  const dressCode = pick(event.dressCodeAr, event.dressCodeEn);
-  const parking = pick(event.parkingAr, event.parkingEn);
-  const entrance = pick(event.entranceAr, event.entranceEn);
-  const sections = pick(event.sectionsAr, event.sectionsEn);
-  const map = classifyMapUrl(event.venueMapUrl);
-  const schedule = (Array.isArray(event.schedule) ? event.schedule : []) as Record<string, string | undefined>[];
-  // A line the operator filled in one language only still shows, in that language: a guest reading
-  // an empty row would think the evening has no programme rather than that one column was skipped.
-  const line = (item: Record<string, string | undefined>, field: "title" | "detail") => {
-    const preferred = item[`${field}_${isArabic ? "ar" : "en"}`];
-    const other = item[`${field}_${isArabic ? "en" : "ar"}`];
-    return (preferred ?? other ?? "").trim();
-  };
+  const view = venuesForGuest(invitation.venues, invitation.audience);
+  const venueVars = venueVariables(view, language);
+  const calendarVenue = venueForCalendar(view, language);
+
   const dateLabel = new Intl.DateTimeFormat(isArabic ? "ar-BH" : "en-BH", {
     dateStyle: "full",
     timeStyle: "short",
     timeZone: event.timezone || "Asia/Bahrain",
   }).format(event.eventDatetime);
+
+  const link = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/i/${token}`;
+  const variables = {
+    guest_name: invitation.guestName,
+    groom: groom ?? "",
+    bride: bride ?? "",
+    date: dateLabel,
+    venue: calendarVenue.name || view.own.map((venue) => venueLabel(venue, language)).join(" · "),
+    map_url: calendarVenue.map,
+    link,
+    venue_name_for_guest: venueVars.venue_name_for_guest,
+    venue_map_url_for_guest: venueVars.venue_map_url_for_guest,
+  };
+
+  const text = (slot: string) => renderTemplate(copy[slot] ?? "", variables);
+
+  /**
+   * The thank-you: the operator's own words on the event first, then the copy slot.
+   *
+   * Two places hold the same sentence because the thank-you existed before the copy system did. The
+   * event's own column wins, because it is the more specific of the two — somebody typed it for this
+   * wedding.
+   */
+  const thankYouFor = (answered: "confirmed" | "declined") => {
+    const written = isArabic
+      ? answered === "confirmed"
+        ? event.thankYouConfirmedAr
+        : event.thankYouDeclinedAr
+      : answered === "confirmed"
+        ? event.thankYouConfirmedEn
+        : event.thankYouDeclinedEn;
+    return renderTemplate(written ?? copy[answered === "confirmed" ? "thankConfirmed" : "thankDeclined"] ?? "", variables);
+  };
+
+  const rsvp = await rsvpForToken(token);
+  const answerFromUrl = RSVP_KEYS.includes((searchParams.rsvp ?? "") as (typeof RSVP_KEYS)[number])
+    ? searchParams.rsvp
+    : undefined;
+  const answered = rsvp?.response ?? null;
+  const showAllSchedule = searchParams.schedule === "all";
+
+  const schedule = (Array.isArray(event.schedule) ? event.schedule : []) as Record<string, string | undefined>[];
+  const relevant = schedule.filter((item) => {
+    const tag = item.audience ?? "all";
+    if (tag === "all") return true;
+    if (invitation.audience === "both") return true;
+    return tag === invitation.audience;
+  });
+  const hiddenByFilter = schedule.length - relevant.length;
+  const shown = showAllSchedule ? schedule : relevant;
+
+  const line = (item: Record<string, string | undefined>, field: "title" | "detail") =>
+    ((item[`${field}_${isArabic ? "ar" : "en"}`] ?? item[`${field}_${isArabic ? "en" : "ar"}`] ?? "") as string).trim();
+
+  // Every guest sees every hall. The card carries what the sheet needs, already localised.
+  const venueCards: VenueCardData[] = view.own.concat(view.other).map((venue) => ({
+    id: venue.id,
+    kind: venue.kind,
+    name: venueLabel(venue, language),
+    iconLabel:
+      venue.kind === "women"
+        ? base.venues.womenLocation
+        : venue.kind === "men"
+          ? base.venues.menLocation
+          : base.venues.location,
+    emphasis: view.emphasis !== null && venue.kind === view.emphasis,
+    address: venueText(venue, "address", language),
+    time: (venue.start_time ?? "").trim(),
+    mapUrl: venue.map_url,
+    mapLabel: mapButtonLabel(classifyMapUrl(venue.map_url).kind ?? "other", language),
+    entrance: venueText(venue, "entrance", language),
+    parking: venueText(venue, "parking", language),
+    dressCode: venueText(venue, "dress_code", language),
+    notes: venueText(venue, "notes", language),
+    phone: venue.contact_phone,
+  }));
 
   const initial = remaining(Date.now(), event.eventDatetime.getTime());
   const couple =
@@ -102,112 +167,93 @@ export default async function InvitationPage({
     start: event.eventDatetime,
     end: calendarEnd,
     title: calendarTitle,
-    location: venue,
-    description: isArabic ? event.quoteAr : event.quoteEn,
+    location: [calendarVenue.name, calendarVenue.address].filter(Boolean).join(", "),
+    description: [isArabic ? event.quoteAr : event.quoteEn, event.notesAr && isArabic ? event.notesAr : event.notesEn]
+      .filter(Boolean)
+      .join("\n\n"),
   });
+
+  const question = (value: string) => {
+    const params = new URLSearchParams();
+    if (value) params.set(value === "all" ? "schedule" : "rsvp", value);
+    if (language !== invitation.language) params.set("lang", language);
+    const query = params.toString();
+    return query ? `?${query}` : "";
+  };
 
   return (
     <WaxSeal
       guestName={invitation.guestName}
       monogram={event.monogramText}
-      coupleNames={{ groom: isArabic ? event.groomNameAr : event.groomNameEn, bride: isArabic ? event.brideNameAr : event.brideNameEn }}
+      coupleNames={{ groom: groom ?? null, bride: bride ?? null }}
       palette={design.palette}
-      locale={invitation.language}
+      locale={language}
       animation={invitation.animation}
-      labels={copy.seal}
+      labels={base.seal}
       sessionKey={`velora-seal-${token.slice(0, 12)}`}
     >
-      <main className="mx-auto flex w-full max-w-[520px] flex-col px-5 py-10">
-        <p className="text-center text-sm text-ink-muted">
-          {isArabic ? "أهلاً" : "Welcome"},{" "}
-          <span className="font-medium text-ink">{invitation.guestName}</span>
-        </p>
+      <main className="mx-auto flex w-full max-w-[520px] flex-col px-5 py-10" lang={language} dir={isArabic ? "rtl" : "ltr"}>
+        {/* The language switch: a link, so nothing is translated on the client and the sheet below
+            survives the soft navigation. */}
+        <nav className="mb-6 flex justify-end" aria-label={base.language.label}>
+          <a
+            className="text-xs text-ink-muted underline underline-offset-4"
+            href={`?lang=${isArabic ? "en" : "ar"}${searchParams.rsvp ? `&rsvp=${searchParams.rsvp}` : ""}`}
+            hrefLang={isArabic ? "en" : "ar"}
+          >
+            {isArabic ? "English" : "العربية"}
+          </a>
+        </nav>
+
+        <p className="text-center text-sm text-ink-muted">{text("greeting")}</p>
 
         {invitation.personalLine ? (
           <p className="mt-2 text-center text-sm italic text-ink-muted">{invitation.personalLine}</p>
         ) : null}
 
+        <div className="mt-5 text-center">
+          <p className="text-sm text-ink-muted">{text("opening")}</p>
+        </div>
+
         <div className="mt-6">
           <TemplateCanvas
             design={design}
             blocks={invitation.blocks}
-            locale={invitation.language}
+            locale={language}
             label={isArabic ? `دعوة ${invitation.guestName}` : `Invitation for ${invitation.guestName}`}
           />
         </div>
+
+        <p className="mt-6 text-center text-sm text-ink">{text("body")}</p>
+
+        {copy.verse && copy.verse.trim() ? (
+          <p className="mt-5 text-center text-sm text-ink-muted">{renderTemplate(copy.verse, variables)}</p>
+        ) : null}
 
         <div className="mt-8">
           <Countdown
             targetIso={event.eventDatetime.toISOString()}
             initial={initial}
-            labels={copy.countdown}
-            finishedMessage={copy.countdownFinished}
+            labels={base.countdown}
+            finishedMessage={base.countdownFinished}
           />
         </div>
 
-        <dl className="mt-8 flex flex-col gap-2 text-sm">
-          <div className="flex justify-between gap-3">
-            <dt className="text-ink-muted">{copy.details.date}</dt>
-            {/* Latin digits in both languages, in the event's zone. */}
-            <dd className="ltr-token text-end" dir="ltr">
-              {dateLabel}
-            </dd>
-          </div>
-          {event.hijriDateText ? (
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-muted">{copy.details.hijri}</dt>
-              <dd className="text-end">{event.hijriDateText}</dd>
-            </div>
-          ) : null}
-          {venue ? (
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-muted">{copy.details.venue}</dt>
-              <dd className="text-end">{venue}</dd>
-            </div>
-          ) : null}
-          {address ? (
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-muted">{copy.details.address}</dt>
-              <dd className="text-end">{address}</dd>
-            </div>
-          ) : null}
-          {dressCode ? (
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-muted">{copy.details.dressCode}</dt>
-              <dd className="text-end">{dressCode}</dd>
-            </div>
-          ) : null}
-        </dl>
+        <p className="mt-6 text-center text-sm text-ink-muted">{text("datetimeLine")}</p>
 
-        {parking || entrance || sections || notes ? (
-          <section className="mt-6 flex flex-col gap-3 text-sm">
-            {notes ? <p className="text-ink">{notes}</p> : null}
-            {parking ? (
-              <p className="text-ink-muted">
-                <span className="text-ink">{copy.details.parking}: </span>
-                {parking}
-              </p>
-            ) : null}
-            {entrance ? (
-              <p className="text-ink-muted">
-                <span className="text-ink">{copy.details.entrance}: </span>
-                {entrance}
-              </p>
-            ) : null}
-            {sections ? (
-              <p className="text-ink-muted">
-                <span className="text-ink">{copy.details.sections}: </span>
-                {sections}
-              </p>
-            ) : null}
-          </section>
-        ) : null}
+        {/* Both halls, always, with the guest's own ringed. */}
+        <VenuesSection
+          venues={venueCards}
+          variant={iconVariantFor(design)}
+          labels={{ ...base.venues, venueOne: base.venues.venueOne }}
+          accent={design.palette.accent}
+        />
 
-        {schedule.length > 0 ? (
-          <section className="mt-8">
-            <h2 className="mb-4 text-center text-sm font-medium text-ink">{copy.details.schedule}</h2>
+        {shown.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="mb-4 text-center text-sm font-medium text-ink">{base.details.schedule}</h2>
             <ol className="timeline">
-              {schedule.map((item, index) => {
+              {shown.map((item, index) => {
                 const title = line(item, "title");
                 const detail = line(item, "detail");
                 if (!title && !detail) return null;
@@ -227,25 +273,22 @@ export default async function InvitationPage({
                 );
               })}
             </ol>
+            {hiddenByFilter > 0 ? (
+              <p className="mt-3 text-center">
+                <a className="text-xs text-ink-muted underline underline-offset-4" href={question(showAllSchedule ? "back" : "all")}>
+                  {showAllSchedule ? base.schedule.onlyMine : base.schedule.showAll(hiddenByFilter)}
+                </a>
+              </p>
+            ) : null}
           </section>
         ) : null}
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {map.ok ? (
-            <a
-              className={buttonClass("secondary")}
-              href={map.href}
-              rel="noreferrer noopener"
-              target="_blank"
-            >
-              {mapButtonLabel(map.kind ?? "other", invitation.language)}
-            </a>
-          ) : null}
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
           <a className={buttonClass("secondary")} href={`/i/${token}/calendar`}>
-            {copy.calendar.ics}
+            {base.calendar.ics}
           </a>
           <a className={buttonClass("quiet")} href={googleUrl} rel="noreferrer noopener" target="_blank">
-            {copy.calendar.google}
+            {base.calendar.google}
           </a>
         </div>
 
@@ -255,42 +298,44 @@ export default async function InvitationPage({
           answerFromUrl === "invalid_token" ||
           answerFromUrl === "rate_limited" ? (
             <p role="alert" className="mb-3 text-sm text-danger">
-              {copy.rsvp.errors[answerFromUrl]}
+              {base.rsvp.errors[answerFromUrl]}
             </p>
           ) : null}
 
           {answered && answerFromUrl !== "update" ? (
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-ink">{thankYou(event, answered, invitation.language)}</p>
+              <p className="text-sm text-ink">{thankYouFor(answered)}</p>
               <p className="text-xs text-ink-muted">
-                {fill(copy.rsvp.current, { answer: copy.rsvp.answers[answered] })}
+                {fill(base.rsvp.current, { answer: base.rsvp.answers[answered] })}
               </p>
-              <a className={buttonClass("quiet")} href={`/i/${token}?rsvp=update`}>
-                {copy.rsvp.update}
+              <a className={buttonClass("quiet")} href={question("update")}>
+                {base.rsvp.update}
               </a>
             </div>
           ) : (
             <form action={submitRsvpAction} className="flex flex-col gap-4">
-              <h2 className="text-sm font-medium text-ink">{copy.rsvp.title}</h2>
+              <h2 className="text-sm font-medium text-ink">{text("beforeRsvp")}</h2>
               <input type="hidden" name="token" value={token} />
+              {language !== invitation.language ? <input type="hidden" name="lang" value={language} /> : null}
 
               <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-3 text-sm text-ink">
                   <input type="radio" name="response" value="confirmed" required defaultChecked={answered !== "declined"} />
-                  {copy.rsvp.confirmed}
+                  {/* The guest's own grammar, taken from their row. */}
+                  {renderTemplate(confirmLabel(copy as never, invitation.gender), variables)}
                 </label>
                 <label className="flex items-center gap-3 text-sm text-ink">
                   <input type="radio" name="response" value="declined" defaultChecked={answered === "declined"} />
-                  {copy.rsvp.declined}
+                  {text("declineButton")}
                 </label>
               </div>
 
               {rsvp && rsvp.maxCompanions > 0 ? (
                 <label className="flex flex-col gap-1.5 text-sm text-ink">
                   <span>
-                    {copy.rsvp.companions}{" "}
+                    {base.rsvp.companions}{" "}
                     <span className="text-xs text-ink-muted">
-                      ({fill(copy.rsvp.companionHint, { max: rsvp.maxCompanions })})
+                      ({fill(base.rsvp.companionHint, { max: rsvp.maxCompanions })})
                     </span>
                   </span>
                   <select
@@ -309,18 +354,18 @@ export default async function InvitationPage({
 
               <div>
                 <button type="submit" className={buttonClass("primary")}>
-                  {answered ? copy.rsvp.update : copy.rsvp.submit}
+                  {answered ? base.rsvp.update : base.rsvp.submit}
                 </button>
               </div>
             </form>
           )}
         </section>
 
-        <p className="mt-8 text-center text-xs text-ink-muted">{copy.privacy}</p>
+        <p className="mt-8 text-center text-xs text-ink-muted">{base.privacy}</p>
 
         <footer className="mt-10 text-center text-xs text-ink-muted">
-          <p>{copy.footer.withLove}</p>
-          <p className="mt-1">{copy.footer.brand}</p>
+          <p>{base.footer.withLove}</p>
+          <p className="mt-1">{base.footer.brand}</p>
         </footer>
       </main>
     </WaxSeal>

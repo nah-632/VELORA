@@ -16,6 +16,9 @@ import { submitRsvp } from "./rsvp";
 
 export async function submitRsvpAction(formData: FormData): Promise<void> {
   const token = String(formData.get("token") ?? "");
+  // A guest who switched language should not be switched back by answering.
+  const rawLang = String(formData.get("lang") ?? "");
+  const lang = rawLang === "en" || rawLang === "ar" ? `&lang=${rawLang}` : "";
   const response = String(formData.get("response") ?? "");
   const companions = Number(formData.get("companions") ?? 0);
 
@@ -27,12 +30,12 @@ export async function submitRsvpAction(formData: FormData): Promise<void> {
   const perGuest = await consume(requestKey("rsvp-guest", { token }), LIMITS.rsvpPerGuest);
   const perAddress = await consume(requestKey("rsvp-address", { address }), LIMITS.rsvpPerAddress);
   if (!perGuest.allowed || !perAddress.allowed) {
-    redirect(`/i/${token}?rsvp=rate_limited`);
+    redirect(`/i/${token}?rsvp=rate_limited${lang}`);
   }
 
   const outcome = await submitRsvp(token, { response, companions });
   revalidatePath(`/i/${token}`);
 
-  if (!outcome.ok) redirect(`/i/${token}?rsvp=${outcome.reason}`);
-  redirect(`/i/${token}?rsvp=${outcome.state.response}`);
+  if (!outcome.ok) redirect(`/i/${token}?rsvp=${outcome.reason}${lang}`);
+  redirect(`/i/${token}?rsvp=${outcome.state.response}${lang}`);
 }

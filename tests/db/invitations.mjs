@@ -228,5 +228,126 @@ const updated = await db.query(`select jsonb_typeof(schedule) as kind, jsonb_arr
 t.check("the updater keeps it an array too", updated.rows[0].kind === "array", `jsonb_typeof = ${updated.rows[0].kind}`);
 t.check("and replaces rather than appends", updated.rows[0].len === 1 && updated.rows[0].status === "active");
 
+// ---------------------------------------------------------------------------------------------
+t.section("halls");
+const queries2 = await import("../../src/features/events/queries.ts");
+const venueRoutes = await import("../../src/features/invitations/venues.ts");
+
+const venueColumns = await db.query(
+  `select column_name from information_schema.columns
+    where table_schema='public' and table_name='event_venues' order by column_name`,
+);
+t.check("the halls table exists with its fields", venueColumns.rows.length >= 18, `${venueColumns.rows.length} columns`);
+const guestColumns = await db.query(
+  `select column_name from information_schema.columns
+    where table_schema='public' and table_name='guests' and column_name in ('gender','audience')`,
+);
+t.check("guests carry a gender and an audience", guestColumns.rows.length === 2);
+
+// The migration's *data move*, tested the only way a migration can be: put the database back into the
+// state it existed in before, then run it again. An event created after the migration proves nothing
+// about the migration.
+await db.query(
+  `insert into public.events (slug, bride_name_ar, event_datetime, venue_name_ar, venue_name_en, venue_address_ar, venue_map_url, parking_ar)
+   values ('legacy-single-venue', 'نور', now() + interval '60 days', 'قاعة البحرين', 'Bahrain Hall', 'المنامة', 'https://maps.google.com/?q=x', 'خلف القاعة')
+   on conflict (slug) do nothing`,
+);
+await db.exec(readFileSync(join(DIR, "0007_dual_venues.sql"), "utf8"));
+const migrated = await db.query(
+  `select v.kind, v.name_ar, v.name_en, v.address_ar, v.map_url, v.parking_ar from public.event_venues v
+     join public.events e on e.id = v.event_id where e.slug = 'legacy-single-venue'`,
+);
+t.check("re-running the migration turns a legacy single venue into a shared hall", migrated.rows.length === 1 && migrated.rows[0].kind === "shared", JSON.stringify(migrated.rows));
+t.check("...keeping the name, the address, the map and the parking note", migrated.rows[0].name_ar === "قاعة البحرين" && migrated.rows[0].address_ar === "المنامة" && migrated.rows[0].map_url.includes("google") && migrated.rows[0].parking_ar === "خلف القاعة");
+const migratedTwice = await db.query(`select count(*)::int as n from public.event_venues v join public.events e on e.id = v.event_id where e.slug = 'legacy-single-venue'`);
+t.check("...and running it twice does not duplicate the hall", migratedTwice.rows[0].n === 1, `${migratedTwice.rows[0].n} rows`);
+
+// An event that never had a venue gets none invented for it.
+await db.query(`insert into public.events (slug, bride_name_ar, event_datetime) values ('no-venue-at-all', 'نور', now()) on conflict (slug) do nothing`);
+await db.exec(readFileSync(join(DIR, "0007_dual_venues.sql"), "utf8"));
+const invented = await db.query(`select count(*)::int as n from public.event_venues v join public.events e on e.id = v.event_id where e.slug = 'no-venue-at-all'`);
+t.check("an event with no venue gets no hall invented", invented.rows[0].n === 0);
+
+// Two halls, written through the shipping writer.
+await queries2.saveVenues(
+  eventId,
+  [
+    { kind: "women", name_ar: "قاعة اللؤلؤة", name_en: "Pearl Hall", address_ar: "المنامة، مجمع ٣٢٨", address_en: null,
+      map_url: "https://maps.apple.com/?q=pearl", start_time: "19:30", entrance_ar: null, entrance_en: "East gate",
+      parking_ar: null, parking_en: null, dress_code_ar: null, dress_code_en: null, notes_ar: null, notes_en: null, contact_phone: null },
+    { kind: "men", name_ar: "قاعة الخليج", name_en: "Gulf Hall", address_ar: "المنامة، مجمع ٣٢٩", address_en: null,
+      map_url: "https://waze.com/ul/abc", start_time: "20:00", entrance_ar: null, entrance_en: null,
+      parking_ar: null, parking_en: null, dress_code_ar: null, dress_code_en: null, notes_ar: null, notes_en: null, contact_phone: null },
+  ],
+  { sql },
+);
+const saved = await queries2.listVenues(eventId, { sql });
+t.check("the writer stores both halls", saved.length === 2, `${saved.length} rows`);
+t.check("...in the order they were given", saved[0].kind === "women" && saved[1].kind === "men");
+t.check("...replacing the shared one", saved.every((venue) => venue.kind !== "shared"));
+
+await queries2.saveVenues(eventId, [{ kind: "shared", name_ar: "قاعة واحدة", name_en: null, address_ar: null, address_en: null, map_url: null, start_time: null, entrance_ar: null, entrance_en: null, parking_ar: null, parking_en: null, dress_code_ar: null, dress_code_en: null, notes_ar: null, notes_en: null, contact_phone: null }], { sql });
+t.check("switching back to one shared venue removes the other two", (await queries2.listVenues(eventId, { sql })).length === 1);
+
+async function refusedVenue(label, statement) {
+  try {
+    await db.query(statement);
+    t.check(`${label} is refused`, false, "accepted");
+  } catch (error) {
+    const name = /constraint "([^"]+)"/.exec(error.message)?.[1] ?? "unknown";
+    t.check(`${label} is refused`, true, name);
+  }
+}
+await refusedVenue(
+  "a third kind of hall",
+  `insert into public.event_venues (event_id, kind) values ('${eventId}', 'garden')`,
+);
+await refusedVenue(
+  "two women's halls for one event",
+  `insert into public.event_venues (event_id, kind) values ('${eventId}', 'shared')`,
+);
+await refusedVenue(
+  "a guest audience nobody defined",
+  `insert into public.guests (event_id, full_name, phone, token, audience)
+   values ('${eventId}', 'x', '+97333009999', 'audienceProbeTokenAAAAAAAAA', 'garden')`,
+);
+await refusedVenue(
+  "a gender nobody defined",
+  `insert into public.guests (event_id, full_name, phone, token, gender)
+   values ('${eventId}', 'x', '+97333009998', 'genderProbeTokenAAAAAAAAAAA', 'other')`,
+);
+
+// The guest's own hall, through the same resolution the page uses.
+const women = saved.find((venue) => venue.kind === "women");
+const men = saved.find((venue) => venue.kind === "men");
+t.check("a guest in the women's hall reads her own address", venueRoutes.venuesForGuest(saved, "women").own[0].id === women.id);
+t.check("...and still sees the men's hall", venueRoutes.venuesForGuest(saved, "women").other[0].id === men.id);
+t.check("a household gets both", venueRoutes.venuesForGuest(saved, "both").own.length === 2);
+t.check(
+  "the WhatsApp variables name one hall, and both for a household",
+  venueRoutes.venueVariables(venueRoutes.venuesForGuest(saved, "men"), "ar").venue_name_for_guest.includes("قاعة الرجال") &&
+    !venueRoutes.venueVariables(venueRoutes.venuesForGuest(saved, "men"), "ar").venue_name_for_guest.includes("قاعة النساء"),
+);
+t.check(
+  "the calendar names the guest's own hall",
+  venueRoutes.venueForCalendar(venueRoutes.venuesForGuest(saved, "women"), "ar").name === "قاعة اللؤلؤة",
+);
+
+// The guest's row drives the wording. The design is restored first: an earlier section deliberately
+// removed it to prove the route shows an apology rather than a broken invitation.
+await db.query(
+  `update public.events set template_id = (select id from public.templates order by sort_order limit 1) where id = $1`,
+  [eventId],
+);
+await db.query(`update public.guests set gender = 'female' where id = $1`, [first.rows[0].id]);
+const loadedForHer = await loadInvitation(firstToken, { sql, recordOpen: false });
+t.check("the loader resolves the audience from the gender", loadedForHer.audience === "women", String(loadedForHer.audience));
+t.check("...and carries both languages of the wording", Boolean(loadedForHer.copyByLocale.ar.greeting && loadedForHer.copyByLocale.en.greeting));
+t.check("...and the halls", Array.isArray(loadedForHer.venues) && loadedForHer.venues.length >= 1);
+
+await db.query(`update public.guests set gender = 'male', audience = 'both' where id = $1`, [first.rows[0].id]);
+const loadedForHim = await loadInvitation(firstToken, { sql, recordOpen: false });
+t.check("an explicit audience overrides the gender", loadedForHim.audience === "both");
+
 await db.close();
 t.finish();

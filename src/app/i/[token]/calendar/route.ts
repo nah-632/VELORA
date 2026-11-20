@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { buildIcs, eventUid } from "@/features/invitations/ics";
 import { loadInvitation } from "@/features/invitations/public";
+import { venueForCalendar, venueVariables, venuesForGuest } from "@/features/invitations/venues";
 import { LIMITS, clientAddress, consume, requestKey } from "@/features/invitations/rate-limit";
 
 /**
@@ -30,8 +31,12 @@ export async function GET(_request: Request, { params }: { params: { token: stri
 
   const { event, language } = invitation;
   const pick = (ar: string | null, en: string | null) => ((language === "ar" ? ar : en) ?? ar ?? en ?? "").trim();
-  const venue = pick(event.venueNameAr, event.venueNameEn);
-  const address = pick(event.venueAddressAr, event.venueAddressEn);
+  // The guest's own hall and its address: somebody who saves this is going to drive to it.
+  const view = venuesForGuest(invitation.venues, invitation.audience);
+  const calendarVenue = venueForCalendar(view, language);
+  const venue = calendarVenue.name || pick(event.venueNameAr, event.venueNameEn);
+  const address = calendarVenue.address || pick(event.venueAddressAr, event.venueAddressEn);
+  const forGuest = venueVariables(view, language);
   const notes = pick(event.notesAr, event.notesEn);
   const dressCode = pick(event.dressCodeAr, event.dressCodeEn);
   const schedule = (Array.isArray(event.schedule) ? event.schedule : []) as Record<string, string | undefined>[];
@@ -57,6 +62,9 @@ export async function GET(_request: Request, { params }: { params: { token: stri
   if (address) descriptionParts.push(`${language === "ar" ? "العنوان" : "Address"}: ${address}`);
   if (notes) descriptionParts.push(notes);
   if (dressCode) descriptionParts.push(`${language === "ar" ? "الزي" : "Dress code"}: ${dressCode}`);
+  // The halls, by name and by link: a guest who forwards this file should be sending the map too.
+  if (forGuest.venue_name_for_guest) descriptionParts.push(forGuest.venue_name_for_guest);
+  if (forGuest.venue_map_url_for_guest) descriptionParts.push(forGuest.venue_map_url_for_guest);
   const programme = schedule
     .map((item) => {
       const title = lineOf(item, "title");

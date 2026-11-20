@@ -89,6 +89,10 @@ const GuestEditSchema = z.object({
   event_id: z.string().min(1),
   locale: z.string(),
   category: z.enum(["family", "friends", "work", "other"]).optional(),
+  gender: z.enum(["male", "female", "neutral"]).optional(),
+  // "derived" is the form's word for "no explicit audience"; the column stays null so the gender
+  // keeps deciding if it changes later.
+  audience: z.enum(["derived", "women", "men", "both"]).optional(),
   max_companions: z.coerce.number().int().min(0).max(20).optional(),
   personal_line_ar: z.string().max(140).optional(),
   personal_line_en: z.string().max(140).optional(),
@@ -114,6 +118,8 @@ export async function updateGuestAction(formData: FormData): Promise<void> {
     maxCompanions: parsed.data.max_companions,
     personalLineAr: blankToNull(parsed.data.personal_line_ar),
     personalLineEn: blankToNull(parsed.data.personal_line_en),
+    gender: parsed.data.gender,
+    audience: parsed.data.audience === "derived" ? null : (parsed.data.audience ?? null),
   });
 
   revalidatePath(`/${locale}/admin/events/${parsed.data.event_id}`);

@@ -9,7 +9,7 @@
  * `tests/unit/event-details.test.mjs` now asserts that every field the schema knows about is read
  * here. Adding a column and forgetting this list is a failing test rather than a silent data loss.
  */
-import { ScheduleSchema, EventInputSchema } from "./schema";
+import { CopyOverridesSchema, ScheduleSchema, VenuesInputSchema, EventInputSchema } from "./schema";
 
 /**
  * Every field the event form submits, other than `schedule`, which arrives as one JSON value.
@@ -58,8 +58,34 @@ export function readEventForm(formData: FormData): Record<string, unknown> {
     out.schedule = [];
   }
 
+  // The halls, as one hidden JSON value — the same shape the programme uses, and validated here so a
+  // malformed value is a validation failure rather than a broken event.
+  const rawVenues = formData.get(VENUES_FIELD);
+  if (typeof rawVenues === "string" && rawVenues.trim().length > 0) {
+    try {
+      const parsed = VenuesInputSchema.safeParse(JSON.parse(rawVenues));
+      out.venues = parsed.success ? parsed.data : [];
+    } catch {
+      out.venues = [];
+    }
+  }
+
+  // The per-event wording overrides.
+  const rawCopy = formData.get(COPY_FIELD);
+  if (typeof rawCopy === "string" && rawCopy.trim().length > 0) {
+    try {
+      const parsed = CopyOverridesSchema.safeParse(JSON.parse(rawCopy));
+      out.copy_templates = parsed.success ? parsed.data : {};
+    } catch {
+      out.copy_templates = {};
+    }
+  }
+
   return out;
 }
+
+export const VENUES_FIELD = "venues";
+export const COPY_FIELD = "copy_templates";
 
 /** The schema's field names, for the test that keeps the two lists in step. */
 export function schemaFields(): string[] {

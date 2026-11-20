@@ -285,7 +285,9 @@
         "dressCode": "Dress code",
         "parking": "Parking",
         "sections": "Men's / women's sections",
-        "schedule": "Schedule"
+        "schedule": "Schedule",
+        "venueAddress": "Full address",
+        "venueMap": "Map link"
       },
       "addressAr": "Full address (Arabic)",
       "addressEn": "Full address (English)",
@@ -309,7 +311,31 @@
       "scheduleUp": "Up",
       "scheduleDown": "Down",
       "scheduleEmpty": "No lines yet.",
-      "scheduleItem": "Line"
+      "scheduleItem": "Line",
+      "venuesTitle": "The halls",
+      "venuesHint": "Two separate halls, or one hall that welcomes everyone.",
+      "venuesSeparate": "Women's and men's halls",
+      "venuesShared": "One shared venue",
+      "venuesWomen": "Women's hall",
+      "venuesMen": "Men's hall",
+      "venuesSharedHall": "The shared venue",
+      "venuesCopy": "Copy details from the other hall",
+      "venuesNameAr": "Hall name (Arabic)",
+      "venuesNameEn": "Hall name (English)",
+      "venuesMapHint": "A Google Maps, Apple Maps or Waze link",
+      "venuesOpenTest": "Open to test",
+      "venuesTime": "Hall time (optional)",
+      "venuesPhone": "Contact phone (optional)",
+      "copyTitle": "Invitation wording",
+      "copyHint": "Every text is editable for this event. Leave one empty to fall back to the default.",
+      "copyLanguage": "Language",
+      "copyArabic": "العربية",
+      "copyEnglish": "English",
+      "copyReset": "Reset to default",
+      "copyResetAll": "Reset all texts",
+      "copyChanged": "{count} edited",
+      "copyDefault": "default",
+      "copyPlaceholders": "Variables"
     },
     "guests": {
       "title": "Guests",
@@ -345,7 +371,20 @@
       "previewBanner": "This is what the guest sees — it does not count as an open",
       "hasPersonalLine": "has a personal line",
       "noPersonalLine": "no personal line",
-      "backToEvent": "Back to the event"
+      "backToEvent": "Back to the event",
+      "genderLabel": "Wording",
+      "audienceLabel": "Hall",
+      "gender": {
+        "neutral": "Neutral",
+        "male": "Male",
+        "female": "Female"
+      },
+      "audience": {
+        "derived": "From the wording",
+        "women": "Women's hall",
+        "men": "Men's hall",
+        "both": "Both"
+      }
     },
     "totp": {
       "eyebrow": "Second step",
@@ -386,7 +425,15 @@
       "enrolManual": "Or enter it by hand in the app. There is no QR code yet.",
       "enrolCode": "Code from the app",
       "passwordToDisable": "Password, to disable it",
-      "lostDevice": "Recovering a lost device: scripts/seed-admin.mjs --reset --disable-totp"
+      "lostDevice": "Recovering a lost device: scripts/seed-admin.mjs --reset --disable-totp",
+      "messagesTitle": "WhatsApp messages",
+      "messagesHint": "The four messages you send. Leave one empty to fall back to the default.",
+      "messagesArabic": "العربية",
+      "messagesEnglish": "English",
+      "messagesSave": "Save the messages",
+      "messagesVariables": "Variables",
+      "messagesReset": "Reset to default",
+      "messagesSaved": "Messages saved."
     }
   }
 }
