@@ -71,6 +71,29 @@ ramp whose lightest stop still clears 3:1:
 | E3 | Venue icons and the dialog keep working, CLS 0 on open/close | re-run `tests/browser/venue-dialog.mjs` |
 | E4 | Warm copy unchanged | the copy slots render the operator's text verbatim |
 
+## The gate before any commit that touches the sealed state
+
+**Any change affecting the sealed state requires a screenshot before commit, even if measurement takes only a few minutes.**
+
+Written after the 2026-11-20 incident, in which three fixes to the sealed state shipped in one commit
+without a screenshot of the result. The rule is stated as a requirement rather than a lesson because a
+lesson is what everyone already had.
+
+## Status of the sealed-state contracts
+
+| # | Status | Why |
+|---|---|---|
+| C1 | **UNVERIFIED** | no measured centre of `.seal` against the flap apex at 375px |
+| C3 | **UNVERIFIED** | no 2× screenshot of the imprint |
+| C5 | **UNVERIFIED** | no screenshot mid-open and after |
+| D | **UNVERIFIED** | no run of the CLS / countdown / tap-to-reveal measurements |
+| E | **UNVERIFIED** | no AR/EN screenshots of the sealed and open states |
+
+A1–A5 and B1–B3 keep whatever status the earlier evidence gave them. They are evidence about the
+**names, the field and the ornaments** — not about the envelope, the seal or the opening. They must not
+be read as proof that the sealed state works. No status above moves, and no "after" value is written,
+without direct visual verification.
+
 ## What "done" means
 
 Each row above has evidence attached in the report. A row without evidence is reported as
