@@ -198,7 +198,7 @@
  *
  * Layer 2. Opaque paper — the old version carried an inline gradient ending at 13% alpha of the wax
  * tone, and over the ivory card that mixed to grey. Its lower edge is a **shallow V through the
- * closure point** (41% at the edges, 61.5% at the centre), not a deep triangle to the flap's own
+ * closure point** (41% at the edges, 54.8% at the centre), not a deep triangle to the flap's own
  * bottom: the reference photograph, cropped edge to edge, shows the fold meeting the seal a little
  * below the envelope's midline.
  *
@@ -208,7 +208,7 @@
 .envelope__flap {
   position: absolute;
   inset: 0;
-  clip-path: polygon(-1% -1%, 101% -1%, 101% 41%, 50% 61.5%, -1% 41%);
+  clip-path: polygon(-1% -1%, 101% -1%, 101% 41%, 50% 54.8%, -1% 41%);
   transform-origin: top center;
   transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
   background: linear-gradient(
