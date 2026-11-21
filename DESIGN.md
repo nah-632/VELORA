@@ -24,6 +24,29 @@ thought through.
 **The rule that follows:** gold is decoration. If a piece of text must be gold, it is drawn with the
 foil ramp (§1.1), whose stops are deliberately darker than the ornament gold.
 
+### 1.0 The palette as sampled from the references
+
+Method, so the numbers can be re-derived: Python 3.12 + Pillow 11 + NumPy 2 — every pixel of the
+941x1672 reference that passes a colour filter, value = median per channel; pixel counts are the
+number of matches, not a guess.
+
+| Role | **sealed** (`entrance-target.png`) | n | **broken** (`entrance-target-broken.png`) | n |
+|---|---|---|---|---|
+| wax | `#650E18` (5% `#5B0211`, 95% `#B85055`) | 5,020 | `#641A1E` (95% `#BA5F53`) | 6,333 |
+| gold — line and leaves | `#BE925E` | 17,712 | `#C0915D` | 20,390 |
+| envelope emerald | `#192A21` | 386,989 | `#15241E` | 354,607 |
+| card cream | `#ECD2B8` | 418,738 | `#EED3B8` | 510,498 |
+| ground beige | `#E6CAAE` | 656,775 | `#E9CDB1` | 725,057 |
+
+**Correction to an earlier report.** The column above filed as "opening" is the **broken** state.
+`entrance-target-opening.png` held the broken photograph until the rename commit; the labels here are
+the corrected ones. The two columns also differ more than noise: the broken state is lit slightly
+differently, which is why the entrance takes its emerald from the sealed column and its liner from the
+broken one — the liner is only ever visible in the broken and opening states.
+
+Measured contrast against the card cream `#EED3B8`: wax **8.99:1**, emerald **10.50:1**, gold
+**1.96:1**. Gold is a decoration colour, confirmed by measurement rather than by taste.
+
 ### 1.1 The gold foil ramp
 
 A gradient clipped to the glyphs; it reads as metal because the light moves across it, not because it
@@ -181,15 +204,25 @@ template once already.
 
 ## 8. The reference images, and the directions
 
-Three photographs, one per state the entrance has to reach, filed in `assets/brand/reference/`. They
-are the target for **materials, lighting, proportions and ornament** — not a colour specification
-(colours come from §1 and the contrast rules) and not a pixel spec.
+Three photographs, one per state the entrance has to reach, filed in `assets/reference/`. They are the
+target for **materials, lighting, proportions and ornament** — not a colour specification (colours
+come from §1 and the contrast rules) and not a pixel spec.
 
 | File | State | What it settles |
 |---|---|---|
-| `envelope-reference-sealed.jpg` | sealed | flap down over the front, its two edges meeting at the seal, a hairline gold line along every fold edge, the sprigs lying along the flap edges, the seal on the vertical axis at the closure point |
-| `envelope-reference-opening.jpg` | opening | the flap at 180°, the lining with its botanical print and frame, the card risen about half way, the wax in **three broken wedges resting on the front panel**, particles rising above where the seal was |
-| `envelope-reference.jpg` | open / final | the card out above the wings, the lining behind it, the ornament at rest |
+| `entrance-target.png` | **sealed** | flap down over the front, its two edges meeting at the seal, a hairline gold line along every fold edge, the sprigs lying along the flap edges, the seal on the vertical axis at the closure point |
+| `entrance-target-opening.png` | **flap open, seal intact** | the flap at 180° with the lining visible behind it, the wax **whole** at the closure point, the card only part way out |
+| `entrance-target-broken.png` | **seal broken** | the wax in three wedges resting on the front panel, gold dust above where it sat, the card raised, the lining behind it |
+
+Naming note, because it cost a wrong review: `entrance-target-opening.png` held the **broken** state
+until a rename commit (`docs: rename broken-seal reference`). "Opening" is the flap at 180° with the
+seal whole; the broken state is a different photograph. The older `assets/brand/reference/*.jpg`
+copies are the same three images filed earlier under descriptive names — the copies under
+`assets/reference/` are the ones the entrance is measured against.
+
+Two of the three are JPEG payloads under a `.png` name. That is what was asked for and the md5 is the
+contract, but a tool that sniffs the container will see JPEG — worth knowing before one of them is
+ever fed to an image pipeline.
 
 Their seals carry a serif V with a leaf spray. The brand mark is not that, and §7 says why. **Do not
 copy the placeholder mark from any of them.**
