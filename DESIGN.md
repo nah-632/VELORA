@@ -92,6 +92,29 @@ Page inset is 20px at 375px; the royal frame sits at 10px from the edge with a 5
 
 ## 5. Motion
 
+### 5.1 The opening sequence — about 2s, end to end
+
+Written before the component, because the order *is* the design. Only `transform` and `opacity` are
+animated; nothing here touches layout.
+
+| t (ms) | What happens | Property |
+|---|---|---|
+| 0–100 | tap feedback on the seal; optional device vibration | `transform`, `opacity` |
+| 100–700 | the wax cracks along the V into three wedges, which settle **on the front panel** | per-piece `transform`, `opacity` |
+| 250–900 | the mark's lit plane draws in under a sweeping mask edge | `mask-position` |
+| 350–1250 | 6–10 gold particles drift up and fade | per-mote `transform`, `opacity` |
+| 700–1500 | the flap opens on its top hinge, revealing the lining | `rotateX` |
+| 900–1700 | the card rises out of the envelope | `transform` |
+| 1400–2400 | the arch draws, then the content settles | `stroke-dashoffset`, `opacity` |
+| 2400 | the entrance overlay is removed; the invitation underneath is what remains | — |
+
+**Failsafe:** at **2500ms** the invitation is forced open wherever the sequence has got to. A guest
+never watches an animation that has stopped.
+
+**Reduced motion:** not a shorter sequence — a **300ms cross-fade** straight to the invitation.
+
+### 5.2 The rest of the page
+
 | Element | Property | Duration | Easing |
 |---|---|---|---|
 | seal crack | `transform`, `opacity` per piece | 620ms | `cubic-bezier(0.3, 0, 0.2, 1)` |
@@ -123,20 +146,54 @@ is elegant in the editor and illegible on a phone is a failed design.
 
 ## 7. The seal
 
-Both T1 and every later template use the **brand mark** — the V-and-leaf — as the imprint. It is
-drawn as vector paths inside the wax, not placed as an image, so it stays crisp at any size and
-inherits the wax's shading.
+The imprint is the **brand mark** — a single strip of card, folded once, read as the letter V. The
+construction and its reasoning are in `brand/monogram.mjs`; the geometry is copied byte-for-byte into
+the component and is never redrawn.
+
+**There is no leaf in it.** `SPEC.md` records the alternative — a serif V carrying a botanical spray —
+as decision **D4**, and notes that it *conflicts with the brief*, which asks for "a folded invitation
+or refined paper geometry" and rules out excessive flourishes. The folded strip is what was built.
+Earlier documents called this mark "the V-and-leaf"; the wording was the drift, not the drawing.
+
+That matters for the sequence: DESIGN.md §5.1 used to say "the leaf branch draws". There is no branch
+to draw. What draws is **the mark's own lit plane**, revealed by a mask edge sweeping across it — which
+is the reveal the mark's construction already implies, since the fold is carried by tone rather than
+by a drawn line.
 
 | Part | Spec |
 |---|---|
-| wax body | irregular edge (seeded path, three soft drips), radial gradient from a light crown to a dark edge |
-| raised rim | stroke at 18% towards white, 2.2px |
-| inner ring | dark line 1.6px at 42% + light line 0.9px just inside it |
-| imprint | brand V-and-leaf, pressed: inner shadow, 88% opacity of the darkest wax tone |
-| highlight | off-centre ellipse at 36%/28%, white at 50% falling to 0 |
-| shadow | drop shadow, 3px y-offset, 3.2px blur, 42% of a warm brown-black |
+| wax body | organic lobed edge with soft drips, radial gradient from a light crown to a dark edge |
+| raised rim | stroke 18% towards white, 2.2px |
+| recessed centre | dark line 1.6px at 42% + light line 0.9px just inside it |
+| imprint | the brand mark in **muted gold**, pressed with an inner shadow; **55–60% of the inner disc at 92px — measured in a browser, not calculated** |
+| highlight | one off-centre ellipse, white at 50% falling to 0 |
+| contact shadow | drop shadow, 3px y-offset, 3.2px blur, 42% of a warm brown-black |
+| grain | inlined noise; no file, no dependency |
 | crack | three wedges clipped from one drawing, so gradients and rings stay continuous until they part |
 
 Colour variants: burgundy (T1), gold, emerald, rose gold, champagne, black. The wax is chosen by the
 template's seal spec — never by the palette accent, which is how a gold seal appeared on a burgundy
 template once already.
+
+---
+
+## 8. The reference images, and the directions
+
+Three photographs, one per state the entrance has to reach, filed in `assets/brand/reference/`. They
+are the target for **materials, lighting, proportions and ornament** — not a colour specification
+(colours come from §1 and the contrast rules) and not a pixel spec.
+
+| File | State | What it settles |
+|---|---|---|
+| `envelope-reference-sealed.jpg` | sealed | flap down over the front, its two edges meeting at the seal, a hairline gold line along every fold edge, the sprigs lying along the flap edges, the seal on the vertical axis at the closure point |
+| `envelope-reference-opening.jpg` | opening | the flap at 180°, the lining with its botanical print and frame, the card risen about half way, the wax in **three broken wedges resting on the front panel**, particles rising above where the seal was |
+| `envelope-reference.jpg` | open / final | the card out above the wings, the lining behind it, the ornament at rest |
+
+Their seals carry a serif V with a leaf spray. The brand mark is not that, and §7 says why. **Do not
+copy the placeholder mark from any of them.**
+
+| Direction | State |
+|---|---|
+| **A — Pressed Wax** | **approved and being built.** Burgundy wax seal with the brand mark pressed in, the crack, the flap opening on its hinge, the arch drawing itself. |
+| **B** | recorded, not chosen |
+| **C — Palace Gate** | recorded as a **future template only**. Nothing is built, no decision depends on it, and it must not appear in the code until it is scoped as a template of its own. |
