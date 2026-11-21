@@ -1211,8 +1211,8 @@
  * The lining: the flap's inner face.
  *
  * Layer 2. It lives **inside** the flap, so it is clipped to the flap's shape and rotates away with
- * the fold — which is what a lined envelope does. Dark emerald (#171E1A, sampled from
- * entrance-target-broken.png: median of 32,639 liner pixels) with a fine gold botanical line-art at
+ * the fold — which is what a lined envelope does. Dark emerald (#14231D, sampled from
+ * entrance-target-broken.png: median of 32,639 liner pixels, #14231D) with a fine gold botanical line-art at
  * low contrast, and a thin gold frame that follows the fold rather than a rectangle.
  */
 .envelope__liner {
@@ -1221,7 +1221,7 @@
   opacity: 0;
   transition: opacity 240ms ease-out 360ms;
   pointer-events: none;
-  background-color: #171e1a;
+  background-color: #14231d;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='68'%3E%3Cg fill='none' stroke='%23a98a5c' stroke-opacity='0.26' stroke-width='0.7'%3E%3Cpath d='M9 52c7-3 12-9 15-17'/%3E%3Cpath d='M24 35c-5-3-6-9-2-12 3 4 4 9 2 12z'/%3E%3Cpath d='M24 35c1-5 6-9 11-8-2 5-6 9-11 8z'/%3E%3Cpath d='M55 60c6-4 9-12 9-20'/%3E%3Cpath d='M64 40c-5-2-8-7-5-11 4 3 6 7 5 11z'/%3E%3Cpath d='M64 40c2-5 8-8 12-5-3 4-8 7-12 5z'/%3E%3Cpath d='M80 22c4-2 7-6 7-11'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 96px 68px;
 }
