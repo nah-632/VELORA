@@ -85,13 +85,55 @@
   background-size: 140px 140px;
 }
 
+/*
+ * Cotton has fibres, not only grain.
+ *
+ * The same turbulence, stretched hard along one axis (`baseFrequency` 0.9 horizontally against
+ * 0.03 vertically) reads as long strands rather than dots. `soft-light` at low opacity keeps it
+ * under the threshold where a phone screen turns it into visible stripes.
+ */
+.envelope__fibres {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.24 0.9' numOctaves='2' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23f)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
 /* The side wings, folded in. Each is a triangle whose hypotenuse is the fold edge. */
 .envelope__wing {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-color: var(--env-paper-shade);
+  /* Light falls off away from the top left, on the panel itself and not only over the whole box. */
+  background-image: linear-gradient(137deg, rgba(255, 255, 255, 0.07) 0%, rgba(0, 0, 0, 0.11) 100%);
+  z-index: 1;
 }
+
+/*
+ * Painting order, stated rather than inherited from the DOM.
+ *
+ * The card used to be painted after the front panel, so it lay *on* the envelope: during the first
+ * third of the rise its lower edge was drawn over the panel a guest should be seeing, and a card
+ * emerging from an envelope looked like a card resting on one. Every layer is absolutely positioned
+ * inside the same stacking context, so z-index is the whole mechanism — and the flap stays above the
+ * card, which is what keeps a sealed envelope closed.
+ *
+ * Found on the harness with the card frozen at 50% of its rise.
+ */
+.envelope__body { z-index: 0; }
+.envelope__card { z-index: 2; }
+.envelope__front,
+.envelope__edges { z-index: 3; }
+.envelope__light,
+.envelope__grain,
+.envelope__fibres { z-index: 4; }
+.envelope__flap { z-index: 5; }
+.envelope__name { z-index: 6; }
+.seal__disc { z-index: 7; }
 
 .envelope__wing--left {
   clip-path: polygon(-1% 40.5%, 50.7% var(--env-closure-y), -1% 80.5%);
@@ -107,7 +149,28 @@
   inset: 0;
   pointer-events: none;
   background-color: var(--env-paper);
+  background-image: linear-gradient(148deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.09) 100%);
   clip-path: polygon(-1% 80.5%, 50% var(--env-closure-y), 101% 80.5%, 101% 101%, -1% 101%);
+}
+
+/*
+ * Decoration must never be the thing a tap lands on.
+ *
+ * Every layer of the envelope is `pointer-events: none`, so hit-testing falls straight through to
+ * the button that wraps them. That is what makes "the button is the topmost hit target" a fact
+ * rather than a description: `elementFromPoint` at the seal centre returns the button itself.
+ * The disc already worked this way; the rest of the envelope now does too.
+ */
+.envelope__wing,
+.envelope__front,
+.envelope__flap,
+.envelope__edges,
+.envelope__light,
+.envelope__grain,
+.envelope__fibres,
+.envelope__liner,
+.envelope__card {
+  pointer-events: none;
 }
 
 /* Light from the top left, over the whole envelope. One layer, not one per panel. */
@@ -169,7 +232,22 @@
   animation: handwrite 1500ms ease-out 350ms forwards;
 }
 
+/*
+ * The Arabic name needs the *other* mask gradient, not only other keyframes.
+ *
+ * The mask is a 220%-wide image: black for its first 45%, transparent from 55%. `mask-position`
+ * slides it, and animating it is the wipe. The LTR wipe runs -120% → 0%, which parks the window
+ * over the black half. The RTL version ran 220% → 100%, and 100% puts the window at image
+ * x 1.2W–2.2W — past the 55% mark, straight into the transparent half. Measured on the harness:
+ * `mask-position: 100%` with the 90deg gradient leaves the guest's name invisible, at opacity 1.
+ * So on every Arabic invitation the personalised name was painted and then masked away.
+ *
+ * With the gradient reversed (270deg) the black half sits on the right, 100% covers the window, and
+ * 220% is past the image — hidden. Same wipe, mirrored, and it ends showing the name.
+ */
 .envelope__name[dir="rtl"] {
+  -webkit-mask-image: linear-gradient(270deg, #000 0 45%, transparent 55% 100%);
+  mask-image: linear-gradient(270deg, #000 0 45%, transparent 55% 100%);
   -webkit-mask-position: 120% 0;
   mask-position: 120% 0;
   animation-name: handwrite-rtl;
@@ -230,10 +308,55 @@
   inset-inline: 6%;
   top: 12%;
   height: 92%;
-  border-radius: 4px;
+  border-radius: 3px;
+  overflow: hidden;
   transform: translateY(6%) scale(0.98);
   transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 180ms;
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.5);
+  /*
+   * Ivory cotton, as a raised leading edge and a shaded trailing one.
+   *
+   * "Colourless emboss" is the constraint that matters: the two edges differ in **luminance only**,
+   * never in tint, so the card still reads as paper whatever ground a template sets. A bevel built
+   * from the palette would turn the card's edge into a coloured rim, which is the same mistake the
+   * flap made when it mixed towards the wax tone and came out slate.
+   */
+  box-shadow:
+    0 10px 30px -18px rgba(0, 0, 0, 0.5),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.85),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+/*
+ * The card's cotton: the same turbulence as the envelope, at a finer scale and lower opacity —
+ * paper that has been in an envelope is smoother than the envelope's own stock, and painting them
+ * identically makes the card look like a cut-out of the flap.
+ */
+.envelope__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23c)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/*
+ * The card's ornament: a rule with a four-point star between its two halves (DESIGN.md §3), in the
+ * envelope's gold. Centred with auto margins rather than a logical inset plus a physical translate,
+ * which is A-1 — the mistake that put the seal 97.5px off-centre in both languages.
+ */
+.envelope__card-rule {
+  position: absolute;
+  inset-inline: 0;
+  margin-inline: auto;
+  inset-block-start: 13%;
+  display: block;
+  inline-size: 44%;
+  block-size: auto;
+  opacity: 0.9;
 }
 
 /*
@@ -1191,19 +1314,57 @@
 .t1 .timeline__title { font-family: var(--tpl-font-label); }
 .t1 .venue-card__label { font-family: var(--tpl-font-label); }
 
-/* The liner sits under the flap, revealed as it opens: a gold arabesque on the envelope paper. */
+/*
+ * The lining: the flap's inner face.
+ *
+ * It lives **inside** the flap, not behind it, so it is clipped to the flap's own shape and rotates
+ * away with the fold — which is what a lined envelope actually does. It used to be a separate layer
+ * that never left the panel.
+ */
 .envelope__liner {
   position: absolute;
   inset: 0;
-  border-radius: 6px;
   opacity: 0;
-  transition: opacity 500ms ease-out 260ms;
+  /*
+   * It fades in as the fold passes halfway.
+   *
+   * The flap rotates for 900ms, so halfway is 450ms. Starting the fade at 420ms means the lining
+   * begins to appear while the flap is still turning — which is what a lining does: it is revealed
+   * continuously, not switched on at the end. Ending at 680ms keeps it ahead of the card's rise.
+   */
+  transition: opacity 260ms ease-out 420ms;
   pointer-events: none;
+  /* Cotton, darker than the envelope it lines, so the print has something to sit on. */
+  background-color: color-mix(in oklab, var(--env-paper), #04100e 46%);
+  /*
+   * Two layers: a botanical repeat, and one light falloff across the whole face. The falloff is what
+   * stops the print reading as wallpaper — a printed lining is still fabric, and fabric is not
+   * evenly lit.
+   */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='72'%3E%3Cg fill='none' stroke='%23b99b6c' stroke-opacity='0.3' stroke-width='0.85' stroke-linecap='round'%3E%3Cpath d='M10 66C22 50 32 38 50 25c9-6 20-11 32-13'/%3E%3Cpath d='M24 55c-7 1-12-3-13-9 7-1 12 3 13 9z'/%3E%3Cpath d='M24 55c-1-6 4-11 10-10-1 6-5 10-10 10z'/%3E%3Cpath d='M41 38c-7 0-12-4-11-10 7 0 11 4 11 10z'/%3E%3Cpath d='M41 38c-1-6 4-11 10-9-1 6-5 9-10 9z'/%3E%3Cpath d='M62 22c-6 1-12-2-13-8 7-1 12 2 13 8z'/%3E%3Cpath d='M62 22c1-6 6-10 12-8-2 6-7 9-12 8z'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(0, 0, 0, 0.16) 62%, rgba(0, 0, 0, 0.3) 100%);
+  /*
+   * The tile is sized against the *lining's visible band*, not against the envelope box.
+   *
+   * The lining spans the whole box but is clipped to the flap, so only the flap's upper ~40% is ever
+   * seen — at the envelope's own scale that showed one and a half sprigs and read as a stray
+   * watermark rather than a printed lining.
+   */
+  background-size: 104px 72px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
+
+.envelope__liner svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
 }
 
 .envelope[data-phase="opening"] .envelope__liner,
 .envelope[data-phase="open"] .envelope__liner {
-  opacity: 0.5;
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

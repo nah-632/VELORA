@@ -169,26 +169,59 @@ export function WaxSeal({
             {/* Directional light from the top left, and the paper's grain — no image files. */}
             <span className="envelope__light" />
             <span className="envelope__grain" />
+            <span className="envelope__fibres" />
 
-            {liner === "arabesque" ? (
-              <span className="envelope__liner" aria-hidden="true">
-                <svg viewBox="0 0 300 200" fill="none">
-                  <g stroke="var(--tpl-gold, #B8913A)" strokeOpacity="0.55" strokeWidth="1">
-                    {Array.from({ length: 5 }, (_, row) =>
-                      Array.from({ length: 8 }, (_, col) => {
-                        const x = col * 38 + (row % 2 ? 19 : 0) + 8;
-                        const y = row * 34 + 14;
-                        return <path key={`${row}-${col}`} d={`M${x} ${y}c6-9 20-9 26 0c-6 9-20 9-26 0zM${x + 13} ${y - 7}v14`} />;
-                      }),
-                    )}
-                  </g>
-                </svg>
-              </span>
-            ) : null}
+            {/*
+              The mark's reveal and the wax break live in the disc, which is drawn below.
+            */}
 
-            <span className="envelope__card" style={{ background: palette.ground, border: `1px solid ${wax.ring}` }} />
+            {/*
+              The card: ivory cotton with a colourless emboss, and its own ornament — a rule with a
+              four-point star between the halves. No border is set here any more: a wax-coloured rim
+              on the card is a tinted edge, and the emboss has to be luminance-only.
+            */}
+            <span className="envelope__card" style={{ background: palette.ground }}>
+              <svg className="envelope__card-rule" viewBox="0 0 160 16" aria-hidden="true">
+                <g stroke="var(--env-gold)" strokeWidth="0.9" strokeLinecap="round" fill="none">
+                  <path d="M2 8 H62" />
+                  <path d="M98 8 H158" />
+                </g>
+                {/* A four-point star, drawn as concave arcs rather than a rotated square. */}
+                <path
+                  d="M80 1 C81 5.5 82.5 7 87 8 C82.5 9 81 10.5 80 15 C79 10.5 77.5 9 73 8 C77.5 7 79 5.5 80 1 Z"
+                  fill="var(--env-gold)"
+                />
+              </svg>
+            </span>
 
             <span className="envelope__flap">
+              {/*
+                The lining is the flap's inner face, so it lives inside the flap: clipped to the
+                flap's own shape and rotating away with the fold. When the envelope is sealed it is
+                invisible and the flap's paper shows; as the fold turns past halfway it fades in.
+              */}
+              {liner === "arabesque" ? (
+                <span className="envelope__liner" aria-hidden="true">
+                  <svg viewBox="0 0 330 220" preserveAspectRatio="none" fill="none">
+                    <path
+                      d="M12 8 L318 8 L318 100 L165 145 L12 100 Z"
+                      stroke="var(--env-gold)"
+                      strokeOpacity="0.45"
+                      strokeWidth="1"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {/* The frame, doubled: a heavier rule with a thinner one inside it. */}
+                    <path
+                      d="M21 17 L309 17 L309 94 L165 134 L21 94 Z"
+                      stroke="var(--env-gold)"
+                      strokeOpacity="0.22"
+                      strokeWidth="1"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
+                </span>
+              ) : null}
+
               <span className="envelope__flap-edges" aria-hidden="true">
                 <svg viewBox="0 0 330 220" preserveAspectRatio="none" fill="none">
                   <g strokeLinecap="round">
@@ -263,10 +296,18 @@ export function WaxSeal({
                           <path d="M16 5l4 11 4-11 4 11-8 13-8-13z" fill={wax.emboss} />
                         )}
                       </g>
+
+                      {/*
+                        The specular highlight belongs to the wax, so it is clipped to a wedge like
+                        everything else.
+                        
+                        It used to sit outside the pieces, as a sibling of the three groups: the wax
+                        broke and left, and the highlight stayed behind on the panel as an unexplained
+                        white smudge. Found on the harness at 50% of the rise.
+                      */}
+                      <ellipse cx="44" cy="36" rx="19" ry="11" fill={`url(#wax-sheen-${uid})`} transform="rotate(-18 44 36)" />
                     </g>
                   ))}
-
-                  <ellipse cx="44" cy="36" rx="19" ry="11" fill={`url(#wax-sheen-${uid})`} transform="rotate(-18 44 36)" />
                 </g>
               </svg>
 
