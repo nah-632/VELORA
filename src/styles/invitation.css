@@ -1212,7 +1212,7 @@
  *
  * Layer 2. It lives **inside** the flap, so it is clipped to the flap's shape and rotates away with
  * the fold — which is what a lined envelope does. Dark emerald (#171E1A, sampled from
- * entrance-target-opening.png: median of 32,639 liner pixels) with a fine gold botanical line-art at
+ * entrance-target-broken.png: median of 32,639 liner pixels) with a fine gold botanical line-art at
  * low contrast, and a thin gold frame that follows the fold rather than a rectangle.
  */
 .envelope__liner {
