@@ -34,7 +34,31 @@
   display: grid;
   place-items: center;
   padding: 1.5rem;
-  background: var(--ground-paper, #faf7f1);
+
+  /*
+   * The entrance's own palette, defined here and nowhere else.
+   *
+   * `invitation.css` is imported only by `src/app/i/[token]/layout.tsx`, so these variables cannot
+   * reach the admin console or the marketing pages, and `tokens.css` is not touched. The values are
+   * the medians sampled from `assets/reference/entrance-target.png`, adjusted where the render
+   * disagreed with the photograph — the numbers and the reason are in the commit message and in the
+   * layer report, not left as lore.
+   */
+  --env-ground: #e6caae;
+  --env-ground-lit: #f5dfc7;
+  --env-ground-shade: #d3b496;
+  --env-paper: #1a2b22;
+  --env-paper-lit: #24372c;
+  --env-paper-shade: #101c16;
+  --env-gold: #be925e;
+  --env-gold-soft: rgba(190, 146, 94, 0.42);
+
+  background-color: var(--env-ground);
+  background-image:
+    radial-gradient(120% 82% at 16% 2%, var(--env-ground-lit) 0%, rgba(245, 223, 199, 0) 58%),
+    radial-gradient(96% 74% at 92% 100%, rgba(120, 84, 55, 0.16) 0%, rgba(120, 84, 55, 0) 62%),
+    radial-gradient(70% 50% at 4% 12%, rgba(120, 84, 55, 0.10) 0%, rgba(120, 84, 55, 0) 70%);
+
   /* While it is up, a swipe does not scroll the invitation behind it out of position. */
   touch-action: none;
   overscroll-behavior: contain;
@@ -43,17 +67,83 @@
 /* The envelope, and the card that comes out of it. */
 .envelope {
   position: relative;
+  /*
+   * The proportions are the reference's, measured rather than guessed.
+   *
+   * `entrance-target.png`, the closed envelope detected edge to edge: 741 x 571 px = **1.298**.
+   * The old 3/2 (1.500) was 16.7% too wide — the envelope read as a bank-note rather than as the
+   * deeper, 5:4-ish object in the photograph. Changed here because every later layer (flap, liner,
+   * card, seal) is positioned as a percentage of this box, so the base has to be right first.
+   */
   width: min(88vw, 380px);
-  aspect-ratio: 3 / 2;
+  aspect-ratio: 741 / 571;
   perspective: 1200px;
 }
 
+/*
+ * The envelope's paper.
+ *
+ * Layer 1 of the entrance rebuild: the body only — emerald cotton with a directional light, a
+ * visible fibre and a contact shadow. The flap, the lining, the card, the seal and the sprigs are
+ * later layers and are not here yet.
+ *
+ * **On the gold edges.** The brief for this layer said "gold hairline edges". The reference says
+ * otherwise: cropped edge to edge, the closed envelope has gold only along the flap's two diagonals
+ * and the wing folds — an X through the seal — and no gold at all along its own perimeter. A gold
+ * ring around the body would be an invention, so the body gets a 1px feather of light instead, and
+ * the gold arrives with the fold in layer 2, where the photograph puts it.
+ *
+ * The fibre is an inlined `feTurbulence` in a data URI: a few hundred bytes of SVG instead of a
+ * texture file, and it is static — nothing animates, nothing is filtered at runtime.
+ */
 .envelope__body {
   position: absolute;
   inset: 0;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.45);
+  border-radius: 9px;
+  border: 0;
+  background-color: var(--env-paper);
+  background-image:
+    linear-gradient(143deg, var(--env-paper-lit) 0%, var(--env-paper) 42%, var(--env-paper-shade) 100%),
+    radial-gradient(120% 90% at 8% 96%, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0) 55%);
+  box-shadow:
+    0 22px 46px -26px rgba(26, 17, 10, 0.55),
+    0 3px 6px -2px rgba(26, 17, 10, 0.22);
+}
+
+/* grain: fine, isotropic — the tooth of the paper */
+.envelope__body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.72;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.42'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* fibre: the same noise stretched along one axis, so it reads as strands and not as dots */
+.envelope__body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.24 0.9' numOctaves='2' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23f)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* The rim: a 1px feather of light, not gold. See the note above the edge element. */
+.envelope__body > .envelope__edge {
+  position: absolute;
+  inset: 0.5px;
+  border-radius: 8.5px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  pointer-events: none;
 }
 
 /*

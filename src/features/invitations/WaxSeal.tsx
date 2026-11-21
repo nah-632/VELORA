@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { MARK_FLIP, MARK_PATHS } from "@/lib/templates/brand-mark";
 import { crackWedges, sealPalette, waxPath } from "./seal";
@@ -143,7 +143,18 @@ export function WaxSeal({
             tabIndex={phase === "sealed" ? 0 : -1}
             aria-label={labels.prompt}
           >
-            <span className="envelope__body" style={{ background: envelopeColor ?? palette.ground, borderColor: wax.ring }} />
+            {/*
+              The paper colour comes from the entrance palette (a scoped CSS variable) unless the
+              template explicitly sets an envelope colour. It deliberately does **not** fall back to
+              `palette.ground`: the envelope is one brand object across templates, and letting the
+              invitation's ground colour leak into it is how the flap once turned grey.
+            */}
+            <span
+              className="envelope__body"
+              style={envelopeColor ? ({ "--env-paper": envelopeColor } as CSSProperties) : undefined}
+            >
+              <span className="envelope__edge" aria-hidden="true" />
+            </span>
 
             {liner === "arabesque" ? (
               <span className="envelope__liner" aria-hidden="true">
