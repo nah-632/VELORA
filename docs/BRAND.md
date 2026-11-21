@@ -147,3 +147,75 @@ carry every interactive use.
 - The tagline ("The Art of Inviting") is set as live text beside the lockup; if it becomes part of
   a printed asset it needs the same outline treatment as the wordmark.
 - Light and dark **social/OG images** are not produced.
+
+---
+
+## Appendix A — measured: would a new Arabic face be worth adopting? (2026-11-21)
+
+**No face was adopted and no decision was taken here.** This is a measurement, taken before a
+decision, so the decision can be made with numbers rather than with an impression from a screenshot.
+
+Method: each family's stylesheet was fetched from the Google Fonts CSS2 API, every subset URL it
+declares was downloaded, and the files were measured with `stat` — not estimated from a directory
+listing, which rounds to 4 KB blocks and has already made this repository's font total wrong once.
+Licences were fetched from the upstream `OFL.txt` in `google/fonts`, not read off a marketing page.
+
+| Candidate | Arabic subset | Latin subset | Licence | Variable? |
+|---|---|---|---|---|
+| **Readex Pro** | **22,864 B (22.3 KB)** | 31,428 B (30.7 KB) | OFL 1.1 — "Copyright 2018 The Readex Pro Project Authors… with Reserved Font Name RevReading Lexend" | yes, 300–700 in one file |
+| **El Messiri** | 22,280 B (21.8 KB) | 23,632 B (23.1 KB) | OFL 1.1 — "Copyright 2015 The El Messiri Project Authors" | yes |
+| **Cairo** | 30,896 B (30.2 KB) | 33,820 B (33.0 KB) | OFL 1.1 — "Copyright 2009 The Cairo Project Authors" | yes |
+
+What the repository ships today, same measure:
+
+| File | Bytes | Role |
+|---|---|---|
+| `amiri-arabic-400.woff2` | 121,088 | verse |
+| `notonaskh-arabic-var.woff2` | 98,880 | body (Arabic) |
+| `cormorantgaramond-latin-var.woff2` | 60,820 | names / body (Latin) |
+| `arefruqaa-arabic-700.woff2` | 56,036 | names |
+| `plexsansarabic-arabic-600.woff2` | 55,076 | admin only |
+| `plexsansarabic-arabic-500.woff2` | 54,756 | admin only |
+| `plexsansarabic-arabic-400.woff2` | 51,220 | admin only |
+| `arefruqaa-arabic-400.woff2` | 48,500 | names |
+| `cinzel-latin-var.woff2` | 35,004 | labels (Latin) |
+| `reemkufi-arabic-var.woff2` | 24,196 | labels |
+| `manrope-latin-var.woff2` | 23,540 | interface |
+| **total** | **629,116 B (614 KB)** | 11 files |
+
+### Where a new face would win, on measurement
+
+Readex Pro's Arabic subset (22.3 KB) is **smaller than every Arabic face this repository ships**
+except Reem Kufi. But it is a geometric **sans**, so it cannot replace Aref Ruqaa (display) or Amiri
+(verse) — those are calligraphic faces and the choice of them is a design decision, not a byte
+count. Its natural slot is the one IBM Plex Sans Arabic occupies today: **admin-only, three static
+files, 161,052 B (157 KB)**. One Readex Pro variable file covers 300–700 and would cut about
+**139 KB** from the repository and two requests from the console's first paint.
+
+That is the strongest measured argument for it, and it is an argument about the **console**, in a
+different font than the invitation's. §2 of `DESIGN.md` already forbids Plex on `/i/<token>`.
+
+### Where it would not win
+
+Swapping **Noto Naskh Arabic** (98.9 KB, the invitation body face) for a geometric sans would change
+the character of every template at once — a Naskh carries the calligraphic register the product is
+selling. That is a `DESIGN.md §2` decision for the owner, and a size saving is not a reason to make
+it.
+
+### Loading strategy — what would have to be done, not assumed
+
+1. **Self-host and subset through `scripts/fonts.py`.** Dropping a Google subset into `public/fonts/`
+   would skip `npm run test:fonts`, which is what asserts joining features survive
+   (`init/medi/fina/rlig`) and that nothing references a glyph it dropped. Google's Arabic subset has
+   not been through that check.
+2. **`font-display: block` above the fold, `swap` below** — the existing rule, measured in
+   `src/styles/fonts.css` as 4 `block` / 7 `swap`. `swap` on a preloaded above-fold face is a
+   substitution, and a substitution is a layout shift; that is how the CLS defect was found on
+   2026-11-19.
+3. **`<link rel="preload">` the faces actually used above the fold**, and only those.
+4. **Keep the subsets split by script.** Readex Pro already ships Arabic and Latin as separate files;
+   `unicode-range` must be kept so a European locale never downloads the Arabic file and vice versa.
+5. **Verify by measurement, not by inspection:** `npm run test:fonts`, plus reading
+   `document.fonts` and the actual bytes fetched in a browser.
+
+Reported to the owner as a measurement. Nothing in this appendix is adopted.

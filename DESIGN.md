@@ -216,6 +216,22 @@ engine at once — is exactly how a regression ships unseen.
 | 6 | the ornament: the two sprigs flanking the seal | screenshot at 2× |
 | 7 | the sequence: timing, the leaf-free mark wipe, particles, reduced motion | state-by-state screenshots, then the timing table |
 
+**Status at 2026-11-21 — 4 of 7, and nothing above is claimed beyond its evidence.**
+
+| # | Layer | State |
+|---|---|---|
+| 1 | the box | **done** (`b975c3f`) |
+| 2 | the flap | **done** (`b975c3f`) |
+| 3 | the lining | **done** — `d8d8c70`; screenshot `tests/visual/layers/layer3-lining-flap-180+layer4-card-0.jpg` |
+| 4 | the card | **done** — `d8d8c70`; same screenshot plus `layer4-card-50.jpg` |
+| 5 | the seal | **partly** — the break, the highlight and the imprint exist, but the imprint's legibility was *not* re-measured at 2x and the mark was *not* read back as a share of the inner disc, which is what this row asks for |
+| 6 | the ornament (sprigs) | **not built** — A-5 records they are ornament around the seal only; nothing is drawn yet |
+| 7 | the sequence | **partly** — the crack, the rise and reduced motion exist, but the timing table is not written and the broken wax still animates out to `opacity: 0`, which §8 says contradicts the reference: the wedges should stay **on the front panel** |
+
+Three defects were found by rendering during layers 3 and 4 and are fixed in `d8d8c70`: the RTL
+name mask (the guest's name was invisible on every Arabic invitation), the specular highlight
+surviving the break, and the card being painted over the front panel instead of rising out of it.
+
 The iteration environment is not the app: this sandbox cannot run Next.js. It is a static page that
 loads the **real** `invitation.css` and mirrors the component's DOM exactly, and it prints what it
 measured (stylesheet loaded, rule count, `.envelope` box) so a broken link cannot be mistaken for a

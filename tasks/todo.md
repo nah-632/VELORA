@@ -265,3 +265,29 @@ written. Everything below is now verified against the live API; see `docs/CRANL.
   deployment on CranL.
 - **B2 — Payment provider not selected** (by design). Phase 1 ships the abstraction and manual
   recording; activation requirements are documented.
+
+## Out of scope for the envelope work — features that need database and policy changes
+
+Recorded 2026-11-21 from the reference study (`replica/recon.md`). These are the rows of that map
+that touch **guest data**, and guest data is not the envelope's business. They are **not** in G3, no
+migration has been written, and no schema is proposed below — this is a statement of what each one
+would reach, so that "small feature" is not mistaken for "small change" when it is scheduled.
+
+The test for landing in this list: does it write guest data, read guest data belonging to one guest
+back to other guests, or attach a new public surface to the token route? If yes, it needs a
+migration, a policy, and a decision about retention — three things an envelope layer must not smuggle
+in.
+
+| Feature | What it would touch | Why it is not envelope work |
+| --- | --- | --- |
+| **Wishes wall / guestbook** | a new relation for the wishes themselves, keyed to the event and to the guest who wrote it; a write path reachable by a guest who has **no account** (the token is the only credential); a read path that shows one guest's words to **every other guest**, which is a different disclosure from anything currently in the product; a moderation/removal path for the operator; a policy question the product does not yet answer — can a guest delete their own wish, and does deleting the guest delete the wish | It creates a public read surface over guest-authored content. Every existing public surface reads the *host's* content and one guest's own row. This is the first one where guests read each other |
+| **QR entry pass + check-in** | a per-guest credential (the pass) that must be unguessable and revocable; a check-in event with a timestamp and an actor (who scanned); an operator surface that works at a door, on a phone, possibly offline; a decision about what the scanner may see (a name? a hall? a party size?) because the person holding the scanner is not the host; a retention rule for arrival data | It adds a second credential per guest and a second actor (the door) to the data model. It also has a physical-world failure mode — no signal at the venue — which is a design constraint nothing else here has |
+| **Per-guest personal font** | a per-guest style preference; a rule that a guest's chosen face must still carry legible text (Aref Ruqaa is display-only below ~24px, per the 2.3 legibility test); if the guest picks it, an unauthenticated write, and if the host picks it, an operator surface over a per-guest field | It is a per-guest field that changes typography — so it collides with the fixed type scale (names 44–52px, DESIGN.md §6) that exists to keep the invitation legible. It is a design-system question before it is a database question. **No reference product implements it** — see recon §2 |
+| **Per-guest personal line** | **already exists** — `guests.personal_line_ar` / `personal_line_en`, read by the token route and rendered under the greeting (T1 E2) | Listed only because the brief grouped it with the others. No new migration, no new policy. The work that remains is the per-guest *font*, above, not the line |
+
+### The rule this list is protecting
+
+The envelope, the seal and the invitation canvas are **presentation**. A feature that writes guest
+data, or lets one guest see another's, changes the product's privacy surface — and that decision
+belongs with the owner, in front of a migration, not inside a commit that was nominally about a
+flap.
