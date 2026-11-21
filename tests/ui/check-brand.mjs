@@ -105,10 +105,19 @@ check(
 
 const monogram = read("monogram.svg");
 const monogramPaths = pathsOf(monogram);
-check("the monogram is two planes", monogramPaths.length === 2, `found ${monogramPaths.length}`);
+// The mark is a trace of the operator's logo — four paths, no folded planes. It used to be a
+// generated ribbon with exactly two planes and a tonal fold, and this guard described that. The
+// guard follows the artwork, not the other way round: it still refuses a monogram that is not the
+// shipped geometry, it just knows what the shipped geometry now is.
 check(
-  "the monogram keeps its tonal fold",
-  /fill-opacity/.test(monogram ?? ""),
+  "the monogram is the traced mark — four paths",
+  monogramPaths.length === 4,
+  `found ${monogramPaths.length}`,
+);
+check(
+  "the monogram is a single tone — the mark has no folded planes",
+  !/fill-opacity/.test(monogram ?? ""),
+  "a traced outline has no second plane to hold back",
 );
 
 const mono = read("monogram-mono.svg");
@@ -122,8 +131,8 @@ const lockup = read("lockup.svg");
 const lockupPaths = pathsOf(lockup);
 check(
   "the lockup carries both the mark and all six wordmark glyphs",
-  lockupPaths.length === 8,
-  `found ${lockupPaths.length}, expected 2 + 6`,
+  lockupPaths.length === 10,
+  `found ${lockupPaths.length}, expected 4 + 6`,
 );
 check(
   "the lockup reuses the mark's exact geometry",
