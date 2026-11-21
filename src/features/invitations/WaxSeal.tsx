@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { BrandMark } from "@/lib/templates/brand-mark";
+import { MARK_FLIP, MARK_PATHS } from "@/lib/templates/brand-mark";
 import { crackWedges, sealPalette, waxPath } from "./seal";
 
 /**
@@ -222,13 +222,22 @@ export function WaxSeal({
                       <circle cx="60" cy="60" r="40" fill="none" stroke={wax.emboss} strokeWidth="1.6" strokeOpacity="0.42" />
                       <circle cx="60" cy="60" r="37.6" fill="none" stroke={wax.light} strokeWidth="0.9" strokeOpacity="0.32" />
 
-                      {/* The imprint: the brand mark, pressed. Geometry from public/brand/monogram.svg. */}
-                      <g transform="translate(37 38.5) scale(1.44)" filter={`url(#wax-press-${uid})`} opacity="0.9">
+                      {/*
+                        The imprint: the operator's mark, pressed.
+
+                        Placed so it spans 57% of the inner disc — the inner disc is r 37.6 here, so
+                        the mark is 43.2 units wide. `translate(12.67 37.67) scale(0.08268)` puts the
+                        traced ink box (523 wide) centred on (60,60); the traced ink box is 523×468.
+                        The numbers are derived, but the percentage is **measured in a browser**, per
+                        docs/INVITATION-QUALITY.md B7.
+                      */}
+                      <g transform="translate(12.67 37.67) scale(0.08268)" filter={`url(#wax-press-${uid})`}>
                         {imprint === "monogram" || imprint === "eight-star" ? (
-                          <g mask={`url(#mark-mask-${uid})`}>
-                            <g className="seal__brand">
-                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L22.96 4.67 L27.84 7.21 L17.33 27.34 L14.67 27.34 Z" fill={wax.emboss} fillOpacity="0.74" />
-                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L16 27.34 L14.67 27.34 Z" fill={wax.emboss} />
+                          <g mask={`url(#mark-mask-${uid})`} className="seal__brand" fill="var(--seal-imprint, #BE925E)">
+                            <g transform={MARK_FLIP}>
+                              {MARK_PATHS.map((d, i) => (
+                                <path key={i} d={d} />
+                              ))}
                             </g>
                           </g>
                         ) : (

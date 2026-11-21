@@ -146,19 +146,20 @@ is elegant in the editor and illegible on a phone is a failed design.
 
 ## 7. The seal
 
-The imprint is the **brand mark** — a single strip of card, folded once, read as the letter V. The
-construction and its reasoning are in `brand/monogram.mjs`; the geometry is copied byte-for-byte into
-the component and is never redrawn.
+The imprint is the **brand mark**: a gold V whose left stroke is thick and carries a flat top serif,
+whose right stroke thins to the vertex, and from which a stem sweeps into an open loop and rises as a
+branch of pointed leaves with visible veins, ending in a small curled tendril.
 
-**There is no leaf in it.** `SPEC.md` records the alternative — a serif V carrying a botanical spray —
-as decision **D4**, and notes that it *conflicts with the brief*, which asks for "a folded invitation
-or refined paper geometry" and rules out excessive flourishes. The folded strip is what was built.
-Earlier documents called this mark "the V-and-leaf"; the wording was the drift, not the drawing.
+**The geometry is a trace of the operator's own logo**, not a drawing of it —
+`assets/brand/velora-mark.svg`, produced with potrace and copied through unchanged. It replaced a
+folded-ribbon monogram that had been generated here (`brand/archive/monogram.mjs`, archived, used
+nowhere): that ribbon is not the operator's mark and has no leaf. Earlier documents called the ribbon
+"the V-and-leaf", which was wrong in the other direction — the leaf was in the real logo all along.
 
-That matters for the sequence: DESIGN.md §5.1 used to say "the leaf branch draws". There is no branch
-to draw. What draws is **the mark's own lit plane**, revealed by a mask edge sweeping across it — which
-is the reveal the mark's construction already implies, since the fold is carried by tone rather than
-by a drawn line.
+The sequence (§5.1) says the branch draws itself. It does — but not with `stroke-dashoffset`: the mark
+is *filled* geometry with no `stroke` anywhere, so a dash offset would first require re-outlining it,
+which changes its shape at every size. The branch is revealed by **a mask edge sweeping across the
+existing paths**, which is the same gesture and leaves the artwork untouched.
 
 | Part | Spec |
 |---|---|
@@ -166,6 +167,7 @@ by a drawn line.
 | raised rim | stroke 18% towards white, 2.2px |
 | recessed centre | dark line 1.6px at 42% + light line 0.9px just inside it |
 | imprint | the brand mark in **muted gold**, pressed with an inner shadow; **55–60% of the inner disc at 92px — measured in a browser, not calculated** |
+| branch reveal | a sweeping mask edge, so the leaf draws without the geometry being redrawn |
 | highlight | one off-centre ellipse, white at 50% falling to 0 |
 | contact shadow | drop shadow, 3px y-offset, 3.2px blur, 42% of a warm brown-black |
 | grain | inlined noise; no file, no dependency |
