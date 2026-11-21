@@ -156,31 +156,37 @@ export function WaxSeal({
               <span className="envelope__edge" aria-hidden="true" />
             </span>
 
-            {liner === "arabesque" ? (
+            <span className="envelope__card" style={{ background: palette.ground, border: `1px solid ${wax.ring}` }} />
+
+            {/*
+              The flap, layer 2. Its material is the stylesheet's now: the inline gradient ended at
+              13% alpha and read grey over the ivory card. The lining is its inner face, so it lives
+              inside — clipped to the fold's shape and rotating away with it.
+            */}
+            <span className="envelope__flap">
+              {/* The lining is the flap's inner face; the entrance always has one. */}
               <span className="envelope__liner" aria-hidden="true">
-                <svg viewBox="0 0 300 200" fill="none">
-                  <g stroke="var(--tpl-gold, #B8913A)" strokeOpacity="0.55" strokeWidth="1">
-                    {Array.from({ length: 5 }, (_, row) =>
-                      Array.from({ length: 8 }, (_, col) => {
-                        const x = col * 38 + (row % 2 ? 19 : 0) + 8;
-                        const y = row * 34 + 14;
-                        return <path key={`${row}-${col}`} d={`M${x} ${y}c6-9 20-9 26 0c-6 9-20 9-26 0zM${x + 13} ${y - 7}v14`} />;
-                      }),
-                    )}
+                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                  <path
+                    d="M14 8 L316 8 L316 104 L165 158 L14 104 Z"
+                    stroke="var(--env-gold)"
+                    strokeOpacity="0.42"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+              </span>
+            
+
+              <span className="envelope__flap-edges" aria-hidden="true">
+                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                  <g strokeLinecap="round">
+                    <path d="M-3 104 L165 156.2 L333 104" stroke="var(--env-gold)" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                    <path d="M-3 105.4 L165 157.6 L333 105.4" stroke="var(--env-light, rgba(255,255,255,0.13))" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                   </g>
                 </svg>
               </span>
-            ) : null}
-
-            <span className="envelope__card" style={{ background: palette.ground, border: `1px solid ${wax.ring}` }} />
-
-            <span
-              className="envelope__flap"
-              style={{
-                background: `linear-gradient(180deg, ${envelopeColor ?? palette.ground} 0%, ${wax.light}22 100%)`,
-                borderBottom: `1px solid ${wax.ring}`,
-              }}
-            />
+            </span>
 
             <span className="envelope__name" style={{ color: palette.ink }} dir={isArabic ? "rtl" : "ltr"}>
               {guestName}

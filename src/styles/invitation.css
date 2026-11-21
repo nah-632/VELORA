@@ -193,14 +193,45 @@
 }
 
 /* The flap: a triangle that pivots on its top edge. */
+/*
+ * The flap.
+ *
+ * Layer 2. Opaque paper — the old version carried an inline gradient ending at 13% alpha of the wax
+ * tone, and over the ivory card that mixed to grey. Its lower edge is a **shallow V through the
+ * closure point** (41% at the edges, 61.5% at the centre), not a deep triangle to the flap's own
+ * bottom: the reference photograph, cropped edge to edge, shows the fold meeting the seal a little
+ * below the envelope's midline.
+ *
+ * The element spans the whole envelope and is clipped to the flap, so the fold edge can sit anywhere
+ * on the box and the shadow follows the clip.
+ */
 .envelope__flap {
   position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 62%;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  inset: 0;
+  clip-path: polygon(-1% -1%, 101% -1%, 101% 41%, 50% 61.5%, -1% 41%);
   transform-origin: top center;
   transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  background: linear-gradient(
+    180deg,
+    var(--env-paper-lit) 0%,
+    var(--env-paper) 38%,
+    var(--env-paper-shade) 100%
+  );
+  filter: drop-shadow(0 2.5px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* The fold's own edge: gold on the diagonals only, with a lit edge just inside it. */
+.envelope__flap-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.envelope__flap-edges svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
 }
 
 .envelope[data-phase="opening"] .envelope__flap,
@@ -218,6 +249,18 @@
   transform: translateY(6%) scale(0.98);
   transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 180ms;
   box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * A closed envelope does not show its card.
+ *
+ * The card spans `top: 12%` and `height: 92%`, so its lower 4% hung outside the flap and the sealed
+ * state showed a large ivory block where the reference shows emerald and two gold fold lines. The
+ * card's own materials are layer 3; its visibility in the sealed phase is layer 2's, because without
+ * this the flap cannot be seen at all.
+ */
+.envelope[data-phase="sealed"] .envelope__card {
+  opacity: 0;
 }
 
 .envelope[data-phase="opening"] .envelope__card,
@@ -1164,18 +1207,35 @@
 .t1 .venue-card__label { font-family: var(--tpl-font-label); }
 
 /* The liner sits under the flap, revealed as it opens: a gold arabesque on the envelope paper. */
+/*
+ * The lining: the flap's inner face.
+ *
+ * Layer 2. It lives **inside** the flap, so it is clipped to the flap's shape and rotates away with
+ * the fold — which is what a lined envelope does. Dark emerald (#171E1A, sampled from
+ * entrance-target-opening.png: median of 32,639 liner pixels) with a fine gold botanical line-art at
+ * low contrast, and a thin gold frame that follows the fold rather than a rectangle.
+ */
 .envelope__liner {
   position: absolute;
   inset: 0;
-  border-radius: 6px;
   opacity: 0;
-  transition: opacity 500ms ease-out 260ms;
+  transition: opacity 240ms ease-out 360ms;
   pointer-events: none;
+  background-color: #171e1a;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='68'%3E%3Cg fill='none' stroke='%23a98a5c' stroke-opacity='0.26' stroke-width='0.7'%3E%3Cpath d='M9 52c7-3 12-9 15-17'/%3E%3Cpath d='M24 35c-5-3-6-9-2-12 3 4 4 9 2 12z'/%3E%3Cpath d='M24 35c1-5 6-9 11-8-2 5-6 9-11 8z'/%3E%3Cpath d='M55 60c6-4 9-12 9-20'/%3E%3Cpath d='M64 40c-5-2-8-7-5-11 4 3 6 7 5 11z'/%3E%3Cpath d='M64 40c2-5 8-8 12-5-3 4-8 7-12 5z'/%3E%3Cpath d='M80 22c4-2 7-6 7-11'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 96px 68px;
+}
+
+.envelope__liner svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
 }
 
 .envelope[data-phase="opening"] .envelope__liner,
 .envelope[data-phase="open"] .envelope__liner {
-  opacity: 0.5;
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
