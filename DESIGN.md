@@ -227,6 +227,35 @@ ever fed to an image pipeline.
 Their seals carry a serif V with a leaf spray. The brand mark is not that, and §7 says why. **Do not
 copy the placeholder mark from any of them.**
 
+### 8.1 Liner polish, deferred
+
+**liner polish: lighting + denser, finer line-art.** Accepted as a later item and deliberately not
+worked on now. The liner is a flat `#14231D` fill with a 0.26-opacity botanical print; the reference's
+lining carries its own lighting and a print that is both denser and finer. Measured spread across the
+reference's lining: `#161817` on the dark body, `#21261D` near a lit edge, `#50412E` on a print stroke.
+
+### 8.2 Idea sources and deferred items
+
+Recorded so the provenance is not lost, and nothing here is implemented yet. **No code, texture file,
+token or dependency from any of these has been imported**; they are ideas, and the implementation
+stays plain CSS and SVG with our own easing and timings — smooth, not stepped.
+
+- **Step (c), the card emerging** — ideas taken from the *Receipt Printer* experiment at
+  `dqnamo.com/kitchen`, reuse stated as fine by the operator: an `overflow: hidden` window the card
+  slides out of with `translateY`; an explicit stage state machine `sealed → cracking → opening →
+  complete`; a soft contact shadow under the emerging card; reduced motion = 300 ms cross-fade.
+  **Not** imported: `motion/react`, Phosphor icons, its texture files, its grayscale tokens.
+  *No literal value or line of code was copied, so there is nothing to attribute line by line.*
+- **Step (c), "sprigs draw" and "arch draws"** — `stroke-dashoffset` on SVG paths: outline traced
+  first, then the fill fades in. Idea source: dqnamo **Logo Trace Loader** (MIT, on 21st.dev).
+  If any code is ever copied from it, its copyright notice comes with it. Reduced motion = the static
+  final state, or a 300 ms cross-fade.
+- **Step (e), the couple-name sheen** — a slow gold gradient sweep, decoration only; the text colour
+  stays ink or deep gold so contrast keeps passing. Idea source: dqnamo **Iridescent Foil**.
+  **Licence NOT verified.** Do not copy code from it. Gold only, no rainbow.
+- **Deferred, not planned:** perforated card edge (Ticket), postage frame (Stamp), a drawn signature,
+  hold-to-confirm RSVP.
+
 | Direction | State |
 |---|---|
 | **A — Pressed Wax** | **approved and being built.** Burgundy wax seal with the brand mark pressed in, the crack, the flap opening on its hinge, the arch drawing itself. |

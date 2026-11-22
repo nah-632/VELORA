@@ -163,13 +163,28 @@ export function WaxSeal({
               13% alpha and read grey over the ivory card. The lining is its inner face, so it lives
               inside — clipped to the fold's shape and rotating away with it.
             */}
+            {/*
+              The lower front pocket, and its two fold diagonals. The diagonals are drawn, not
+              bordered: a 1px border cannot follow 46°, and the line has to sit on the fold rather
+              than around the envelope.
+            */}
+            <span className="envelope__front" />
+            <span className="envelope__front-edges" aria-hidden="true">
+              <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none" style={{ color: "var(--env-gold)" }}>
+                <g strokeLinecap="round">
+                  <path d="M-3 232.4 L165 139.2 L333 232.4" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  <path d="M-3 233.8 L165 140.6 L333 233.8" stroke="rgba(0,0,0,0.35)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                </g>
+              </svg>
+            </span>
+
             <span className="envelope__flap">
               {/* The lining is the flap's inner face; the entrance always has one. */}
               <span className="envelope__liner" aria-hidden="true">
                 <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
                   <path
                     d="M14 8 L316 8 L316 104 L165 158 L14 104 Z"
-                    stroke="var(--env-gold)"
+                    stroke="currentColor"
                     strokeOpacity="0.42"
                     strokeWidth="1"
                     vectorEffect="non-scaling-stroke"
@@ -179,9 +194,9 @@ export function WaxSeal({
             
 
               <span className="envelope__flap-edges" aria-hidden="true">
-                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none" style={{ color: "var(--env-gold)" }}>
                   <g strokeLinecap="round">
-                    <path d="M-3 104 L165 156.2 L333 104" stroke="var(--env-gold)" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                    <path d="M-3 104 L165 156.2 L333 104" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                     <path d="M-3 105.4 L165 157.6 L333 105.4" stroke="var(--env-light, rgba(255,255,255,0.13))" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                   </g>
                 </svg>
