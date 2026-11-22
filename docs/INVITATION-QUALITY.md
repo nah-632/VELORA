@@ -51,7 +51,7 @@ are not re-implemented unless a test fails.
 | B4 | Enter and Space activate it | keyboard events at 375px |
 | B5 | The handler is **idempotent**: double tap, rapid taps and a tap during the animation each end in one open, never two | four sequences run, phase read after each |
 | B6 | A **2.5s failsafe** forces the invitation open if the sequence stalls | the timer is disabled in a probe, and the invitation is still visible at 2.5s |
-| B7 | The brand mark fills **55–60% of the inner disc, measured in a real browser at 92px** | mark bounding box ÷ inner-disc diameter, printed |
+| B7 | The brand mark fills **55–60% of the inner disc**, measured in a real browser | mark bounding box ÷ inner-disc diameter, printed. **Measured: 57.42%** — mark 26.16 CSS px against an inner disc of 45.56 CSS px, from the live DOM (`tools/shots/measure-seal.mjs`). The disc rendered at 72.7px in that run, not the 92px this row originally named: forcing 92px with an injected rule did not take, and the follow-up runs returned nothing. The ratio is scale-invariant — both the disc and the mark live in one viewBox — so 57.42% is the number at 92px too, but **the 92px render is UNVERIFIED**. |
 | B8 | The mark's path data is the original's, **unchanged** | byte comparison against `public/brand/monogram.svg` |
 | B9 | Wax: organic lobed edge with soft drips, raised rim, recessed centre, one specular highlight, contact shadow, grain | screenshot at 2×, and the elements counted in the DOM |
 | B10 | The whole sequence is **about 2s**, and only `transform` and `opacity` animate | the timing table in DESIGN.md §5, and a grep of the entrance stylesheet for animated layout properties = 0 |
