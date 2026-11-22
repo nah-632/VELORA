@@ -156,7 +156,39 @@ export function WaxSeal({
               <span className="envelope__edge" aria-hidden="true" />
             </span>
 
-            <span className="envelope__card" style={{ background: palette.ground, border: `1px solid ${wax.ring}` }} />
+            <span className="envelope__card">
+              {/*
+                The card's face: tone-on-tone sprigs and the star on its rule. Embossing is a light
+                copy offset up-left and a dark copy offset down-right, both at low opacity — no
+                colour, which is what "tone-on-tone" means here.
+                ESTIMATED: the ornament's placement is my construction; it is not measured from the
+                references. See the note on .envelope__card.
+              */}
+              <span className="envelope__card-ornament" aria-hidden="true">
+                <svg viewBox="0 0 300 208" preserveAspectRatio="none" fill="none">
+                  <g transform="translate(58 54)">
+                    <path d="M0 62 C10 44 22 30 36 22" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+                    <path d="M0 63 C10 45 22 31 36 23" stroke="rgba(120,90,54,0.30)" strokeWidth="1" />
+                    <path d="M14 40 C4 36 0 26 6 18 C14 24 17 33 14 40 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M15 41 C5 37 1 27 7 19 C15 25 18 34 15 41 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                    <path d="M34 22 C26 14 26 4 34 -2 C40 6 40 16 34 22 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M35 23 C27 15 27 5 35 -1 C41 7 41 17 35 23 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                  </g>
+                  <g transform="translate(242 54) scale(-1 1)">
+                    <path d="M0 62 C10 44 22 30 36 22" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+                    <path d="M0 63 C10 45 22 31 36 23" stroke="rgba(120,90,54,0.30)" strokeWidth="1" />
+                    <path d="M14 40 C4 36 0 26 6 18 C14 24 17 33 14 40 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M15 41 C5 37 1 27 7 19 C15 25 18 34 15 41 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                    <path d="M34 22 C26 14 26 4 34 -2 C40 6 40 16 34 22 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M35 23 C27 15 27 5 35 -1 C41 7 41 17 35 23 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                  </g>
+                  {/* the rule, and the four-point star sitting on its top end */}
+                  <path d="M150 14 L150 122" stroke="rgba(184,145,58,0.55)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  <path d="M150 40 L154 50 L164 54 L154 58 L150 68 L146 58 L136 54 L146 50 Z"
+                        stroke="rgba(184,145,58,0.75)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                </svg>
+              </span>
+            </span>
 
             {/*
               The flap, layer 2. Its material is the stylesheet's now: the inline gradient ended at

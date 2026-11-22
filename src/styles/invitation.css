@@ -240,34 +240,85 @@
   transform: rotateX(-172deg);
 }
 
-/* The invitation card, hidden behind the flap until the seal breaks. */
+/*
+ * The invitation card.
+ *
+ * B2. Five things and nothing else: a cream face, a gold hairline border, tone-on-tone embossed
+ * sprigs, a four-point star on a thin vertical rule, and being hidden while the envelope is sealed.
+ *
+ * **THE CARD'S TOP EDGE AND HEIGHT ARE ESTIMATED, NOT MEASURED.** The references cannot settle them:
+ * the card is #EDD2B7 and the ground #E9CDB1 — four levels apart — and the three photographs do not
+ * share a frame, so "a percentage of the envelope height" has no common reference yet. What is here
+ * is a construction that is at least self-consistent:
+ *
+ *   top 0, height 80%, and a sealed offset of +70% -> the card's top sits at 56% when sealed, which
+ *   is just below the pocket's edge at the centre (54.8%), so it is genuinely hidden. Raised, it
+ *   stands at 0-80%.
+ *
+ * UNVERIFIED: the two numbers that would place this from the references. Do not read them as
+ * measured, and do not tune them by eye until the face box per image is established.
+ */
 .envelope__card {
   position: absolute;
   inset-inline: 6%;
-  top: 12%;
-  height: 92%;
+  top: 0;
+  height: 80%;
   border-radius: 4px;
-  transform: translateY(6%) scale(0.98);
-  transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 180ms;
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.5);
+  /* The cream is flat enough to read as one sheet: the top is the brief's #EDD2B7, the middle is the
+     reference's measured cream (#E9D0B6, the median of 143,978 card pixels), and the bottom only
+     slightly deeper. A wider ramp was tried first and measured out — the upper half came back 19.4
+     from the reference, which is a gradient you can see rather than paper. */
+  background: linear-gradient(180deg, #edd2b7 0%, #e9d0b6 58%, #e6cab0 100%);
+  border: 1px solid color-mix(in oklab, var(--env-gold), #000 18%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 -6px 14px rgba(30, 16, 6, 0.22),
+    0 12px 26px -18px rgba(30, 16, 6, 0.35);
+  transform: translateY(70%);
+  opacity: 0;
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1) 440ms, opacity 120ms linear 440ms;
+}
+
+/* The ornament sits on the card's own face: embossed sprigs, and the star on its rule. */
+.envelope__card-ornament {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.envelope__card-ornament svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
 }
 
 /*
- * A closed envelope does not show its card.
+ * Sealed: the card is not there.
  *
- * The card spans `top: 12%` and `height: 92%`, so its lower 4% hung outside the flap and the sealed
- * state showed a large ivory block where the reference shows emerald and two gold fold lines. The
- * card's own materials are layer 3; its visibility in the sealed phase is layer 2's, because without
- * this the flap cannot be seen at all.
+ * It used to be visible — `top: 12%; height: 92%` hung 4% below the flap and every guest saw a band
+ * of ivory where the reference shows emerald. A closed envelope does not show its card.
  */
 .envelope[data-phase="sealed"] .envelope__card {
   opacity: 0;
+  transform: translateY(70%);
+  transition: none;
 }
 
+/*
+ * Rising. Timings from DESIGN.md 8.0 — transform and opacity only, no layout property anywhere.
+ *
+ * The decision recorded in 8.06 is that the card CARRIES the invitation: one entrance per container.
+ * That restructure touches the invitation route, so it is not in this commit; the card's own motion
+ * is, and it is the motion the invitation will inherit when it moves inside.
+ */
 .envelope[data-phase="opening"] .envelope__card,
 .envelope[data-phase="open"] .envelope__card {
-  transform: translateY(-46%) scale(1);
+  transform: translateY(0);
+  opacity: 1;
 }
+
+
 
 /*
  * The seal.
