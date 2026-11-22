@@ -285,16 +285,6 @@ export default async function InvitationPage({
 
         <p className="vi-when">{text("datetimeLine")}</p>
 
-        {/* Both halls, always, with the guest's own ringed. */}
-        <VenuesSection
-          venues={venueCards}
-          variant={iconVariantFor(design)}
-          labels={{ ...base.venues, venueOne: base.venues.venueOne }}
-          accent={design.palette.accent}
-          languageHref={languageHref}
-          languageLabel={isArabic ? "English" : "العربية"}
-        />
-
         {shown.length > 0 ? (
           <section className="vi-programme" aria-labelledby="vi-programme-title">
             <h2 className="vi-section-title" id="vi-programme-title">
@@ -331,11 +321,24 @@ export default async function InvitationPage({
           </section>
         ) : null}
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <a className={buttonClass("secondary")} href={`/i/${token}/calendar`}>
+        {/* Both halls, always, with the guest's own marked. */}
+        <VenuesSection
+          venues={venueCards}
+          variant={iconVariantFor(design)}
+          labels={{ ...base.venues, venueOne: base.venues.venueOne }}
+          accent={design.palette.accent}
+          languageHref={languageHref}
+          languageLabel={isArabic ? "English" : "العربية"}
+        />
+
+        {/* Adding it to a calendar belongs with the halls: the calendar entry carries the address,
+            and a guest who has just read the address is the one who wants it. Both routes are the v1
+            ones — the .ics the server builds, and the Google link it builds from the same data. */}
+        <div className="vi-actions">
+          <a className="vi-btn vi-btn--fill" href={`/i/${token}/calendar`}>
             {base.calendar.ics}
           </a>
-          <a className={buttonClass("quiet")} href={googleUrl} rel="noreferrer noopener" target="_blank">
+          <a className="vi-btn" href={googleUrl} rel="noreferrer noopener" target="_blank">
             {base.calendar.google}
           </a>
         </div>

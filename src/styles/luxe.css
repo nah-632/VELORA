@@ -586,3 +586,76 @@
   outline: 2px solid var(--vi-gold-deep);
   outline-offset: 3px;
 }
+/* ==========================================================================================
+   B6 — THE HALLS, FRAMELESS
+   ------------------------------------------------------------------------------------------
+   Two options, side by side, with nothing drawn around either of them: no border, no background, no
+   box. What marks the guest's own hall is a small gold-deep word — «قاعتك» / "Your hall" — and
+   `aria-current` on the card, which is the half of it that a screen reader can read.
+
+   The card was a bordered, rounded rectangle around a ringed icon. The ring is what the owner
+   rejected and what this section removes: the rule and its transition were deleted from
+   `invitation.css` rather than overridden, because nothing else used them.
+
+   The icons stay as they are — they were drawn for this product, and the prototype's were
+   placeholders. Their colour comes from the cream palette here instead of the design document's
+   accent, so the halls belong to the invitation and not to the template row.
+   ========================================================================================== */
+
+.vi .venues {
+  margin-block-start: 34px;
+}
+
+.vi .venues__row {
+  gap: 10px;
+}
+
+.vi .venue-card {
+  gap: 0.35rem;
+  max-width: none;
+  padding: 0.5rem 0.25rem;
+  color: var(--vi-gold);
+}
+
+.vi .venue-card__icon {
+  width: 72px;
+}
+
+.vi .venue-card__label {
+  color: var(--vi-ink);
+  font-family: "Reem Kufi", "Amiri", sans-serif;
+  font-size: 0.9rem;
+  /* The gold underline went with the ring: a rule under one option and not the other is a frame by
+     another name. */
+  background-image: none;
+  padding-block-end: 0;
+}
+
+.vi .venue-card__you {
+  font-family: "Reem Kufi", "Amiri", sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: normal;
+  color: var(--vi-gold-deep);
+}
+
+.vi .venues__single {
+  color: var(--vi-muted);
+}
+
+/* A section heading at this scale: 1.05rem, in the text gold. Used by the programme and the halls
+   so the two read as siblings. The halls heading is the component's own class, restated here
+   rather than renamed — the section works with or without this stylesheet. */
+.vi .venues__title {
+  margin-block-end: 1.1rem;
+}
+
+.vi .venues__title {
+  margin-block-end: 1.1rem;
+}
+
+.vi-error {
+  margin: 0 0 12px;
+  color: var(--vi-error);
+  font-size: 0.95rem;
+}
+
