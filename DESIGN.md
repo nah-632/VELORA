@@ -275,6 +275,41 @@ about the vertical axis so neither language gets a bias.
 **Reduced motion** collapses the choreography rather than shortening it: no delays, no movement, a
 300ms cross-fade to the end state.
 
+### 8.06 The card — the decision, and the measurement that is still owed
+
+**Decision: the card carries the invitation. Yes.** One entrance per container.
+
+Today two things enter at once, on the same pixels: `.envelope__card` (900ms, delay 180ms) rises
+while `.invitation-reveal` (700ms, delay 200ms) fades in beside it. That is two entrances for one
+object, and it is why the opening reads as a queue rather than a gesture. The card is what the guest
+is being handed; the invitation is what is printed on it. So the card moves and the invitation travels
+with it — the *Carry* relationship, not two siblings performing the same gesture.
+
+What this commits us to, when the card is built:
+
+  * the invitation loses its own entrance animation entirely. No fade, no delay of its own.
+  * its position comes from the card's transform, so there is one moving object and one thing to keep
+    in sync — not two.
+  * the overlay is still removed at 2000ms with **zero layout change**, so removal cannot shift
+    anything a guest is already reading.
+
+**Hall cards: no entrance animation.** They open many times in a session, and the choreography
+rule against staggering a high-frequency surface applies. They are simply there.
+
+**MEASUREMENT OWED, and B2 is blocked on it: the card's top edge as a percentage of the envelope
+height, for state 2 and state 3 separately.** Attempted and **UNVERIFIED**:
+
+  * the card is `#EDD2B7` and the ground is `#E9CDB1` — four levels apart on every channel, so no
+    threshold separates them;
+  * a per-column luminance profile down the middle is noise at that margin;
+  * a full-row mean, which should average the margin down to a clean step, was killed by the sandbox
+    before it produced output.
+
+The reference states cannot be opened by "the card looks like it starts about here". What would
+resolve it: the card's own edge — a thin shadow line or the gold border the brief asks for — measured
+row by row across the middle 60% of the width, which is a job for a machine that is not currently
+running out of memory.
+
 ### 8.05 The fold lines — the measured geometry, which is not a clip edge
 
 **This replaces an assumption.** The pocket and the flap were both built on the idea that the fold
