@@ -275,6 +275,40 @@ about the vertical axis so neither language gets a bias.
 **Reduced motion** collapses the choreography rather than shortening it: no delays, no movement, a
 300ms cross-fade to the end state.
 
+### 8.05 The fold lines — the measured geometry, which is not a clip edge
+
+**This replaces an assumption.** The pocket and the flap were both built on the idea that the fold
+lines meet where the seal sits, at the closure point (50%, 54.8%). They do not. Fitted on
+`entrance-target.png` with RANSAC over the centres of gold runs — columns 8%–30% of the envelope
+width on the left and 70%–92% on the right, the two lines on a side separated by **slope sign** with a
+25–55° gate, inliers within 2px (the earlier attempt separated them by the closure point and came back
+with 72° and 70°: it was fitting the gold botanical print):
+
+| Line | Slope (image px) | Angle | Edge start | Inliers |
+|---|---|---|---|---|
+| upper-left | +0.8304 | **39.7°** | **13.8%** of H | 120 |
+| lower-left | −0.7836 | **38.1°** | **85.9%** | 79 |
+| upper-right | −0.8287 | **39.6°** | **14.0%** | 101 |
+| lower-right | +0.7901 | **38.3°** | **86.4%** | 129 |
+
+The left pair meets at **(34.4% W, 50.9% H)** and the right pair at **(65.4% W, 51.1%)** — at the
+**sprig bases**, not at the seal. The lines stop there; the seal sits in the gap between them.
+
+Consequences, and they are implemented as such:
+
+  * the four lines are **independent SVG paths**, each from its edge start to its pair's meeting
+    point. They are not attached to the pocket's or the flap's clip-path edge, because neither edge
+    is where they are.
+  * the flap's clip apex **stays 54.8%** — that is the flap's own fold, and a separate thing from
+    where the gold is drawn.
+  * the gold takes its colour from a **CSS class** (`stroke: var(--env-gold)`), never from a
+    `stroke="var(...)"` attribute — that is invalid, falls back to `currentColor`, and is how these
+    lines were once drawn in near-black on near-black paper. `tests/ui/check-svg-vars.mjs` refuses it.
+
+**Deferred:** the envelope's rounded corners. The fits start at the outer edge of a rectangle; the
+reference's corners are rounded, so the line's true start is a little inside. Recorded as a later
+polish item, not worked on.
+
 ### 8.1 Liner polish, deferred
 
 **liner polish: lighting + denser, finer line-art.** Accepted as a later item and deliberately not

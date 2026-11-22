@@ -170,11 +170,10 @@ export function WaxSeal({
             */}
             <span className="envelope__front" />
             <span className="envelope__front-edges" aria-hidden="true">
-              <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none" style={{ color: "var(--env-gold)" }}>
-                <g strokeLinecap="round">
-                  <path d="M-3 232.4 L165 139.2 L333 232.4" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                  <path d="M-3 233.8 L165 140.6 L333 233.8" stroke="rgba(0,0,0,0.35)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                </g>
+              <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                {/* The two lower fold lines, drawn where they were measured — not on a clip edge. */}
+                <path className="ent-gold" d="M0.0 218.4 L113.6 129.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                <path className="ent-gold" d="M329.6 219.8 L215.7 129.8" strokeWidth="1" vectorEffect="non-scaling-stroke" />
               </svg>
             </span>
 
@@ -194,13 +193,10 @@ export function WaxSeal({
             
 
               <span className="envelope__flap-edges" aria-hidden="true">
-                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none" style={{ color: "var(--env-gold)" }}>
-                  <g strokeLinecap="round">
-                    <path d="M-3 104 L165 139.2 L333 104" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    {/* A literal, not var(--env-light): a var() inside an SVG presentation attribute is not a CSS
-                        value, and this attribute would silently fall back to currentColor. */}
-                    <path d="M-3 105.4 L165 140.6 L333 105.4" stroke="rgba(255, 255, 255, 0.13)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                  </g>
+                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                  {/* The two upper fold lines, measured the same way. */}
+                  <path className="ent-gold" d="M0.0 35.1 L113.6 129.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  <path className="ent-gold" d="M329.6 35.5 L215.7 129.8" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                 </svg>
               </span>
             </span>

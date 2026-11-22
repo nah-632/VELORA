@@ -1248,6 +1248,16 @@
   pointer-events: none;
 }
 
+/*
+ * The fold lines take their colour from CSS, not from a `stroke="var(...)"` attribute — that is
+ * invalid, falls back to currentColor, and is how these lines spent a day drawn in near-black on
+ * near-black paper. `tests/ui/check-svg-vars.mjs` now refuses the pattern.
+ */
+.ent-gold {
+  stroke: var(--env-gold);
+  stroke-opacity: 0.62;
+}
+
 .envelope__front-edges svg {
   display: block;
   inline-size: 100%;
