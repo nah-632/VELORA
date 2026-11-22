@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { isGoogleMapsUrl } from "@/lib/maps";
 
 /**
  * The halls.
@@ -71,16 +72,14 @@ export interface VenueEditorLabels {
   phone: string;
 }
 
-/** The three link shapes the operator actually receives, checked before it is saved. */
+/**
+ * Checked before it is saved, and the rule is the server's rule (`isGoogleMapsUrl`) rather than a
+ * second opinion that can drift from it. The field ends up inside the guest's map button, so a link
+ * that is not Google's is not this field's business — an operator sending guests to a page they do
+ * not control is the failure this prevents.
+ */
 export function mapUrlLooksValid(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed) return true; // empty is allowed; the checklist is what complains about a missing link
-  try {
-    const url = new URL(trimmed);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
+  return isGoogleMapsUrl(value);
 }
 
 function Field({

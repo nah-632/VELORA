@@ -322,7 +322,7 @@
       "venuesCopy": "انسخ التفاصيل من القاعة الأخرى",
       "venuesNameAr": "اسم القاعة (عربي)",
       "venuesNameEn": "اسم القاعة (إنجليزي)",
-      "venuesMapHint": "رابط خرائط جوجل أو آبل أو ويز",
+      "venuesMapHint": "رابط خرائط Google يبدأ بـ ‎https://‎ — google.com/maps أو www.google.com/maps أو maps.app.goo.gl",
       "venuesOpenTest": "افتح للتجربة",
       "venuesTime": "وقت القاعة (اختياري)",
       "venuesPhone": "هاتف للتواصل (اختياري)",

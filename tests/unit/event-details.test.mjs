@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 
 import { EventInputSchema, ScheduleSchema, eventChecklist, eventReadiness } from "../../src/features/events/schema.ts";
 import { EVENT_FORM_KEYS, SCHEDULE_FIELD, readEventForm, schemaFields } from "../../src/features/events/form-fields.ts";
-import { classifyMapUrl, mapButtonLabel } from "../../src/lib/maps.ts";
+import { googleMapsHref, googleMapsSearchUrl, isGoogleMapsUrl, mapsButtonLabel } from "../../src/lib/maps.ts";
 
 const complete = {
   bride_name_ar: "نور", groom_name_ar: "خالد",
@@ -77,37 +77,57 @@ test("each optional detail lights up on its own, in either language", () => {
   assert.equal(bothLanguages.find((item) => item.key === "dressCode")?.done, true);
 });
 
-test("map links: what is accepted, and what a link is not", () => {
-  const google = classifyMapUrl("https://maps.app.goo.gl/abc123");
-  assert.equal(google.ok, true);
-  assert.equal(google.kind, "google");
-
-  const apple = classifyMapUrl("https://maps.apple.com/?q=Bahrain");
-  assert.equal(apple.ok, true);
-  assert.equal(apple.kind, "apple");
-
-  const other = classifyMapUrl("https://example.com/where");
-  assert.equal(other.ok, true);
-  assert.equal(other.kind, "other");
-
-  // A bare http link from a phone is upgraded rather than refused.
-  const insecure = classifyMapUrl("http://maps.google.com/?q=1");
-  assert.equal(insecure.ok, true);
-  assert.equal(insecure.href?.startsWith("https://"), true);
-
-  // Not links. This value ends up inside an anchor's href, and it came from a text field.
-  for (const hostile of ["javascript:alert(1)", "data:text/html;base64,PHNjcmlwdD4=", "vbscript:msgbox", "not a url", ""]) {
-    assert.equal(classifyMapUrl(hostile).ok, false, hostile);
+test("a Google Maps link is accepted, and only a Google Maps link", () => {
+  for (const accepted of [
+    "https://maps.app.goo.gl/abc123",
+    "https://www.google.com/maps/search/?api=1&query=Manama",
+    "https://google.com/maps/place/Bahrain+Hall",
+    "https://www.google.com/maps/@26.2,50.5,15z",
+  ]) {
+    assert.equal(isGoogleMapsUrl(accepted), true, accepted);
   }
-  assert.equal(classifyMapUrl(null).ok, false);
+
+  // Refused, in three families. Each of these is a value that could reach an anchor's href.
+  for (const refused of [
+    // not links at all
+    "javascript:alert(1)", "data:text/html;base64,PHNjcmlwdD4=", "vbscript:msgbox", "not a url", "",
+    // a link, but somebody else's service
+    "https://maps.apple.com/?q=Bahrain", "https://waze.com/ul/abc", "https://example.com/where",
+    // Google's name on a host Google does not control — this is the open-redirect shape
+    "https://google.com.maps.example.com/", "https://google.com.evil.example/maps",
+    "https://www.google.com.attacker.test/maps", "https://goo.gl/maps/abc",
+    // Google's host, but not the Maps path
+    "https://google.com/search?q=Bahrain", "https://www.google.com/",
+    // plain http is a mixed-content downgrade, not a map link
+    "http://maps.google.com/?q=1",
+  ]) {
+    assert.equal(isGoogleMapsUrl(refused), false, refused);
+  }
+  assert.equal(isGoogleMapsUrl(null), false);
 });
 
-test("the map button says which maps", () => {
-  assert.match(mapButtonLabel("google", "en"), /Google/);
-  assert.match(mapButtonLabel("apple", "en"), /Apple/);
-  assert.equal(mapButtonLabel("other", "en"), "Open in Maps");
-  assert.match(mapButtonLabel("apple", "ar"), /آبل/);
-  assert.equal(mapButtonLabel("other", "ar"), "افتح الموقع في الخرائط");
+test("the guest's button opens Google Maps whatever the operator pasted", () => {
+  const good = "https://maps.app.goo.gl/abc123";
+  assert.equal(googleMapsHref({ mapUrl: good }), good, "a Google link is used as it is");
+
+  const generated = googleMapsHref({ mapUrl: "https://waze.com/ul/abc", name: "قاعة الخليج", address: "المنامة" });
+  assert.equal(generated?.startsWith("https://www.google.com/maps/search/?api=1&query="), true);
+  assert.equal(generated?.includes("waze"), false, "the Waze link is not passed through");
+  assert.equal(decodeURIComponent(generated?.split("query=")[1] ?? ""), "قاعة الخليج, المنامة");
+
+  // Nothing to search for: an address field is not a map link, and a blank map is worse than none.
+  assert.equal(googleMapsHref({ mapUrl: "https://waze.com/ul/abc" }), null);
+  assert.equal(googleMapsHref({ mapUrl: null, name: "قاعة", address: null })?.includes("query=%D9%82%D8%A7%D8%B9%D8%A9"), true);
+
+  // The length cap is applied to the query, so the URL stays a URL.
+  const long = googleMapsSearchUrl("ا".repeat(3000));
+  assert.equal(long.length <= 2048, true, `${long.length}`);
+  assert.equal(long.startsWith("https://www.google.com/maps/search/?api=1&query="), true);
+});
+
+test("the map button says Google Maps in both languages", () => {
+  assert.equal(mapsButtonLabel("en"), "Open in Google Maps");
+  assert.equal(mapsButtonLabel("ar"), "افتح في خرائط Google");
 });
 
 test("the schedule: shape, order, and a limit", () => {
@@ -138,12 +158,18 @@ test("the event form accepts the new fields, and rejects a dangerous map URL", (
 
   const bad = EventInputSchema.safeParse({ ...complete, venue_map_url: "javascript:alert(1)" });
   assert.equal(bad.success, false);
-  assert.match(bad.success ? "" : bad.error.issues[0]?.message ?? "", /Google Maps or Apple Maps/);
+  assert.match(bad.success ? "" : bad.error.issues[0]?.message ?? "", /Google Maps link starting with https:/);
 });
 
-test("a link with no maps in it is still a link, and is kept as one", () => {
-  const parsed = EventInputSchema.parse({ ...complete, venue_map_url: "https://maps.apple.com/?ll=26.2,50.5" });
-  assert.equal(parsed.venue_map_url, "https://maps.apple.com/?ll=26.2,50.5");
+test("a link that is not Google's is refused, and an empty field is absent rather than empty", () => {
+  // Apple and Waze links arrive from phones and are still valid links; they are simply not this
+  // field's value any more, because the guest's button opens Google Maps.
+  for (const refused of ["https://maps.apple.com/?ll=26.2,50.5", "https://waze.com/ul/abc", "https://google.com.evil.example/maps"]) {
+    assert.equal(EventInputSchema.safeParse({ ...complete, venue_map_url: refused }).success, false, refused);
+  }
+
+  const parsed = EventInputSchema.parse({ ...complete, venue_map_url: "https://maps.app.goo.gl/xyz" });
+  assert.equal(parsed.venue_map_url, "https://maps.app.goo.gl/xyz");
   const empty = EventInputSchema.parse({ ...complete, venue_map_url: "" });
   assert.equal(empty.venue_map_url, null, "an empty field is absent, not an empty string");
 });

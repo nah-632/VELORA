@@ -467,7 +467,7 @@ plausible.
 | Successful deployment | **`O9WzIZXfDI_M5JZyzhTgq`** (the change), **`VT7o8T3nGQk1osid0jlmn`** (the dialog fixes) |
 | `/api/health` | `schema.ok: true`, all three objects present, `migrations.applied: 0007_dual_venues.sql` |
 | Both halls on the guest's page | ✅ `قاعة اللؤلؤة` and `قاعة الخليج`, with `موقع قاعة النساء` / `موقع قاعة الرجال` and `قاعتك` on the guest's own |
-| The sheet | ✅ opens with address, time, entrance, parking, a **Waze**-labelled button, copy-address |
+| The sheet | ✅ opens with address, time, entrance, parking, an **Open in Google Maps** button, copy-address |
 | CLS opening the sheet | **0** — and `scrollY` unchanged, so the page behind did not move |
 | Focus on open | inside the dialog |
 | Focus on close | **back on the card that opened it** (measured: `activeIsVenueCard: true`) |

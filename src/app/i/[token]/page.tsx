@@ -17,11 +17,12 @@ import { iconVariantFor } from "@/features/invitations/VenueIcons";
 import {
   venueForCalendar,
   venueLabel,
+  venueMapLink,
   venueText,
   venueVariables,
   venuesForGuest,
 } from "@/features/invitations/venues";
-import { classifyMapUrl, mapButtonLabel } from "@/lib/maps";
+import { mapsButtonLabel } from "@/lib/maps";
 import { GoldenPalace, T1Divider } from "@/lib/templates/GoldenPalace";
 import { getTemplateBySlug } from "@/lib/templates/registry";
 import { themeToCssVars } from "@/lib/templates/css-vars";
@@ -151,8 +152,8 @@ export default async function InvitationPage({
     emphasis: view.emphasis !== null && venue.kind === view.emphasis,
     address: venueText(venue, "address", language),
     time: (venue.start_time ?? "").trim(),
-    mapUrl: venue.map_url,
-    mapLabel: mapButtonLabel(classifyMapUrl(venue.map_url).kind ?? "other", language),
+    mapUrl: venueMapLink(venue, language),
+    mapLabel: mapsButtonLabel(language),
     entrance: venueText(venue, "entrance", language),
     parking: venueText(venue, "parking", language),
     dressCode: venueText(venue, "dress_code", language),
