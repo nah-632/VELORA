@@ -268,16 +268,22 @@ export default async function InvitationPage({
           ) : null}
         </header>
 
-        <div className="mt-8">
+        <section className="vi-band vi-band--top" aria-labelledby="vi-countdown-title">
+          <h2 className="vi-band__title" id="vi-countdown-title">
+            {isArabic ? "العدّ التنازلي" : "The countdown"}
+          </h2>
+          <p className="vi-band__sub">
+            {isArabic ? "حتى اليوم الذي نفرح فيه معاً" : "Until the day we celebrate together"}
+          </p>
           <Countdown
             targetIso={event.eventDatetime.toISOString()}
             initial={initial}
             labels={base.countdown}
             finishedMessage={base.countdownFinished}
           />
-        </div>
+        </section>
 
-        <p className="mt-6 text-center text-sm text-ink-muted">{text("datetimeLine")}</p>
+        <p className="vi-when">{text("datetimeLine")}</p>
 
         {/* Both halls, always, with the guest's own ringed. */}
         <VenuesSection

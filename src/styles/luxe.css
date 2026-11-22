@@ -38,6 +38,8 @@
   --vi-em-l: #2e4539;
   --vi-gold-light: #dcb27f;
   --vi-on-em: #cdb591;
+  /* The one non-gold colour in the palette: an error on emerald has to read as an error. */
+  --vi-error: #ffd9d3;
 
   background-color: var(--vi-paper);
   color: var(--vi-ink);
@@ -388,3 +390,91 @@
 .vi {
   --vi-band-radius: 30px;
 }
+
+/* ==========================================================================================
+   B4 / B7 — THE EMERALD BANDS
+   ------------------------------------------------------------------------------------------
+   The countdown and the RSVP are the two emerald sections. They are the only place on the page with
+   an inverted ground, which is what makes them read as a change of register rather than as two more
+   sections.
+
+   The band is full-bleed: it pulls the page gutter back out and puts its own padding back in, so the
+   emerald reaches both edges of the column and the 30px radius reads as the top of a sheet sliding
+   under the paper above it.
+
+   **Nothing in the band's own box depends on a countdown value.** The band is sized by its padding
+   and its children's fixed heights, and the countdown below keeps the fixed-cell geometry it was
+   measured with — this section only changes what the cells look like.
+   ========================================================================================== */
+
+.vi-band {
+  margin-inline: -22px;
+  padding: 40px 22px;
+  background: linear-gradient(160deg, var(--vi-em-l) -20%, var(--vi-em) 38%, var(--vi-em-d) 130%);
+  color: var(--vi-gold-light);
+  text-align: center;
+}
+
+.vi-band--top {
+  border-start-start-radius: var(--vi-band-radius);
+  border-start-end-radius: var(--vi-band-radius);
+  margin-block-start: 28px;
+}
+
+.vi-band__title {
+  font-size: 1.25rem;
+  color: var(--vi-gold-light);
+}
+
+.vi:lang(en) .vi-band__title {
+  font-size: 1rem;
+}
+
+.vi-band__sub {
+  margin: 6px 0 0;
+  font-size: 0.98rem;
+  color: var(--vi-on-em);
+}
+
+/* ---- the countdown cells ------------------------------------------------------------------
+   The geometry comes from `invitation.css` and is deliberately not restated here: fixed inline
+   size, fixed height, `contain: layout paint`. Only the surface changes. */
+.vi-band .countdown {
+  gap: 9px;
+  min-height: auto;
+  margin-block-start: 22px;
+}
+
+.vi-band .countdown__unit {
+  border: 1px solid rgba(220, 178, 127, 0.38);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vi-band .countdown__value {
+  font-family: "Reem Kufi", "Amiri", sans-serif;
+  font-size: 2rem;
+  line-height: 1.2;
+  color: var(--vi-gold-light);
+}
+
+.vi-band .countdown__label {
+  font-size: 0.8rem;
+  color: var(--vi-on-em);
+}
+
+.vi-band .countdown__finished {
+  min-height: auto;
+  color: var(--vi-gold-light);
+}
+
+/* The operator's own sentence about the date. It sits under the band because it is the line that
+   turns the countdown back into a plan — and it is the *only* place the date is written in words a
+   second time: the hero shows the date itself, this is the operator's sentence around it. */
+.vi-when {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--vi-muted);
+}
+
