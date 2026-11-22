@@ -227,6 +227,54 @@ ever fed to an image pipeline.
 Their seals carry a serif V with a leaf spray. The brand mark is not that, and §7 says why. **Do not
 copy the placeholder mark from any of them.**
 
+### 8.0 The card's entrance — choreography, for step (c)
+
+**What this covers.** The invitation card inside the envelope — not the hall cards, which keep **no**
+entrance animation (they are opened many times a session and a stagger there is a tax on every use).
+Recorded here as a plan only: **no motion is implemented in this commit.**
+
+Cast, with the file each element lives in:
+
+| Element | Role | Where |
+|---|---|---|
+| wax pieces ×3 | Decoration — they are the tap's acknowledgement, not the message | `invitation.css:346` |
+| gold particles, 6–10 | Decoration | `WaxSeal.tsx` `.seal__mote` |
+| flap | Support — the gate, not the gift | `invitation.css:213` |
+| **the card** | **Lead** | `invitation.css:251` |
+| sprigs, drawn | Support | drawn with `stroke-dashoffset` |
+| arch | Support | `invitation.css:1015` |
+| guest name | Support — the personal moment | `invitation.css:176` |
+| entrance overlay | Static — removed, never animated out | `invitation.css:435` |
+
+| Element | Starts | Duration | Motion | Relationship |
+|---|---|---|---|---|
+| tap feedback | 0ms | <100ms | `transform: scale(.985)` | — |
+| wax pieces | 0ms | 560ms | drop **a few px and stay on the envelope face**; no fade | with the tap |
+| particles 6–10 | 180ms | 820ms | rise 10–18px, fade | overlaps the crack's tail |
+| flap | **first crack clearly visible**, then | 620ms | `rotateX(-172deg)` | overlaps only the crack's **tail** |
+| the card | after the flap has cleared the pocket | 900ms | `translateY` out of an `overflow:hidden` window | overlaps the flap |
+| sprigs | with the card | 700ms | `stroke-dashoffset` | overlaps the card |
+| arch | after the card settles | 1160ms | `stroke-dashoffset` | overlaps the card's settle |
+| guest name | 780ms after the tap | 1200ms | mask wipe, logical direction | overlaps the arch |
+| overlay removed | **2000ms** | — | zero layout change | — |
+| failsafe | **2500ms** | — | forces the invitation open wherever the sequence is | — |
+
+**Order is not negotiable:** wax cracks → flap → card. The flap must not move before the first crack
+is legible; that is the cause-and-effect pairing, and reversing it reads as the envelope flinching.
+
+**The card carrying the invitation is a PROPOSAL**, not a decision. Today the card rises and the
+invitation fades in beside it — two entrances for one object, which is what makes the opening feel
+like a queue. Whether to restructure the DOM so the card *carries* the invitation is decided in B2,
+**after the card's geometry is measured**. Nothing is restructured now.
+
+**RTL (§19).** Everything above is vertical — `translateY`, `rotateX`, `scale` — so no direction can
+be got wrong. The guest name's wipe is the only directional motion; it is expressed once with a
+logical `--wipe-angle` set per `[dir]`, not duplicated as two rules. Particles drift symmetrically
+about the vertical axis so neither language gets a bias.
+
+**Reduced motion** collapses the choreography rather than shortening it: no delays, no movement, a
+300ms cross-fade to the end state.
+
 ### 8.1 Liner polish, deferred
 
 **liner polish: lighting + denser, finer line-art.** Accepted as a later item and deliberately not

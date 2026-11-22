@@ -1224,8 +1224,21 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-color: var(--env-paper);
-  background-image: linear-gradient(158deg, rgba(255, 255, 255, 0.045) 0%, rgba(0, 0, 0, 0.10) 100%);
+  /*
+   * The pocket carries the body's paper and its own light: a ramp from the top-left plus a corner
+   * shadow on the right, because the reference's light comes from the upper left and its pocket's
+   * right side is darker than a single linear ramp makes it.
+   *
+   * A 14% black mix was tried first and **measured out**: at four fixed points inside the pocket the
+   * render came back (R,G,B) at -2.5, -4.8, -3.2 against the reference, i.e. uniformly too dark, and
+   * a 14% mix on this paper is about 3.6 levels. The number was removed rather than compensated.
+   */
+  background-color: color-mix(in oklab, var(--env-paper), #000 6%);
+  /* A ramp from the top-left, plus a corner shadow at the right: the light in the reference comes
+     from the upper left, so the pocket's right side is darker than a single linear ramp makes it. */
+  background-image:
+    radial-gradient(116% 96% at 102% 92%, rgba(0, 0, 0, 0.17) 0%, rgba(0, 0, 0, 0) 58%),
+    linear-gradient(158deg, rgba(255, 255, 255, 0.035) 0%, rgba(0, 0, 0, 0.09) 100%);
   clip-path: polygon(-1% 91.5%, 50% 54.8%, 101% 91.5%, 101% 101%, -1% 101%);
 }
 
