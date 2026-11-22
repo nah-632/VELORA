@@ -231,7 +231,7 @@ export default async function InvitationPage({
       liner={template?.envelope.liner}
     >
       <main
-        className="mx-auto flex w-full max-w-[520px] flex-col px-5 py-10"
+        className="vi px-5 py-10"
         lang={language}
         dir={isArabic ? "rtl" : "ltr"}
         style={themeVars}

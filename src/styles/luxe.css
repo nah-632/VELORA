@@ -1,0 +1,103 @@
+
+/* ==========================================================================================
+   THE LUXE COMPOSITION
+   ------------------------------------------------------------------------------------------
+   Ported from the owner's prototype `velora-invitation-luxe.html` into the real guest page.
+
+   **Every value in this section is scoped to `.vi` — the `<main>` of `/i/<token>`.** Nothing is
+   written to `:root` and `styles/tokens.css` is not touched: the cream palette is the *invitation's*
+   palette, not the product's, and the studio, the catalogue and the admin console must not change
+   colour because a wedding invitation did. The gate, the envelope and the seal above this subtree
+   keep the brand tokens they were measured against.
+
+   **The colours are the owner's, exactly as sent.** Two of them are load-bearing and must not be
+   reused by eye:
+     `--vi-gold` (#BE925E) is decoration only. It is 2.4:1 on this paper and can never carry text.
+     `--vi-gold-deep` (#7A5220) is the text gold, and every label that reads as "gold" uses it.
+   `scripts/check-contrast.py` measures the first pair, and the `.vi-*` pairs are added to it.
+
+   **Dark mode is guarded, not automatic.** `:root[data-theme="dark"]` is the explicit switch the
+   owner asks for; the media query is wrapped in `:root:not([data-theme="light"])` so a device set to
+   dark never overrides an invitation that was explicitly shown light. Both rules are scoped to
+   `.vi`, so they cannot repaint anything outside this route.
+   ========================================================================================== */
+
+.vi {
+  --vi-paper: #f1dec6;
+  --vi-paper-2: #e8cfb1;
+  --vi-ink: #2b1b12;
+  --vi-muted: #5c4636;
+  /* Decoration: rules, rings, icons, the arch. Never text. */
+  --vi-gold: #be925e;
+  /* Text and labels. The only gold that carries words. */
+  --vi-gold-deep: #7a5220;
+  --vi-foil-1: #946828;
+  --vi-foil-2: #7a5220;
+  --vi-em: #192a21;
+  --vi-em-d: #0f1913;
+  --vi-em-l: #2e4539;
+  --vi-gold-light: #dcb27f;
+  --vi-on-em: #cdb591;
+
+  background-color: var(--vi-paper);
+  color: var(--vi-ink);
+  font-family: "Noto Naskh Arabic", "Amiri", serif;
+  font-size: 1rem;
+  line-height: 1.85;
+  /* The prototype's column, and the reason nothing needs a container query: the composition is one
+     column of one width at every viewport, so a clamp is a fraction of a known measure. */
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  overflow-x: clip;
+}
+
+/* The Latin faces are for Latin text. `lang` is on this element, set from the guest's own row. */
+.vi:lang(en) {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+/* A label is Reem Kufi in Arabic and Cinzel in English — the prototype's pairing. Cinzel is
+   inscriptional Latin and carries an Arabic page badly, which is why it is never the Arabic face. */
+.vi :is(h1, h2, h3, .vi-label) {
+  font-family: "Reem Kufi", "Amiri", sans-serif;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.vi:lang(en) :is(h1, h2, h3, .vi-label) {
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+/* Arabic is a joined script: letter-spacing pulls the joins apart rather than spacing the letters.
+   The rule is stated once, here, instead of being remembered per component. */
+.vi:lang(ar) :is(h1, h2, h3, .vi-label, .vi-kicker) {
+  letter-spacing: normal;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .vi {
+    --vi-paper: #17120d;
+    --vi-paper-2: #201911;
+    --vi-ink: #f0e2cc;
+    --vi-muted: #c9b79e;
+    --vi-gold-deep: #dcb27f;
+    --vi-foil-1: #f0cd97;
+    --vi-foil-2: #c99a58;
+  }
+}
+
+:root[data-theme="dark"] .vi {
+  --vi-paper: #17120d;
+  --vi-paper-2: #201911;
+  --vi-ink: #f0e2cc;
+  --vi-muted: #c9b79e;
+  --vi-gold-deep: #dcb27f;
+  --vi-foil-1: #f0cd97;
+  --vi-foil-2: #c99a58;
+}
