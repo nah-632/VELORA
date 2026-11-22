@@ -478,3 +478,111 @@
   color: var(--vi-muted);
 }
 
+/* ==========================================================================================
+   B5 — THE PROGRAMME
+   ------------------------------------------------------------------------------------------
+   The timeline is the one place the composition is *linear*: a rule down the inline-start edge with a
+   rotated square bead at each line. Every offset here is logical — `inset-inline-start`,
+   `padding-inline-start`, `border-inline-start`, `text-align: start` — so one rule serves both
+   directions, and the bead stays on the side the reading starts from.
+
+   The measure is capped at 350px and centred: a timeline line that runs the full width of a 480px
+   column stops looking like a programme and starts looking like a form.
+   ========================================================================================== */
+
+.vi-programme {
+  margin-block-start: 34px;
+}
+
+.vi-tl {
+  list-style: none;
+  margin: 20px auto 0;
+  padding: 0;
+  padding-inline-start: 22px;
+  border-inline-start: 1px solid var(--vi-gold);
+  width: min(88%, 350px);
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+}
+
+.vi-tl .timeline__item {
+  position: relative;
+  padding-block: 0 22px;
+  padding-inline: 0;
+  display: block;
+}
+
+.vi-tl .timeline__item::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -27px;
+  inset-block-start: 0.7em;
+  inline-size: 9px;
+  block-size: 9px;
+  transform: rotate(45deg);
+  background: var(--vi-gold);
+}
+
+/* The marker span the old list rendered is not a bead any more: the bead is the ::before, so this
+   element would be a second one on top of it. */
+.vi-tl .timeline__marker {
+  display: none;
+}
+
+.vi-tl .timeline__body {
+  display: block;
+}
+
+.vi-tl .timeline__time {
+  display: block;
+  color: var(--vi-gold-deep);
+  font-family: "Reem Kufi", "Amiri", sans-serif;
+  font-weight: 600;
+}
+
+.vi:lang(en) .vi-tl .timeline__time {
+  font-family: Cinzel, Georgia, serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+
+.vi-tl .timeline__title {
+  margin: 2px 0 0;
+  color: var(--vi-ink);
+}
+
+.vi-tl .timeline__detail {
+  margin: 2px 0 0;
+  font-size: 0.95rem;
+  color: var(--vi-muted);
+}
+
+.vi-tl .timeline__item:last-child {
+  padding-block-end: 0;
+}
+
+.vi-section-title,
+.vi .venues__title {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--vi-gold-deep);
+}
+
+.vi-more {
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+.vi-more__link {
+  font-size: 0.85rem;
+  color: var(--vi-muted);
+  text-underline-offset: 4px;
+}
+
+.vi-more__link:focus-visible {
+  outline: 2px solid var(--vi-gold-deep);
+  outline-offset: 3px;
+}

@@ -296,9 +296,11 @@ export default async function InvitationPage({
         />
 
         {shown.length > 0 ? (
-          <section className="mt-10">
-            <h2 className="mb-4 text-center text-sm font-medium text-ink">{base.details.schedule}</h2>
-            <ol className="timeline">
+          <section className="vi-programme" aria-labelledby="vi-programme-title">
+            <h2 className="vi-section-title" id="vi-programme-title">
+              {base.details.schedule}
+            </h2>
+            <ol className="timeline vi-tl">
               {shown.map((item, index) => {
                 const title = line(item, "title");
                 const detail = line(item, "detail");
@@ -320,8 +322,8 @@ export default async function InvitationPage({
               })}
             </ol>
             {hiddenByFilter > 0 ? (
-              <p className="mt-3 text-center">
-                <a className="text-xs text-ink-muted underline underline-offset-4" href={question(showAllSchedule ? "back" : "all")}>
+              <p className="vi-more">
+                <a className="vi-more__link" href={question(showAllSchedule ? "back" : "all")}>
                   {showAllSchedule ? base.schedule.onlyMine : base.schedule.showAll(hiddenByFilter)}
                 </a>
               </p>
