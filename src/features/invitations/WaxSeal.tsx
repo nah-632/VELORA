@@ -196,8 +196,10 @@ export function WaxSeal({
               <span className="envelope__flap-edges" aria-hidden="true">
                 <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none" style={{ color: "var(--env-gold)" }}>
                   <g strokeLinecap="round">
-                    <path d="M-3 104 L165 156.2 L333 104" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    <path d="M-3 105.4 L165 157.6 L333 105.4" stroke="var(--env-light, rgba(255,255,255,0.13))" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                    <path d="M-3 104 L165 139.2 L333 104" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                    {/* A literal, not var(--env-light): a var() inside an SVG presentation attribute is not a CSS
+                        value, and this attribute would silently fall back to currentColor. */}
+                    <path d="M-3 105.4 L165 140.6 L333 105.4" stroke="rgba(255, 255, 255, 0.13)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                   </g>
                 </svg>
               </span>
@@ -265,7 +267,8 @@ export function WaxSeal({
                       */}
                       <g transform="translate(12.67 37.67) scale(0.08268)" filter={`url(#wax-press-${uid})`}>
                         {imprint === "monogram" || imprint === "eight-star" ? (
-                          <g mask={`url(#mark-mask-${uid})`} className="seal__brand" fill="var(--seal-imprint, #BE925E)">
+                          <g mask={`url(#mark-mask-${uid})`} className="seal__brand" fill="currentColor"
+                            style={{ color: "var(--seal-imprint, #BE925E)" }}>
                             <g transform={MARK_FLIP}>
                               {MARK_PATHS.map((d, i) => (
                                 <path key={i} d={d} />
