@@ -312,6 +312,8 @@
   position: absolute;
   inset-block-start: 12px;
   inset-inline-end: 16px;
+  /* Above the khatam layer, which is a `::before` on the hero's own stacking context. */
+  z-index: 1;
 }
 
 .vi-lang {
@@ -337,4 +339,52 @@
 .vi-lang:focus-visible {
   outline: 2px solid var(--vi-gold-deep);
   outline-offset: 3px;
+}
+
+/* ==========================================================================================
+   B3 — ORNAMENT
+   ------------------------------------------------------------------------------------------
+   Three things, all of them pure SVG in a data URI or plain CSS. No raster: a tiled background
+   image would be a second asset to keep in step with the palette, and it would not recolour in dark
+   mode.
+
+   The khatam is a background *pattern*, so it is masked to a radial fade and kept well under the
+   text: a repeating geometric figure at full strength behind 1.05rem Arabic is a legibility
+   problem, not an ornament. The mask is what makes it read as light falling on the paper rather
+   than as wallpaper.
+   ========================================================================================== */
+
+.vi-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cg fill='none' stroke='%23BE925E' stroke-width='.8' opacity='.5'%3E%3Crect x='18' y='18' width='28' height='28'/%3E%3Crect x='18' y='18' width='28' height='28' transform='rotate(45 32 32)'/%3E%3Ccircle cx='32' cy='32' r='4'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.38;
+  -webkit-mask-image: radial-gradient(70% 55% at 50% 40%, #000, transparent 78%);
+  mask-image: radial-gradient(70% 55% at 50% 40%, #000, transparent 78%);
+}
+
+/* Everything the hero actually says sits above the pattern. */
+.vi-hero > * {
+  position: relative;
+}
+
+/* The zellige rule: a row of lozenges with a bead at each end of the tile. Masked at both ends so it
+   fades into the paper rather than stopping at a cut edge. */
+.vi-zel {
+  height: 14px;
+  width: min(88%, 380px);
+  margin: 26px auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Cpath d='M14 1l6 6-6 6-6-6z' fill='none' stroke='%23BE925E' stroke-width='1'/%3E%3Ccircle cx='0' cy='7' r='1.6' fill='%23BE925E'/%3E%3Ccircle cx='28' cy='7' r='1.6' fill='%23BE925E'/%3E%3C/svg%3E");
+  background-position: center;
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+}
+
+/* The emerald bands' corners — the one place the composition rounds anything. */
+.vi {
+  --vi-band-radius: 30px;
 }
