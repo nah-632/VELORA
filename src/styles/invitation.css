@@ -1207,6 +1207,41 @@
 .t1 .timeline__title { font-family: var(--tpl-font-label); }
 .t1 .venue-card__label { font-family: var(--tpl-font-label); }
 
+/*
+ * The lower front pocket.
+ *
+ * Layer 3, B1. The region below the two lower fold diagonals, which run from the closure point —
+ * where the seal sits, 54.8% down — out to the envelope's left and right edges.
+ *
+ * The geometry is measured, not drawn: on `entrance-target.png` the left diagonal fits through 66
+ * columns of gold pixels clear of the sprigs and lands **91.5%** of the envelope's height at the
+ * outer edge — a rise of 210px over a run of 370px, **46.0°** below horizontal. The right cannot be
+ * fitted on its own (the sprigs and the gold print sit in the same band), so it is the mirror.
+ *
+ * **No gold on the perimeter.** The hairline follows the fold and stops there.
+ */
+.envelope__front {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--env-paper);
+  background-image: linear-gradient(158deg, rgba(255, 255, 255, 0.045) 0%, rgba(0, 0, 0, 0.10) 100%);
+  clip-path: polygon(-1% 91.5%, 50% 54.8%, 101% 91.5%, 101% 101%, -1% 101%);
+}
+
+.envelope__front-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.envelope__front-edges svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+}
+
 /* The liner sits under the flap, revealed as it opens: a gold arabesque on the envelope paper. */
 /*
  * The lining: the flap's inner face.
@@ -1372,3 +1407,4 @@
   }
   .t1[data-foil="on"] .t1__name::after { opacity: 0.35; }
 }
+
