@@ -176,20 +176,27 @@
   animation: handwrite 1500ms ease-out 350ms forwards;
 }
 
+/*
+ * The wipe starts where the writing starts, and that is one rule, not two.
+ *
+ * `--wipe-from` and `--wipe-to` carry the direction; the keyframe reads them. Writing the LTR and RTL
+ * animations separately means the next person changes one and forgets the other — which is how the
+ * name once landed under its own mask. Direction is a property of the document, so it is expressed
+ * once, as a variable, and the keyframe stays direction-blind.
+ */
+.envelope__name {
+  --wipe-from: -120%;
+  --wipe-to: 0%;
+}
+
 .envelope__name[dir="rtl"] {
-  -webkit-mask-position: 120% 0;
-  mask-position: 120% 0;
-  animation-name: handwrite-rtl;
+  --wipe-from: 220%;
+  --wipe-to: 100%;
 }
 
 @keyframes handwrite {
-  from { opacity: 1; -webkit-mask-position: -120% 0; mask-position: -120% 0; }
-  to   { opacity: 1; -webkit-mask-position: 0% 0; mask-position: 0% 0; }
-}
-
-@keyframes handwrite-rtl {
-  from { opacity: 1; -webkit-mask-position: 220% 0; mask-position: 220% 0; }
-  to   { opacity: 1; -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  from { opacity: 1; -webkit-mask-position: var(--wipe-from) 0; mask-position: var(--wipe-from) 0; }
+  to   { opacity: 1; -webkit-mask-position: var(--wipe-to) 0; mask-position: var(--wipe-to) 0; }
 }
 
 /* The flap: a triangle that pivots on its top edge. */
@@ -210,7 +217,11 @@
   inset: 0;
   clip-path: polygon(-1% -1%, 101% -1%, 101% 41%, 50% 54.8%, -1% 41%);
   transform-origin: top center;
-  transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  /*
+   * 620ms, starting at 300ms — step (c)'s table. The delay is not decoration: the flap must not move
+   * before the first crack is legible, so it waits for the shards to break, then takes over.
+   */
+  transition: transform 620ms cubic-bezier(0.5, 0, 0.2, 1) 300ms;
   background: linear-gradient(
     180deg,
     var(--env-paper-lit) 0%,
@@ -340,8 +351,8 @@
   cursor: pointer;
   color: inherit;
   -webkit-tap-highlight-color: transparent;
-  /* 100ms of feedback on press, before anything else moves. */
-  transition: transform 100ms ease-out;
+  /* 90ms of feedback on press — under the 100ms the table allows, so it reads as instant. */
+  transition: transform 90ms ease-out;
 }
 
 .seal.envelope__open:active {
@@ -394,7 +405,7 @@
  * distances — identical pieces moving identically would read as a shutter.
  */
 .seal__piece {
-  transition: transform 620ms cubic-bezier(0.3, 0, 0.2, 1), opacity 620ms ease-out;
+  transition: transform 560ms cubic-bezier(0.3, 0, 0.2, 1), opacity 560ms ease-out;
 }
 
 .seal[data-broken="true"] .seal__disc {
@@ -483,7 +494,13 @@
 .seal-stage[data-phase="open"] .seal-stage__entrance {
   opacity: 0;
   transform: translateY(-2%);
-  transition: opacity 600ms ease-out, transform 600ms ease-out, visibility 0s linear 600ms;
+  /*
+   * The gate fades at **2000ms** — exactly where step (c)'s table puts the end of the sequence. Only
+   * opacity and visibility move; the element keeps its size and position, so removing it cannot
+   * shift a single thing underneath. `visibility` waits for the fade to finish so the overlay is not
+   * focusable or clickable while it is still dissolving.
+   */
+  transition: opacity 320ms ease-out 2000ms, visibility 0s linear 2320ms;
   visibility: hidden;
   pointer-events: none;
 }
