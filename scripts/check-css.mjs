@@ -90,6 +90,18 @@ for (const dir of SCAN_DIRS) {
         }
       }
     }
+
+    // A multi-line comment is normal CSS; only a comment still open at end of file is
+    // an error. The balance flag is threaded through the loop above for the `continue`
+    // guard, so this check must happen after the loop, not inside it.
+    if (inComment) {
+      findings.push({
+        file: relative(ROOT, file),
+        line: lines.length,
+        rule: "CSS comment still open at end of file",
+        text: "unterminated /* */",
+      });
+    }
   }
 }
 
