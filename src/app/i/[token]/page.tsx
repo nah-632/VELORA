@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MihrabArch } from "@/features/invitations/MihrabArch";
-import { buttonClass } from "@/components/ui/Button";
 import { loadInvitationOnce } from "@/features/invitations/cache";
 import { Countdown } from "@/features/invitations/Countdown";
 import { WaxSeal } from "@/features/invitations/WaxSeal";
@@ -343,57 +342,59 @@ export default async function InvitationPage({
           </a>
         </div>
 
-        <section className="mt-10 border-t border-line pt-6">
+        {/* The RSVP band. The endpoint, the validation, the rate limit and the companion limit are
+            the v1 ones and are not touched by this order; only the surface is. */}
+        <section className="vi-band vi-band--rsvp" aria-labelledby="vi-rsvp-title">
+          <h2 className="vi-band__title" id="vi-rsvp-title">
+            {base.rsvp.title}
+          </h2>
+
           {answerFromUrl === "bad_response" ||
           answerFromUrl === "too_many_companions" ||
           answerFromUrl === "invalid_token" ||
           answerFromUrl === "rate_limited" ? (
-            <p role="alert" className="mb-3 text-sm text-danger">
+            <p role="alert" className="vi-error">
               {base.rsvp.errors[answerFromUrl]}
             </p>
           ) : null}
 
           {answered && answerFromUrl !== "update" ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-ink">{thankYouFor(answered)}</p>
-              <p className="text-xs text-ink-muted">
+            <div className="vi-form">
+              <p className="vi-thanks">{thankYouFor(answered)}</p>
+              <p className="vi-band__sub">
                 {fill(base.rsvp.current, { answer: base.rsvp.answers[answered] })}
               </p>
-              <a className={buttonClass("quiet")} href={question("update")}>
-                {base.rsvp.update}
-              </a>
+              <div className="vi-actions">
+                <a className="vi-btn" href={question("update")}>
+                  {base.rsvp.update}
+                </a>
+              </div>
             </div>
           ) : (
-            <form action={submitRsvpAction} className="flex flex-col gap-4">
-              <h2 className="text-sm font-medium text-ink">{text("beforeRsvp")}</h2>
+            <form action={submitRsvpAction} className="vi-form">
+              <p className="vi-band__sub">{text("beforeRsvp")}</p>
               <input type="hidden" name="token" value={token} />
               {language !== invitation.language ? <input type="hidden" name="lang" value={language} /> : null}
 
-              <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-3 text-sm text-ink">
-                  <input type="radio" name="response" value="confirmed" required defaultChecked={answered !== "declined"} />
-                  {/* The guest's own grammar, taken from their row. */}
-                  {renderTemplate(confirmLabel(copy as never, invitation.gender), variables)}
-                </label>
-                <label className="flex items-center gap-3 text-sm text-ink">
-                  <input type="radio" name="response" value="declined" defaultChecked={answered === "declined"} />
-                  {text("declineButton")}
-                </label>
-              </div>
+              <label className="vi-opt">
+                <input type="radio" name="response" value="confirmed" required defaultChecked={answered !== "declined"} />
+                {/* The guest's own grammar, taken from their row. */}
+                <span>{renderTemplate(confirmLabel(copy as never, invitation.gender), variables)}</span>
+              </label>
+              <label className="vi-opt">
+                <input type="radio" name="response" value="declined" defaultChecked={answered === "declined"} />
+                <span>{text("declineButton")}</span>
+              </label>
 
               {rsvp && rsvp.maxCompanions > 0 ? (
-                <label className="flex flex-col gap-1.5 text-sm text-ink">
+                <label className="vi-form">
                   <span>
                     {base.rsvp.companions}{" "}
-                    <span className="text-xs text-ink-muted">
+                    <span className="vi-band__sub">
                       ({fill(base.rsvp.companionHint, { max: rsvp.maxCompanions })})
                     </span>
                   </span>
-                  <select
-                    name="companions"
-                    defaultValue={String(rsvp.companions)}
-                    className="min-h-11 rounded-md border border-line bg-ground-paper px-3 text-sm text-ink"
-                  >
+                  <select name="companions" defaultValue={String(rsvp.companions)} className="vi-select">
                     {Array.from({ length: rsvp.maxCompanions + 1 }, (_, n) => (
                       <option key={n} value={n}>
                         {String(n)}
@@ -403,8 +404,8 @@ export default async function InvitationPage({
                 </label>
               ) : null}
 
-              <div>
-                <button type="submit" className={buttonClass("primary")}>
+              <div className="vi-actions">
+                <button type="submit" className="vi-btn vi-btn--fill">
                   {answered ? base.rsvp.update : base.rsvp.submit}
                 </button>
               </div>
@@ -412,11 +413,12 @@ export default async function InvitationPage({
           )}
         </section>
 
-        <p className="mt-8 text-center text-xs text-ink-muted">{base.privacy}</p>
+        <p className="vi-note">{base.privacy}</p>
 
-        <footer className="mt-10 text-center text-xs text-ink-muted">
-          <p>{base.footer.withLove}</p>
-          <p className="mt-1">{base.footer.brand}</p>
+        <footer className="vi-footer">
+          <span className="vi-footer__tagline">{isArabic ? "فنّ الدعوة" : "The Art of Inviting"}</span>
+          <p className="vi-footer__line">{base.footer.withLove}</p>
+          <p className="vi-footer__line">{base.footer.brand}</p>
         </footer>
       </main>
     </WaxSeal>

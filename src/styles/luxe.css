@@ -659,3 +659,151 @@
   font-size: 0.95rem;
 }
 
+/* ==========================================================================================
+   B7 — THE RSVP BAND, AND THE FOOTER
+   ------------------------------------------------------------------------------------------
+   The same emerald as the countdown, on the same 30px top radius, because it is the same register:
+   the page asks something of the guest twice, and both times it says so in emerald.
+
+   The form controls are the real ones — the server action, the validation, the rate limit and the
+   companion limit are untouched. What changes is that they are drawn on emerald, which means the
+   radio and the select need their own colours rather than the browser's.
+   ========================================================================================== */
+
+.vi-band--rsvp {
+  border-start-start-radius: var(--vi-band-radius);
+  border-start-end-radius: var(--vi-band-radius);
+  margin-block-start: 34px;
+}
+
+.vi-band .vi-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-block-start: 20px;
+  text-align: center;
+}
+
+.vi-band .vi-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  cursor: pointer;
+  color: var(--vi-gold-light);
+}
+
+.vi-band .vi-opt input {
+  inline-size: 20px;
+  block-size: 20px;
+  accent-color: var(--vi-gold-light);
+}
+
+.vi-band .vi-select {
+  min-height: 48px;
+  min-width: 140px;
+  margin-inline: auto;
+  padding-inline: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(220, 178, 127, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--vi-gold-light);
+  font: inherit;
+}
+
+/* A native select paints its own drop-down in the platform's colours, so the options are given a
+   dark ground explicitly rather than left to inherit a light one. */
+.vi-band .vi-select option {
+  color: #1a120a;
+  background: #f1dec6;
+}
+
+/* The buttons. One shape for every action on the page: a pill, 48px tall. */
+.vi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding-inline: 22px;
+  border: 1px solid var(--vi-gold);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--vi-ink);
+  font: inherit;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vi-btn--fill {
+  background: var(--vi-em);
+  border-color: var(--vi-em);
+  color: var(--vi-gold-light);
+}
+
+.vi-band .vi-btn {
+  color: var(--vi-gold-light);
+  border-color: rgba(220, 178, 127, 0.6);
+}
+
+.vi-band .vi-btn--fill {
+  background: var(--vi-gold-light);
+  border-color: var(--vi-gold-light);
+  color: #1a120a;
+  font-weight: 600;
+}
+
+.vi-btn:focus-visible,
+.vi-opt input:focus-visible,
+.vi-select:focus-visible {
+  outline: 2px solid var(--vi-gold-deep);
+  outline-offset: 3px;
+}
+
+.vi-band .vi-btn:focus-visible {
+  outline-color: var(--vi-gold-light);
+}
+
+.vi-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-block-start: 22px;
+}
+
+.vi-thanks {
+  margin: 0;
+  color: var(--vi-gold-light);
+}
+
+.vi-note {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--vi-muted);
+}
+
+/* The footer says what the product is, in the deepest emerald. */
+.vi-footer {
+  margin-inline: -22px;
+  margin-block-start: 34px;
+  padding: 30px 22px;
+  background: var(--vi-em-d);
+  color: var(--vi-on-em);
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.vi-footer__tagline {
+  display: block;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--vi-gold-light);
+}
+
+.vi-footer__line {
+  margin: 6px 0 0;
+}
