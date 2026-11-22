@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { TemplateCanvas } from "@/components/invitation/TemplateCanvas";
+import { MihrabArch } from "@/features/invitations/MihrabArch";
 import { buttonClass } from "@/components/ui/Button";
 import { loadInvitationOnce } from "@/features/invitations/cache";
 import { Countdown } from "@/features/invitations/Countdown";
@@ -23,10 +23,7 @@ import {
   venuesForGuest,
 } from "@/features/invitations/venues";
 import { mapsButtonLabel } from "@/lib/maps";
-import { GoldenPalace, T1Divider } from "@/lib/templates/GoldenPalace";
 import { getTemplateBySlug } from "@/lib/templates/registry";
-import { themeToCssVars } from "@/lib/templates/css-vars";
-import type { ThemeOverride } from "@/lib/templates/schema";
 
 /**
  * A guest's invitation.
@@ -164,13 +161,12 @@ export default async function InvitationPage({
   /**
    * The template, if this event uses one of the token-system designs.
    *
-   * The slug comes from the `templates` row the operator picked, and the override from the event.
-   * When the slug has no token template the page renders exactly as it did before — the older
-   * `design_config` path — so no existing invitation changes.
+   * Since B2 the template supplies the **entrance** — the seal's imprint, the envelope's paper, the
+   * wax colour, the liner — and the palette the venue icons draw their accent from. It no longer
+   * renders its own card: the luxe hero below is the invitation for every event, and the card was
+   * what printed the couple's names, the date and the verse a second time.
    */
   const template = getTemplateBySlug(invitation.templateSlug);
-  const override = (invitation.themeOverride ?? {}) as ThemeOverride;
-  const themeVars = template ? themeToCssVars(template, language) : undefined;
 
   const initial = remaining(Date.now(), event.eventDatetime.getTime());
   const couple =
@@ -231,73 +227,46 @@ export default async function InvitationPage({
       liner={template?.envelope.liner}
     >
       <main
-        className="vi px-5 py-10"
+        className="vi"
         lang={language}
         dir={isArabic ? "rtl" : "ltr"}
-        style={themeVars}
       >
-        {/* The language switch: a link, so nothing is translated on the client and the sheet below
-            survives the soft navigation. */}
-        <nav className="mb-6 flex justify-end" aria-label={base.language.label}>
-          <Link
-            className="text-xs text-ink-muted underline underline-offset-4"
-            href={languageHref}
-            hrefLang={isArabic ? "en" : "ar"}
-            scroll={false}
-          >
-            {isArabic ? "English" : "العربية"}
-          </Link>
-        </nav>
+        <header className="vi-hero">
+          {/* The language switch: a link, so nothing is translated on the client and the sheet below
+              survives the soft navigation. Inside the hero, because it belongs to the hero's own
+              background — outside it, the paper shows a strip above the gradient that reads as the
+              top edge of a card. */}
+          <nav className="vi-langrow" aria-label={base.language.label}>
+            <Link className="vi-lang" href={languageHref} hrefLang={isArabic ? "en" : "ar"} scroll={false}>
+              {isArabic ? "English" : "العربية"}
+            </Link>
+          </nav>
 
-        {template ? (
-          <GoldenPalace
-            template={template}
-            override={override}
-            locale={language}
-            eyebrow={isArabic ? "دعوة زفاف" : "Wedding Invitation"}
-            groom={groom ?? ""}
-            bride={bride ?? ""}
-            names={
-              <div className="t1__couple">
-                <p className="t1__greeting">{text("greeting")}</p>
-                <span className="t1__name">{groom}</span>
-                <span className="t1__amp">{isArabic ? "و" : "&"}</span>
-                <span className="t1__name">{bride}</span>
-              </div>
-            }
-          >
-            <p className="t1__verse">{text("body")}</p>
-            {copy.verse && copy.verse.trim() ? <p className="t1__verse">{renderTemplate(copy.verse, variables)}</p> : null}
-            {invitation.personalLine ? <p className="t1__personal">{invitation.personalLine}</p> : null}
-          </GoldenPalace>
-        ) : null}
+          <p className="vi-kicker">{isArabic ? "دعوة زفاف" : "A wedding invitation"}</p>
+          <p className="vi-greeting">{text("greeting")}</p>
 
-        <p className={`text-center text-sm text-ink-muted ${template ? "sr-only" : ""}`}>{text("greeting")}</p>
+          <div className="vi-arch">
+            <MihrabArch />
+            <h1 className="vi-names">
+              <span className="vi-names__name">{groom}</span>
+              <span className="vi-names__amp" aria-hidden="true">
+                {isArabic ? "و" : "&"}
+              </span>
+              <span className="vi-names__name">{bride}</span>
+            </h1>
+          </div>
 
-        {invitation.personalLine ? (
-          <p className="mt-2 text-center text-sm italic text-ink-muted">{invitation.personalLine}</p>
-        ) : null}
+          <p className="vi-lead">{text("opening")}</p>
+          <p className="vi-body">{text("body")}</p>
+          <p className="vi-date">{dateLabel}</p>
+          {invitation.personalLine ? <p className="vi-personal">{invitation.personalLine}</p> : null}
 
-        <div className="mt-5 text-center">
-          <p className="text-sm text-ink-muted">{text("opening")}</p>
-        </div>
+          <div className="vi-zel" aria-hidden="true" />
 
-        <div className={template ? "hidden" : "mt-6"}>
-          <TemplateCanvas
-            design={design}
-            blocks={invitation.blocks}
-            locale={language}
-            label={isArabic ? `دعوة ${invitation.guestName}` : `Invitation for ${invitation.guestName}`}
-          />
-        </div>
-
-        {template ? <T1Divider kind={template.layout.divider} /> : null}
-
-        <p className={`text-center text-sm text-ink ${template ? "sr-only" : "mt-6"}`}>{text("body")}</p>
-
-        {!template && copy.verse && copy.verse.trim() ? (
-          <p className="mt-5 text-center text-sm text-ink-muted">{renderTemplate(copy.verse, variables)}</p>
-        ) : null}
+          {copy.verse && copy.verse.trim() ? (
+            <p className="vi-verse">{renderTemplate(copy.verse, variables)}</p>
+          ) : null}
+        </header>
 
         <div className="mt-8">
           <Countdown
