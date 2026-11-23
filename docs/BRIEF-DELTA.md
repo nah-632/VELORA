@@ -87,9 +87,19 @@ mockups' `#192A21` / `#BE925E` / `#650E18`. That palette exists only as the hard
 `src/styles/luxe.css`. The brief's "ship at least 6 templates" is met at the database level and the two
 canonical designs the owner just chose are not selectable in either.
 
-**Left unanswered on purpose:** sealing `emerald-envelope` into the database means deciding how a
-five-role token palette becomes a three-role `DesignConfig` palette, or extending `DesignConfig`. That is
-an architecture decision, not a mechanical mapping, and mapping by eye is how the two would drift.
+**Answered 2026-11-23 — the second document moves into the row.** `0009_token_config.sql` adds
+`templates.token_config` (nullable), backfills Golden Palace, and seeds `emerald-envelope` and
+`velora-classic` with both documents, following 0008's precedent of mapping the five token roles onto
+the three the catalogue renderer understands. One row, two documents, both versioned. The nullable
+column is the point: the eight 0003 presets keep falling back to `getTemplateBySlug`, so the previous
+container renders unchanged against the migrated database.
+
+Nullability creates one risk — two copies of one document drifting — so `tests/db/token-config.mjs`
+asserts the code registry and the stored document are structurally identical, field by field. It found
+a real disagreement on its first run: `sort_order` was `0/1/2` in the registry and `4/5/6` in the rows.
+The rows' values won (that ordering is what the operator's picker uses beside the eight presets).
+It also reported three agreeing documents as different, because `JSON.stringify` is key-order-sensitive
+and jsonb does not preserve key order. Both were fixed; it is now 13/13 and runs in `verify`.
 
 ### Public page `/i/[token]`
 
@@ -157,11 +167,11 @@ an architecture decision, not a mechanical mapping, and mapping by eye is how th
 
 ## Ordered next tasks
 
-1. **Decide the design-document shape, then seed the attachment design.** The tokens exist, the two
-   registry entries exist, and neither is reachable until `public.templates` has a row with a matching
-   slug. The blocking question is the one left unanswered above: five-role tokens into a three-role
-   `DesignConfig`, or extend `DesignConfig`. Tokens already exist in `src/styles/luxe.css`; carry the
-   gold-is-decoration-only constraint with them.
+1. **Apply 0009 to production, migrate-first, then deploy.** The migration and its wiring are committed
+   and proved on PGlite; it is **not applied to production and not deployed**. Per `db/RELEASE.md`:
+   apply the migration, record it in `schema_migrations`, deploy, then confirm `checks.schema.ok` on
+   `/api/health`. Until it is applied, the row's `token_config` is absent and the code falls back to the
+   registry — which is the intended state, not a broken one.
 2. **Excel export verification** — confirm real `.xlsx`, print-friendly, sortable.
 3. **Open Graph leak audit** — assert no guest name, phone, or token appears in preview metadata.
 4. **C5 QR entry pass** — the only new feature with a schema dependency (`rsvps` → check-in state).
