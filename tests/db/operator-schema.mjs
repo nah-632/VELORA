@@ -236,5 +236,62 @@ const defaulted = await db.query(
 );
 t.check("an event with no programme gets an empty one, not null", JSON.stringify(defaulted.rows[0].schedule) === "[]");
 
+// ---------------------------------------------------------------------------------------------
+// 0009 — the token document lives in the row
+// ---------------------------------------------------------------------------------------------
+
+const tokenColumn = await db.query(
+  `select is_nullable, data_type from information_schema.columns
+    where table_schema = 'public' and table_name = 'templates' and column_name = 'token_config'`,
+);
+t.check("templates.token_config exists", tokenColumn.rows.length === 1);
+t.check(
+  "and it is nullable, so a row seeded before 0009 still renders",
+  tokenColumn.rows[0]?.is_nullable === "YES",
+  String(tokenColumn.rows[0]?.is_nullable),
+);
+
+await refused(
+  "a token document that is not an object",
+  `update public.templates set token_config = '"not a document"'::jsonb where slug = 'golden-palace'`,
+);
+
+const seeded = await db.query(
+  `select slug, token_config, design_config from public.templates
+    where slug in ('emerald-envelope', 'velora-classic', 'golden-palace') order by slug`,
+);
+t.check("the three token templates are seeded", seeded.rows.length === 3, seeded.rows.map((r) => r.slug).join(", "));
+t.check(
+  "every one of them carries a token document",
+  seeded.rows.every((r) => r.token_config !== null && typeof r.token_config === "object"),
+);
+t.check(
+  "and a design document beside it, because the catalogue renderer reads that one",
+  seeded.rows.every((r) => r.design_config !== null && typeof r.design_config === "object"),
+);
+t.check(
+  "the emerald row keeps the mockups' measured emerald, not a near neighbour",
+  seeded.rows.find((r) => r.slug === "emerald-envelope")?.token_config?.palette?.emerald === "#192A21",
+);
+t.check(
+  "and its design document uses the text gold, not the 2.4:1 decoration gold",
+  seeded.rows.find((r) => r.slug === "emerald-envelope")?.design_config?.palette?.accent === "#7A5220",
+);
+t.check(
+  "the plain slug format constraint still holds for the new rows",
+  seeded.rows.every((r) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(r.slug)),
+);
+
+// The fallback the route relies on: a preset seeded in 0003 has no token document, and that is the
+// normal case rather than a gap.
+const presets = await db.query(
+  `select count(*)::int as without_token from public.templates where token_config is null`,
+);
+t.check(
+  "the 0003 presets have no token document — the code registry is their fallback",
+  presets.rows[0].without_token >= 8,
+  `${presets.rows[0].without_token} rows fall back`,
+);
+
 await db.close();
 t.finish();

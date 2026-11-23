@@ -24,6 +24,29 @@ thought through.
 **The rule that follows:** gold is decoration. If a piece of text must be gold, it is drawn with the
 foil ramp (§1.1), whose stops are deliberately darker than the ornament gold.
 
+### 1.0 The palette as sampled from the references
+
+Method, so the numbers can be re-derived: Python 3.12 + Pillow 11 + NumPy 2 — every pixel of the
+941x1672 reference that passes a colour filter, value = median per channel; pixel counts are the
+number of matches, not a guess.
+
+| Role | **sealed** (`entrance-target.png`) | n | **broken** (`entrance-target-broken.png`) | n |
+|---|---|---|---|---|
+| wax | `#650E18` (5% `#5B0211`, 95% `#B85055`) | 5,020 | `#641A1E` (95% `#BA5F53`) | 6,333 |
+| gold — line and leaves | `#BE925E` | 17,712 | `#C0915D` | 20,390 |
+| envelope emerald | `#192A21` | 386,989 | `#15241E` | 354,607 |
+| card cream | `#ECD2B8` | 418,738 | `#EED3B8` | 510,498 |
+| ground beige | `#E6CAAE` | 656,775 | `#E9CDB1` | 725,057 |
+
+**Correction to an earlier report.** The column above filed as "opening" is the **broken** state.
+`entrance-target-opening.png` held the broken photograph until the rename commit; the labels here are
+the corrected ones. The two columns also differ more than noise: the broken state is lit slightly
+differently, which is why the entrance takes its emerald from the sealed column and its liner from the
+broken one — the liner is only ever visible in the broken and opening states.
+
+Measured contrast against the card cream `#EED3B8`: wax **8.99:1**, emerald **10.50:1**, gold
+**1.96:1**. Gold is a decoration colour, confirmed by measurement rather than by taste.
+
 ### 1.1 The gold foil ramp
 
 A gradient clipped to the glyphs; it reads as metal because the light moves across it, not because it
@@ -92,6 +115,29 @@ Page inset is 20px at 375px; the royal frame sits at 10px from the edge with a 5
 
 ## 5. Motion
 
+### 5.1 The opening sequence — about 2s, end to end
+
+Written before the component, because the order *is* the design. Only `transform` and `opacity` are
+animated; nothing here touches layout.
+
+| t (ms) | What happens | Property |
+|---|---|---|
+| 0–100 | tap feedback on the seal; optional device vibration | `transform`, `opacity` |
+| 100–700 | the wax cracks along the V into three wedges, which settle **on the front panel** | per-piece `transform`, `opacity` |
+| 250–900 | the mark's lit plane draws in under a sweeping mask edge | `mask-position` |
+| 350–1250 | 6–10 gold particles drift up and fade | per-mote `transform`, `opacity` |
+| 700–1500 | the flap opens on its top hinge, revealing the lining | `rotateX` |
+| 900–1700 | the card rises out of the envelope | `transform` |
+| 1400–2400 | the arch draws, then the content settles | `stroke-dashoffset`, `opacity` |
+| 2400 | the entrance overlay is removed; the invitation underneath is what remains | — |
+
+**Failsafe:** at **2500ms** the invitation is forced open wherever the sequence has got to. A guest
+never watches an animation that has stopped.
+
+**Reduced motion:** not a shorter sequence — a **300ms cross-fade** straight to the invitation.
+
+### 5.2 The rest of the page
+
 | Element | Property | Duration | Easing |
 |---|---|---|---|
 | seal crack | `transform`, `opacity` per piece | 620ms | `cubic-bezier(0.3, 0, 0.2, 1)` |
@@ -123,26 +169,31 @@ is elegant in the editor and illegible on a phone is a failed design.
 
 ## 7. The seal
 
-Both T1 and every later template use the **brand mark** as the imprint. The mark is a single strip of
-card, folded once, read as the letter V — the construction and its reasoning are in
-`brand/monogram.mjs`, and the geometry is generated there, never drawn by hand. It is drawn as vector
-paths inside the wax, not placed as an image, so it stays crisp at any size and inherits the wax's
-shading.
+The imprint is the **brand mark**: a gold V whose left stroke is thick and carries a flat top serif,
+whose right stroke thins to the vertex, and from which a stem sweeps into an open loop and rises as a
+branch of pointed leaves with visible veins, ending in a small curled tendril.
 
-**There is no leaf in it.** `SPEC.md` records the alternative — a serif V carrying a botanical spray —
-as decision **D4**, and notes that it *conflicts with the brief*, which asks for "a folded invitation
-or refined paper geometry" and rules out excessive flourishes. The folded strip is what was built.
-This paragraph said "the V-and-leaf" until a G2 extraction showed the artwork has two paths and no
-leaf; the wording was the drift, not the drawing.
+**The geometry is a trace of the operator's own logo**, not a drawing of it —
+`assets/brand/velora-mark.svg`, produced with potrace and copied through unchanged. It replaced a
+folded-ribbon monogram that had been generated here (`brand/archive/monogram.mjs`, archived, used
+nowhere): that ribbon is not the operator's mark and has no leaf. Earlier documents called the ribbon
+"the V-and-leaf", which was wrong in the other direction — the leaf was in the real logo all along.
+
+The sequence (§5.1) says the branch draws itself. It does — but not with `stroke-dashoffset`: the mark
+is *filled* geometry with no `stroke` anywhere, so a dash offset would first require re-outlining it,
+which changes its shape at every size. The branch is revealed by **a mask edge sweeping across the
+existing paths**, which is the same gesture and leaves the artwork untouched.
 
 | Part | Spec |
 |---|---|
-| wax body | irregular edge (seeded path, three soft drips), radial gradient from a light crown to a dark edge |
-| raised rim | stroke at 18% towards white, 2.2px |
-| inner ring | dark line 1.6px at 42% + light line 0.9px just inside it |
-| imprint | brand mark (a folded strip, read as V), pressed: inner shadow, 88% opacity of the darkest wax tone |
-| highlight | off-centre ellipse at 36%/28%, white at 50% falling to 0 |
-| shadow | drop shadow, 3px y-offset, 3.2px blur, 42% of a warm brown-black |
+| wax body | organic lobed edge with soft drips, radial gradient from a light crown to a dark edge |
+| raised rim | stroke 18% towards white, 2.2px |
+| recessed centre | dark line 1.6px at 42% + light line 0.9px just inside it |
+| imprint | the brand mark in **muted gold**, pressed with an inner shadow; **55–60% of the inner disc at 92px — measured in a browser, not calculated** |
+| branch reveal | a sweeping mask edge, so the leaf draws without the geometry being redrawn |
+| highlight | one off-centre ellipse, white at 50% falling to 0 |
+| contact shadow | drop shadow, 3px y-offset, 3.2px blur, 42% of a warm brown-black |
+| grain | inlined noise; no file, no dependency |
 | crack | three wedges clipped from one drawing, so gradients and rings stay continuous until they part |
 
 Colour variants: burgundy (T1), gold, emerald, rose gold, champagne, black. The wax is chosen by the
@@ -151,89 +202,236 @@ template once already.
 
 ---
 
-## 8. The reference image, and the directions
+## 8. The reference images, and the directions
 
-**`assets/brand/reference/envelope-reference.jpg`** is the operator's target image for the opening.
-It lives under `assets/`, not `public/`: it is a thing to compare renders against, not an asset to
-serve to a guest's phone.
-
-It shows the **open** state — matte emerald cotton envelope, the flap folded back over a dark green
-botanical lining, an ivory card rising above the wings, burgundy wax at the wing junction with two
-thin gold sprigs beside it, soft light from the top left. There are three of them, and together they are the three states G3 has to build:
+Three photographs, one per state the entrance has to reach, filed in `assets/reference/`. They are the
+target for **materials, lighting, proportions and ornament** — not a colour specification (colours
+come from §1 and the contrast rules) and not a pixel spec.
 
 | File | State | What it settles |
 |---|---|---|
-| `envelope-reference-sealed.jpg` | **sealed** | the closed composition: flap down over the front, its two edges meeting at the seal, gold hairline along every fold edge, the two sprigs lying along the flap edges, the seal on the vertical axis at the closure point |
-| `envelope-reference-opening.jpg` | **opening** | the flap standing at 180°, the lining fully revealed with its gold botanical print and frame, the card risen about half way, the wax in **three broken wedges resting on the front panel**, and the particles rising above where the seal was |
-| `envelope-reference.jpg` | **open / final** | the card out above the wings, the lining behind it, the ornament at rest |
+| `entrance-target.png` | **sealed** | flap down over the front, its two edges meeting at the seal, a hairline gold line along every fold edge, the sprigs lying along the flap edges, the seal on the vertical axis at the closure point |
+| `entrance-target-opening.png` | **flap open, seal intact** | the flap at 180° with the lining visible behind it, the wax **whole** at the closure point, the card only part way out |
+| `entrance-target-broken.png` | **seal broken** | the wax in three wedges resting on the front panel, gold dust above where it sat, the card raised, the lining behind it |
 
-All three are the target for **materials, lighting, proportions and ornament**. None is a colour
-specification — colours come from `tokens.css` and the contrast rules.
+Naming note, because it cost a wrong review: `entrance-target-opening.png` held the **broken** state
+until a rename commit (`docs: rename broken-seal reference`). "Opening" is the flap at 180° with the
+seal whole; the broken state is a different photograph. The older `assets/brand/reference/*.jpg`
+copies are the same three images filed earlier under descriptive names — the copies under
+`assets/reference/` are the ones the entrance is measured against.
 
-Two geometry notes to carry into G3. In the sealed reference the flap's lower edge is a **shallow V**
-across the upper half of the envelope, not the deep triangle the current build draws
-(`clip-path: polygon(0 0, 100% 0, 50% 100%)`, whose apex reaches the flap's own bottom) — the seal
-sits where that shallow V meets the vertical axis, a little above the envelope's midline. And in the
-opening reference the broken wax stays **on the front panel** rather than falling away; the current
-build animates the three pieces down and out to `opacity: 0`.
+Two of the three are JPEG payloads under a `.png` name. That is what was asked for and the md5 is the
+contract, but a tool that sniffs the container will see JPEG — worth knowing before one of them is
+ever fed to an image pipeline.
 
-The seal in all three carries a serif **V with a leaf spray**. The brand mark is not that, and
-`SPEC.md` D4 is where that was decided. **Do not copy the placeholder mark from any of them.**
+Their seals carry a serif V with a leaf spray. The brand mark is not that, and §7 says why. **Do not
+copy the placeholder mark from any of them.**
+
+### 8.0 The card's entrance — choreography, for step (c)
+
+**What this covers.** The invitation card inside the envelope — not the hall cards, which keep **no**
+entrance animation (they are opened many times a session and a stagger there is a tax on every use).
+Recorded here as a plan only: **no motion is implemented in this commit.**
+
+Cast, with the file each element lives in:
+
+| Element | Role | Where |
+|---|---|---|
+| wax pieces ×3 | Decoration — they are the tap's acknowledgement, not the message | `invitation.css:346` |
+| gold particles, 6–10 | Decoration | `WaxSeal.tsx` `.seal__mote` |
+| flap | Support — the gate, not the gift | `invitation.css:213` |
+| **the card** | **Lead** | `invitation.css:251` |
+| sprigs, drawn | Support | drawn with `stroke-dashoffset` |
+| arch | Support | `invitation.css:1015` |
+| guest name | Support — the personal moment | `invitation.css:176` |
+| entrance overlay | Static — removed, never animated out | `invitation.css:435` |
+
+| Element | Starts | Duration | Motion | Relationship |
+|---|---|---|---|---|
+| tap feedback | 0ms | <100ms | `transform: scale(.985)` | — |
+| wax pieces | 0ms | 560ms | drop **a few px and stay on the envelope face**; no fade | with the tap |
+| particles 6–10 | 180ms | 820ms | rise 10–18px, fade | overlaps the crack's tail |
+| flap | **first crack clearly visible**, then | 620ms | `rotateX(-172deg)` | overlaps only the crack's **tail** |
+| the card | after the flap has cleared the pocket | 900ms | `translateY` out of an `overflow:hidden` window | overlaps the flap |
+| sprigs | with the card | 700ms | `stroke-dashoffset` | overlaps the card |
+| arch | after the card settles | 1160ms | `stroke-dashoffset` | overlaps the card's settle |
+| guest name | 780ms after the tap | 1200ms | mask wipe, logical direction | overlaps the arch |
+| overlay removed | **2000ms** | — | zero layout change | — |
+| failsafe | **2500ms** | — | forces the invitation open wherever the sequence is | — |
+
+**Order is not negotiable:** wax cracks → flap → card. The flap must not move before the first crack
+is legible; that is the cause-and-effect pairing, and reversing it reads as the envelope flinching.
+
+**The card carrying the invitation is a PROPOSAL**, not a decision. Today the card rises and the
+invitation fades in beside it — two entrances for one object, which is what makes the opening feel
+like a queue. Whether to restructure the DOM so the card *carries* the invitation is decided in B2,
+**after the card's geometry is measured**. Nothing is restructured now.
+
+**RTL (§19).** Everything above is vertical — `translateY`, `rotateX`, `scale` — so no direction can
+be got wrong. The guest name's wipe is the only directional motion; it is expressed once with a
+logical `--wipe-angle` set per `[dir]`, not duplicated as two rules. Particles drift symmetrically
+about the vertical axis so neither language gets a bias.
+
+**Reduced motion** collapses the choreography rather than shortening it: no delays, no movement, a
+300ms cross-fade to the end state.
+
+### 8.06 The card — the decision, and the measurement that is still owed
+
+**Decision: the card carries the invitation. Yes.** One entrance per container.
+
+Today two things enter at once, on the same pixels: `.envelope__card` (900ms, delay 180ms) rises
+while `.invitation-reveal` (700ms, delay 200ms) fades in beside it. That is two entrances for one
+object, and it is why the opening reads as a queue rather than a gesture. The card is what the guest
+is being handed; the invitation is what is printed on it. So the card moves and the invitation travels
+with it — the *Carry* relationship, not two siblings performing the same gesture.
+
+What this commits us to, when the card is built:
+
+  * the invitation loses its own entrance animation entirely. No fade, no delay of its own.
+  * its position comes from the card's transform, so there is one moving object and one thing to keep
+    in sync — not two.
+  * the overlay is still removed at 2000ms with **zero layout change**, so removal cannot shift
+    anything a guest is already reading.
+
+**Hall cards: no entrance animation.** They open many times in a session, and the choreography
+rule against staggering a high-frequency surface applies. They are simply there.
+
+**MEASUREMENT OWED, and B2 is blocked on it: the card's top edge as a percentage of the envelope
+height, for state 2 and state 3 separately.** Attempted and **UNVERIFIED**:
+
+  * the card is `#EDD2B7` and the ground is `#E9CDB1` — four levels apart on every channel, so no
+    threshold separates them;
+  * a per-column luminance profile down the middle is noise at that margin;
+  * a full-row mean, which should average the margin down to a clean step, was killed by the sandbox
+    before it produced output.
+
+The reference states cannot be opened by "the card looks like it starts about here". What would
+resolve it: the card's own edge — a thin shadow line or the gold border the brief asks for — measured
+row by row across the middle 60% of the width, which is a job for a machine that is not currently
+running out of memory.
+
+### 8.05 The fold lines — the measured geometry, which is not a clip edge
+
+**This replaces an assumption.** The pocket and the flap were both built on the idea that the fold
+lines meet where the seal sits, at the closure point (50%, 54.8%). They do not. Fitted on
+`entrance-target.png` with RANSAC over the centres of gold runs — columns 8%–30% of the envelope
+width on the left and 70%–92% on the right, the two lines on a side separated by **slope sign** with a
+25–55° gate, inliers within 2px (the earlier attempt separated them by the closure point and came back
+with 72° and 70°: it was fitting the gold botanical print):
+
+| Line | Slope (image px) | Angle | Edge start | Inliers |
+|---|---|---|---|---|
+| upper-left | +0.8304 | **39.7°** | **13.8%** of H | 120 |
+| lower-left | −0.7836 | **38.1°** | **85.9%** | 79 |
+| upper-right | −0.8287 | **39.6°** | **14.0%** | 101 |
+| lower-right | +0.7901 | **38.3°** | **86.4%** | 129 |
+
+The left pair meets at **(34.4% W, 50.9% H)** and the right pair at **(65.4% W, 51.1%)** — at the
+**sprig bases**, not at the seal. The lines stop there; the seal sits in the gap between them.
+
+Consequences, and they are implemented as such:
+
+  * the four lines are **independent SVG paths**, each from its edge start to its pair's meeting
+    point. They are not attached to the pocket's or the flap's clip-path edge, because neither edge
+    is where they are.
+  * the flap's clip apex **stays 54.8%** — that is the flap's own fold, and a separate thing from
+    where the gold is drawn.
+  * the gold takes its colour from a **CSS class** (`stroke: var(--env-gold)`), never from a
+    `stroke="var(...)"` attribute — that is invalid, falls back to `currentColor`, and is how these
+    lines were once drawn in near-black on near-black paper. `tests/ui/check-svg-vars.mjs` refuses it.
+
+**Deferred:** the envelope's rounded corners. The fits start at the outer edge of a rectangle; the
+reference's corners are rounded, so the line's true start is a little inside. Recorded as a later
+polish item, not worked on.
+
+### 8.1 Liner polish, deferred
+
+**liner polish: lighting + denser, finer line-art.** Accepted as a later item and deliberately not
+worked on now. The liner is a flat `#14231D` fill with a 0.26-opacity botanical print; the reference's
+lining carries its own lighting and a print that is both denser and finer. Measured spread across the
+reference's lining: `#161817` on the dark body, `#21261D` near a lit edge, `#50412E` on a print stroke.
+
+### 8.2 Idea sources and deferred items
+
+Recorded so the provenance is not lost, and nothing here is implemented yet. **No code, texture file,
+token or dependency from any of these has been imported**; they are ideas, and the implementation
+stays plain CSS and SVG with our own easing and timings — smooth, not stepped.
+
+- **Step (c), the card emerging** — ideas taken from the *Receipt Printer* experiment at
+  `dqnamo.com/kitchen`, reuse stated as fine by the operator: an `overflow: hidden` window the card
+  slides out of with `translateY`; an explicit stage state machine `sealed → cracking → opening →
+  complete`; a soft contact shadow under the emerging card; reduced motion = 300 ms cross-fade.
+  **Not** imported: `motion/react`, Phosphor icons, its texture files, its grayscale tokens.
+  *No literal value or line of code was copied, so there is nothing to attribute line by line.*
+- **Step (c), "sprigs draw" and "arch draws"** — `stroke-dashoffset` on SVG paths: outline traced
+  first, then the fill fades in. Idea source: dqnamo **Logo Trace Loader** (MIT, on 21st.dev).
+  If any code is ever copied from it, its copyright notice comes with it. Reduced motion = the static
+  final state, or a 300 ms cross-fade.
+- **Step (e), the couple-name sheen** — a slow gold gradient sweep, decoration only; the text colour
+  stays ink or deep gold so contrast keeps passing. Idea source: dqnamo **Iridescent Foil**.
+  **Licence NOT verified.** Do not copy code from it. Gold only, no rainbow.
+- **Deferred, not planned:** perforated card edge (Ticket), postage frame (Stamp), a drawn signature,
+  hold-to-confirm RSVP.
 
 | Direction | State |
 |---|---|
-| **A — Pressed Wax** | **approved.** The seal rebuilt as pressed wax; flap, lining and card given real materials; the mark revealed by wiping its own lit plane. See §9 for the decisions taken under it. |
+| **A — Pressed Wax** | **approved and being built.** Burgundy wax seal with the brand mark pressed in, the crack, the flap opening on its hinge, the arch drawing itself. |
 | **B** | recorded, not chosen |
-| **C — Palace Gate** | recorded as a **future template only**. Its brief has not been written down here and nothing is built; no current decision depends on it. |
-
+| **C — Palace Gate** | recorded as a **future template only**. Nothing is built, no decision depends on it, and it must not appear in the code until it is scoped as a template of its own. |
 ---
 
-## 9. Decisions taken under Direction A
+## 9. The cream palette, and the luxe composition (2026-11-23)
 
-Recorded as taken, with the evidence that forced them. Where a decision contradicts an earlier
-document, the earlier document is corrected rather than left to disagree.
+### 9.1 The decision
 
-| # | Decision | Why |
+The owner's prototype `velora-invitation-luxe.html` carries its own palette, and the invitation now
+uses it **instead of** the brand tokens — for the `/i/<token>` subtree only.
+
+| Token | Value | Role |
 |---|---|---|
-| A-1 | The envelope and seal layers are **direction-neutral** — physical offsets or an explicit `direction: ltr` on `.envelope`, never a logical inset with a physical offset | `/i/` is an RTL document even when `?lang=en`; only the invitation canvas goes LTR. `inset-inline-start: 50%` with `translate: -50%` put the seal 97.5px off-centre in **both** languages. Fixed in `b623464`, measured delta 0.00px in AR and EN |
-| A-2 | Every decorative layer stays **inside** the seal button; the disc keeps `pointer-events: none` | The button is `inset: 0` and wraps the whole envelope, so the topmost hit target is always one of its own children. A decorative layer placed outside it silently kills the touch — which is what happened before `01eb103` |
-| A-3 | The reference image is filed under `assets/`, and the brand geometry stays in `public/brand/*.svg` + `brand/monogram.mjs` | There is no `assets/brand/` source directory in this repository. `public/` is for things that are served; the reference is not |
-| A-4 | The mark's reveal is a **mask wipe over its own paths**, not a stroke draw and not a leaf unfurl | The brand file is filled geometry with no `stroke`, so `stroke-dashoffset` would require re-outlining it. And there is no leaf to unfurl — see §7 |
-| A-5 | The two gold botanical sprigs are **ornament around the seal only**. The mark itself stays the folded strip | The operator's decision on the G2 gate. The sprigs are what R7 and `docs/TEMPLATES.md` call ornament, so they can be drawn fresh; the identity of the mark does not move because a reference photograph of a concept contained one |
+| `--vi-paper` | `#F1DEC6` | the page |
+| `--vi-paper-2` | `#E8CFB1` | the hero's recessed cream |
+| `--vi-ink` | `#2B1B12` | body copy |
+| `--vi-muted` | `#5C4636` | secondary copy |
+| `--vi-gold` | `#BE925E` | **decoration only** — arch, rules, icons, rings. 2.14:1 on the paper: it can never carry words |
+| `--vi-gold-deep` | `#7A5220` | **the text gold.** 5.24:1 on the paper, 4.58:1 on the recessed cream |
+| `--vi-foil-1/2` | `#946828` → `#7A5220` | the names, through `background-clip: text` (large text: 3.75:1 / 5.24:1) |
+| `--vi-em / --vi-em-d / --vi-em-l` | `#192A21` / `#0F1913` / `#2E4539` | the two bands |
+| `--vi-gold-light` / `--vi-on-em` | `#DCB27F` / `#CDB591` | text on emerald only |
+| `--vi-error` | `#FFD9D3` | the one non-gold colour; 11.56:1 on the band |
 
-### 9.1 The build order for G3 — one layer, one screenshot, before the next
+**Why it is scoped and not global.** A wedding invitation is a document, not a screen of the product.
+The studio, the catalogue and the admin console must not change colour because a guest page did, and
+the entrance gate above this subtree keeps the brand tokens it was measured against. Everything lives
+under `.vi` in `src/styles/luxe.css`; `tokens.css` is untouched.
 
-Written down so it cannot become a blind rewrite, and because the alternative — writing the whole
-engine at once — is exactly how a regression ships unseen.
+**Dark mode is guarded, as the owner wrote it:** `@media (prefers-color-scheme: dark)
+:root:not([data-theme="light"]) .vi` plus `:root[data-theme="dark"] .vi`. An invitation explicitly
+shown light is not repainted by a dark device.
 
-| # | Layer | Proved by |
-|---|---|---|
-| 1 | the box: body, wings, front panel, the fold lines | harness screenshot at 375px; `.envelope` still 330×220 |
-| 2 | the flap: opaque, shallow-V lower edge, lit edge, gold hairline, shadow onto the panel | ditto, plus `clip-path` read back from the computed style |
-| 3 | the lining: the flap's inner face, botanical print, gold frame | screenshot with the flap at 180° |
-| 4 | the card: ivory cotton, colourless emboss, gold star on a rule | screenshot, card at 0% and at 50% |
-| 5 | the seal: pressed wax, the original mark in muted gold | screenshot at 2×; the mark measured as a share of the inner disc |
-| 6 | the ornament: the two sprigs flanking the seal | screenshot at 2× |
-| 7 | the sequence: timing, the leaf-free mark wipe, particles, reduced motion | state-by-state screenshots, then the timing table |
+**Every pair is measured, not asserted.** `scripts/check-contrast.py` now reads `luxe.css` as a
+second source and measures 16 cream pairs (35/35, 0 required failures). It reads only the *light*
+`.vi` block on purpose: the file redefines seven of those values for dark mode, and a naive read
+would have measured dark ink against light paper and reported a comfortable pass.
 
-**Status at 2026-11-21 — 4 of 7, and nothing above is claimed beyond its evidence.**
+### 9.2 What the composition replaced
 
-| # | Layer | State |
-|---|---|---|
-| 1 | the box | **done** (`b975c3f`) |
-| 2 | the flap | **done** (`b975c3f`) |
-| 3 | the lining | **done** — `d8d8c70`; screenshot `tests/visual/layers/layer3-lining-flap-180+layer4-card-0.jpg` |
-| 4 | the card | **done** — `d8d8c70`; same screenshot plus `layer4-card-50.jpg` |
-| 5 | the seal | **partly** — the break, the highlight and the imprint exist, but the imprint's legibility was *not* re-measured at 2x and the mark was *not* read back as a share of the inner disc, which is what this row asks for |
-| 6 | the ornament (sprigs) | **not built** — A-5 records they are ornament around the seal only; nothing is drawn yet |
-| 7 | the sequence | **partly** — the crack, the rise and reduced motion exist, but the timing table is not written and the broken wax still animates out to `opacity: 0`, which §8 says contradicts the reference: the wedges should stay **on the front panel** |
+- The hero is now the kicker, the mihrab arch, the names inside it, the lead, the couple's own
+  sentence, the real date, the personal line and the verse — from real event data and the v1 copy
+  system. **The template card is gone from the guest page.** `GoldenPalace` and `TemplateCanvas`
+  printed the names, the date and the venue a second time; that duplication was the owner's question
+  (c). The template still supplies the entrance (seal imprint, envelope paper, wax, liner) and the
+  accent the venue icons take, so nothing about the gate changed.
+- The page has **two** emerald bands (countdown, RSVP) with 30px top corners, a frameless pair of
+  halls, a programme timeline, and a footer that carries the tagline.
+- The date appears **once** in the hero and **once** as the operator's own sentence under the
+  countdown — down from three printings.
 
-Three defects were found by rendering during layers 3 and 4 and are fixed in `d8d8c70`: the RTL
-name mask (the guest's name was invisible on every Arabic invitation), the specular highlight
-surviving the break, and the card being painted over the front panel instead of rising out of it.
+### 9.3 Still open
 
-The iteration environment is not the app: this sandbox cannot run Next.js. It is a static page that
-loads the **real** `invitation.css` and mirrors the component's DOM exactly, and it prints what it
-measured (stylesheet loaded, rule count, `.envelope` box) so a broken link cannot be mistaken for a
-styling choice. A layer is not done because the harness likes it — it is done when the same markup is
-in `WaxSeal.tsx` and the deployed page agrees.
+- The seam defect on the envelope is **not** part of this order and is **not** closed. It stays on
+  the list.
+- P1 in `docs/PROPOSALS.md` (`?open=1`) is still proposed, not approved.
+- The hall icons are the product's own line art at 72px in `--vi-gold`, which is deliberately faint
+  on cream. If the owner wants them read as more than ornament, that is a palette decision, not a
+  bug.

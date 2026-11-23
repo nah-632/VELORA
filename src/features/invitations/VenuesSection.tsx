@@ -10,7 +10,9 @@ import { VenueIcon, type IconVariant } from "./VenueIcons";
  *
  * **Both halls are always shown.** A guest invited to the men's hall still needs to tell his mother
  * where the women's hall is; hiding the other one produces a phone call, and the phone call is the
- * operator's evening. The guest's own hall gets a gold ring and a small label; nothing is removed.
+ * operator's evening. The guest's own hall is marked twice: a small gold word («قاعتك» / "Your hall")
+ * and `aria-current`, which is the part a screen reader can read. The two options are frameless —
+ * no border, no background, no box — so the mark cannot be a ring around one of them.
  *
  * **The dialog is a native `<dialog>` with `showModal()`.** That is not a shortcut, it is the correct
  * tool: the browser gives the focus trap, `aria-modal`, Escape-to-close, the top layer (so the page
@@ -157,8 +159,8 @@ export function VenuesSection({
               setOpenId(venue.id);
             }}
             aria-haspopup="dialog"
+            aria-current={venue.emphasis ? "true" : undefined}
           >
-            <span className="venue-card__ring" aria-hidden="true" />
             <VenueIcon kind={venue.kind} variant={variant} className="venue-card__icon" />
             <span className="venue-card__label">{venue.iconLabel}</span>
             {venue.emphasis ? <span className="venue-card__you">{labels.yourHall}</span> : null}

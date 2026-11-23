@@ -67,6 +67,10 @@ so `DATABASE_URL` points at something that actually accepts a connection.
 ```bash
 gh codespace create -R nah-632/VELORA -b main    # or Code → Codespaces → Create
 npm ci
+`next build` and `next dev` share `.next/`: **always `rm -rf .next` before `next dev`**, and
+never run both against the same directory — a build leaves the dev server failing every request
+with `ENOENT .../vendor-chunks/*.js`.
+
 npm run db:migrate                               # applies db/migrations to the real PostgreSQL
 npm run verify                                   # the full gate
 npm run build                                    # the production build — finally verifiable here

@@ -11,6 +11,8 @@
  * What the guest's audience does change is the wording they receive in WhatsApp and the calendar
  * entry they save: those are addressed to one person, and "the venue" has a definite answer there.
  */
+import { googleMapsHref } from "@/lib/maps";
+
 import { type Locale } from "./messages";
 
 export type VenueKind = "women" | "men" | "shared";
@@ -141,6 +143,22 @@ export function venueForCalendar(view: VenueView, locale: Locale): { name: strin
     address: view.own.map((venue) => venueText(venue, "address", locale)).filter(Boolean).join(" · "),
     map: view.own.map((venue) => (venue.map_url ?? "").trim()).filter(Boolean).join(" "),
   };
+}
+
+/**
+ * The link behind the guest's map button, for one hall.
+ *
+ * The venue's stored link is used only when it is a Google Maps link; anything else is turned into a
+ * Google Maps search for "name, address" in the guest's own language, because the button says Google
+ * Maps. The name and address go through `venueText`, so an Arabic-reading guest searches the Arabic
+ * spelling of the hall — which is the spelling that is on the building.
+ */
+export function venueMapLink(venue: Venue, locale: Locale): string | null {
+  return googleMapsHref({
+    mapUrl: venue.map_url,
+    name: venueText(venue, "name", locale),
+    address: venueText(venue, "address", locale),
+  });
 }
 
 /** True when this venue has the three things a guest needs: a name, an address and a map link. */

@@ -11,7 +11,16 @@
  */
 import { z } from "zod";
 
-import { classifyMapUrl } from "@/lib/maps";
+import { isGoogleMapsUrl } from "@/lib/maps";
+
+/**
+ * One message for every map-link field, because there is one rule.
+ *
+ * The form says the same thing in both languages (`venuesMapHint`); this is the server's copy of it,
+ * and it names the shape rather than saying "invalid".
+ */
+export const MAP_URL_MESSAGE =
+  "Use a Google Maps link starting with https:// — google.com/maps, www.google.com/maps or maps.app.goo.gl.";
 
 const trimmed = (max: number) =>
   z
@@ -61,8 +70,9 @@ export const EventInputSchema = z.object({
   hijri_date_text: optionalText(120),
   venue_name_ar: optionalText(200),
   venue_name_en: optionalText(200),
-  // Validated by `classifyMapUrl`, which refuses `javascript:` and `data:` outright. This value
-  // came from a text field and ends up inside an anchor's href.
+  // A Google Maps link, and nothing else. This value came from a text field and ends up inside an
+  // anchor's href, so `https://google.com/maps.example.com/` — a valid URL that is not Google's —
+  // is refused along with `javascript:` and `data:`. See `isGoogleMapsUrl`.
   venue_map_url: z
     .string()
     .trim()
@@ -70,8 +80,8 @@ export const EventInputSchema = z.object({
     .nullable()
     .optional()
     .refine(
-      (value) => value === null || value === undefined || classifyMapUrl(value).ok,
-      "Use a Google Maps or Apple Maps link starting with https://",
+      (value) => value === null || value === undefined || isGoogleMapsUrl(value),
+      MAP_URL_MESSAGE,
     ),
   quote_ar: optionalText(400),
   quote_en: optionalText(400),
@@ -115,7 +125,13 @@ export const VenueInputSchema = z.object({
   name_en: optionalText(120),
   address_ar: optionalText(300),
   address_en: optionalText(300),
-  map_url: optionalText(600),
+  // Same rule as the event's own legacy field: a Google Maps link or nothing. A hall's link is what
+  // the guest's button points at, so it is the value most worth checking. Old rows are untouched —
+  // this validates what is *saved*, not what is read.
+  map_url: optionalText(600).refine(
+    (value) => value === null || value === undefined || isGoogleMapsUrl(value),
+    MAP_URL_MESSAGE,
+  ),
   start_time: optionalText(40),
   entrance_ar: optionalText(200),
   entrance_en: optionalText(200),

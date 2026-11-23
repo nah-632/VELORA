@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { TemplateCanvas } from "@/components/invitation/TemplateCanvas";
-import { buttonClass } from "@/components/ui/Button";
+import { MihrabArch } from "@/features/invitations/MihrabArch";
 import { loadInvitationOnce } from "@/features/invitations/cache";
 import { Countdown } from "@/features/invitations/Countdown";
 import { WaxSeal } from "@/features/invitations/WaxSeal";
@@ -17,15 +16,13 @@ import { iconVariantFor } from "@/features/invitations/VenueIcons";
 import {
   venueForCalendar,
   venueLabel,
+  venueMapLink,
   venueText,
   venueVariables,
   venuesForGuest,
 } from "@/features/invitations/venues";
-import { classifyMapUrl, mapButtonLabel } from "@/lib/maps";
-import { GoldenPalace, T1Divider } from "@/lib/templates/GoldenPalace";
+import { mapsButtonLabel } from "@/lib/maps";
 import { getTemplateBySlug } from "@/lib/templates/registry";
-import { themeToCssVars } from "@/lib/templates/css-vars";
-import type { ThemeOverride } from "@/lib/templates/schema";
 
 /**
  * A guest's invitation.
@@ -151,8 +148,8 @@ export default async function InvitationPage({
     emphasis: view.emphasis !== null && venue.kind === view.emphasis,
     address: venueText(venue, "address", language),
     time: (venue.start_time ?? "").trim(),
-    mapUrl: venue.map_url,
-    mapLabel: mapButtonLabel(classifyMapUrl(venue.map_url).kind ?? "other", language),
+    mapUrl: venueMapLink(venue, language),
+    mapLabel: mapsButtonLabel(language),
     entrance: venueText(venue, "entrance", language),
     parking: venueText(venue, "parking", language),
     dressCode: venueText(venue, "dress_code", language),
@@ -163,13 +160,20 @@ export default async function InvitationPage({
   /**
    * The template, if this event uses one of the token-system designs.
    *
-   * The slug comes from the `templates` row the operator picked, and the override from the event.
-   * When the slug has no token template the page renders exactly as it did before — the older
-   * `design_config` path — so no existing invitation changes.
+   * Since B2 the template supplies the **entrance** — the seal's imprint, the envelope's paper, the
+   * wax colour, the liner — and the palette the venue icons draw their accent from. It no longer
+   * renders its own card: the luxe hero below is the invitation for every event, and the card was
+   * what printed the couple's names, the date and the verse a second time.
    */
-  const template = getTemplateBySlug(invitation.templateSlug);
-  const override = (invitation.themeOverride ?? {}) as ThemeOverride;
-  const themeVars = template ? themeToCssVars(template, language) : undefined;
+  /*
+   * The template: the row's own token document wins, the code registry is the fallback.
+   *
+   * The document lives in the row (`templates.token_config`, 0009) because two rows can share a
+   * palette and differ only in the seal, the envelope and the opening — which only the token document
+   * describes. The registry lookup stays for rows seeded before 0009, and for the Golden Palace row
+   * whose document has not been attached yet.
+   */
+  const template = invitation.tokenConfig ?? getTemplateBySlug(invitation.templateSlug);
 
   const initial = remaining(Date.now(), event.eventDatetime.getTime());
   const couple =
@@ -230,99 +234,70 @@ export default async function InvitationPage({
       liner={template?.envelope.liner}
     >
       <main
-        className="mx-auto flex w-full max-w-[520px] flex-col px-5 py-10"
+        className="vi"
         lang={language}
         dir={isArabic ? "rtl" : "ltr"}
-        style={themeVars}
       >
-        {/* The language switch: a link, so nothing is translated on the client and the sheet below
-            survives the soft navigation. */}
-        <nav className="mb-6 flex justify-end" aria-label={base.language.label}>
-          <Link
-            className="text-xs text-ink-muted underline underline-offset-4"
-            href={languageHref}
-            hrefLang={isArabic ? "en" : "ar"}
-            scroll={false}
-          >
-            {isArabic ? "English" : "العربية"}
-          </Link>
-        </nav>
+        <header className="vi-hero">
+          {/* The language switch: a link, so nothing is translated on the client and the sheet below
+              survives the soft navigation. Inside the hero, because it belongs to the hero's own
+              background — outside it, the paper shows a strip above the gradient that reads as the
+              top edge of a card. */}
+          <nav className="vi-langrow" aria-label={base.language.label}>
+            <Link className="vi-lang" href={languageHref} hrefLang={isArabic ? "en" : "ar"} scroll={false}>
+              {isArabic ? "English" : "العربية"}
+            </Link>
+          </nav>
 
-        {template ? (
-          <GoldenPalace
-            template={template}
-            override={override}
-            locale={language}
-            eyebrow={isArabic ? "دعوة زفاف" : "Wedding Invitation"}
-            groom={groom ?? ""}
-            bride={bride ?? ""}
-            names={
-              <div className="t1__couple">
-                <p className="t1__greeting">{text("greeting")}</p>
-                <span className="t1__name">{groom}</span>
-                <span className="t1__amp">{isArabic ? "و" : "&"}</span>
-                <span className="t1__name">{bride}</span>
-              </div>
-            }
-          >
-            <p className="t1__verse">{text("body")}</p>
-            {copy.verse && copy.verse.trim() ? <p className="t1__verse">{renderTemplate(copy.verse, variables)}</p> : null}
-            {invitation.personalLine ? <p className="t1__personal">{invitation.personalLine}</p> : null}
-          </GoldenPalace>
-        ) : null}
+          <p className="vi-kicker">{isArabic ? "دعوة زفاف" : "A wedding invitation"}</p>
+          <p className="vi-greeting">{text("greeting")}</p>
 
-        <p className={`text-center text-sm text-ink-muted ${template ? "sr-only" : ""}`}>{text("greeting")}</p>
+          <div className="vi-arch">
+            <MihrabArch />
+            <h1 className="vi-names">
+              <span className="vi-names__name">{groom}</span>
+              <span className="vi-names__amp" aria-hidden="true">
+                {isArabic ? "و" : "&"}
+              </span>
+              <span className="vi-names__name">{bride}</span>
+            </h1>
+          </div>
 
-        {invitation.personalLine ? (
-          <p className="mt-2 text-center text-sm italic text-ink-muted">{invitation.personalLine}</p>
-        ) : null}
+          <p className="vi-lead">{text("opening")}</p>
+          <p className="vi-body">{text("body")}</p>
+          <p className="vi-date">{dateLabel}</p>
+          {invitation.personalLine ? <p className="vi-personal">{invitation.personalLine}</p> : null}
 
-        <div className="mt-5 text-center">
-          <p className="text-sm text-ink-muted">{text("opening")}</p>
-        </div>
+          <div className="vi-zel" aria-hidden="true" />
 
-        <div className={template ? "hidden" : "mt-6"}>
-          <TemplateCanvas
-            design={design}
-            blocks={invitation.blocks}
-            locale={language}
-            label={isArabic ? `دعوة ${invitation.guestName}` : `Invitation for ${invitation.guestName}`}
-          />
-        </div>
+          {copy.verse && copy.verse.trim() ? (
+            <p className="vi-verse">{renderTemplate(copy.verse, variables)}</p>
+          ) : null}
+        </header>
 
-        {template ? <T1Divider kind={template.layout.divider} /> : null}
-
-        <p className={`text-center text-sm text-ink ${template ? "sr-only" : "mt-6"}`}>{text("body")}</p>
-
-        {!template && copy.verse && copy.verse.trim() ? (
-          <p className="mt-5 text-center text-sm text-ink-muted">{renderTemplate(copy.verse, variables)}</p>
-        ) : null}
-
-        <div className="mt-8">
+        <section className="vi-band vi-band--top" aria-labelledby="vi-countdown-title">
+          <h2 className="vi-band__title" id="vi-countdown-title">
+            {isArabic ? "العدّ التنازلي" : "The countdown"}
+          </h2>
+          <p className="vi-band__sub">
+            {isArabic ? "حتى اليوم الذي نفرح فيه معاً" : "Until the day we celebrate together"}
+          </p>
           <Countdown
             targetIso={event.eventDatetime.toISOString()}
             initial={initial}
             labels={base.countdown}
             finishedMessage={base.countdownFinished}
           />
-        </div>
+        </section>
 
-        <p className="mt-6 text-center text-sm text-ink-muted">{text("datetimeLine")}</p>
-
-        {/* Both halls, always, with the guest's own ringed. */}
-        <VenuesSection
-          venues={venueCards}
-          variant={iconVariantFor(design)}
-          labels={{ ...base.venues, venueOne: base.venues.venueOne }}
-          accent={design.palette.accent}
-          languageHref={languageHref}
-          languageLabel={isArabic ? "English" : "العربية"}
-        />
+        <p className="vi-when">{text("datetimeLine")}</p>
 
         {shown.length > 0 ? (
-          <section className="mt-10">
-            <h2 className="mb-4 text-center text-sm font-medium text-ink">{base.details.schedule}</h2>
-            <ol className="timeline">
+          <section className="vi-programme" aria-labelledby="vi-programme-title">
+            <h2 className="vi-section-title" id="vi-programme-title">
+              {base.details.schedule}
+            </h2>
+            <ol className="timeline vi-tl">
               {shown.map((item, index) => {
                 const title = line(item, "title");
                 const detail = line(item, "detail");
@@ -344,8 +319,8 @@ export default async function InvitationPage({
               })}
             </ol>
             {hiddenByFilter > 0 ? (
-              <p className="mt-3 text-center">
-                <a className="text-xs text-ink-muted underline underline-offset-4" href={question(showAllSchedule ? "back" : "all")}>
+              <p className="vi-more">
+                <a className="vi-more__link" href={question(showAllSchedule ? "back" : "all")}>
                   {showAllSchedule ? base.schedule.onlyMine : base.schedule.showAll(hiddenByFilter)}
                 </a>
               </p>
@@ -353,66 +328,81 @@ export default async function InvitationPage({
           </section>
         ) : null}
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <a className={buttonClass("secondary")} href={`/i/${token}/calendar`}>
+        {/* Both halls, always, with the guest's own marked. */}
+        <VenuesSection
+          venues={venueCards}
+          variant={iconVariantFor(design)}
+          labels={{ ...base.venues, venueOne: base.venues.venueOne }}
+          accent={design.palette.accent}
+          languageHref={languageHref}
+          languageLabel={isArabic ? "English" : "العربية"}
+        />
+
+        {/* Adding it to a calendar belongs with the halls: the calendar entry carries the address,
+            and a guest who has just read the address is the one who wants it. Both routes are the v1
+            ones — the .ics the server builds, and the Google link it builds from the same data. */}
+        <div className="vi-actions">
+          <a className="vi-btn vi-btn--fill" href={`/i/${token}/calendar`}>
             {base.calendar.ics}
           </a>
-          <a className={buttonClass("quiet")} href={googleUrl} rel="noreferrer noopener" target="_blank">
+          <a className="vi-btn" href={googleUrl} rel="noreferrer noopener" target="_blank">
             {base.calendar.google}
           </a>
         </div>
 
-        <section className="mt-10 border-t border-line pt-6">
+        {/* The RSVP band. The endpoint, the validation, the rate limit and the companion limit are
+            the v1 ones and are not touched by this order; only the surface is. */}
+        <section className="vi-band vi-band--rsvp" aria-labelledby="vi-rsvp-title">
+          <h2 className="vi-band__title" id="vi-rsvp-title">
+            {base.rsvp.title}
+          </h2>
+
           {answerFromUrl === "bad_response" ||
           answerFromUrl === "too_many_companions" ||
           answerFromUrl === "invalid_token" ||
           answerFromUrl === "rate_limited" ? (
-            <p role="alert" className="mb-3 text-sm text-danger">
+            <p role="alert" className="vi-error">
               {base.rsvp.errors[answerFromUrl]}
             </p>
           ) : null}
 
           {answered && answerFromUrl !== "update" ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-ink">{thankYouFor(answered)}</p>
-              <p className="text-xs text-ink-muted">
+            <div className="vi-form">
+              <p className="vi-thanks">{thankYouFor(answered)}</p>
+              <p className="vi-band__sub">
                 {fill(base.rsvp.current, { answer: base.rsvp.answers[answered] })}
               </p>
-              <a className={buttonClass("quiet")} href={question("update")}>
-                {base.rsvp.update}
-              </a>
+              <div className="vi-actions">
+                <a className="vi-btn" href={question("update")}>
+                  {base.rsvp.update}
+                </a>
+              </div>
             </div>
           ) : (
-            <form action={submitRsvpAction} className="flex flex-col gap-4">
-              <h2 className="text-sm font-medium text-ink">{text("beforeRsvp")}</h2>
+            <form action={submitRsvpAction} className="vi-form">
+              <p className="vi-band__sub">{text("beforeRsvp")}</p>
               <input type="hidden" name="token" value={token} />
               {language !== invitation.language ? <input type="hidden" name="lang" value={language} /> : null}
 
-              <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-3 text-sm text-ink">
-                  <input type="radio" name="response" value="confirmed" required defaultChecked={answered !== "declined"} />
-                  {/* The guest's own grammar, taken from their row. */}
-                  {renderTemplate(confirmLabel(copy as never, invitation.gender), variables)}
-                </label>
-                <label className="flex items-center gap-3 text-sm text-ink">
-                  <input type="radio" name="response" value="declined" defaultChecked={answered === "declined"} />
-                  {text("declineButton")}
-                </label>
-              </div>
+              <label className="vi-opt">
+                <input type="radio" name="response" value="confirmed" required defaultChecked={answered !== "declined"} />
+                {/* The guest's own grammar, taken from their row. */}
+                <span>{renderTemplate(confirmLabel(copy as never, invitation.gender), variables)}</span>
+              </label>
+              <label className="vi-opt">
+                <input type="radio" name="response" value="declined" defaultChecked={answered === "declined"} />
+                <span>{text("declineButton")}</span>
+              </label>
 
               {rsvp && rsvp.maxCompanions > 0 ? (
-                <label className="flex flex-col gap-1.5 text-sm text-ink">
+                <label className="vi-form">
                   <span>
                     {base.rsvp.companions}{" "}
-                    <span className="text-xs text-ink-muted">
+                    <span className="vi-band__sub">
                       ({fill(base.rsvp.companionHint, { max: rsvp.maxCompanions })})
                     </span>
                   </span>
-                  <select
-                    name="companions"
-                    defaultValue={String(rsvp.companions)}
-                    className="min-h-11 rounded-md border border-line bg-ground-paper px-3 text-sm text-ink"
-                  >
+                  <select name="companions" defaultValue={String(rsvp.companions)} className="vi-select">
                     {Array.from({ length: rsvp.maxCompanions + 1 }, (_, n) => (
                       <option key={n} value={n}>
                         {String(n)}
@@ -422,8 +412,8 @@ export default async function InvitationPage({
                 </label>
               ) : null}
 
-              <div>
-                <button type="submit" className={buttonClass("primary")}>
+              <div className="vi-actions">
+                <button type="submit" className="vi-btn vi-btn--fill">
                   {answered ? base.rsvp.update : base.rsvp.submit}
                 </button>
               </div>
@@ -431,11 +421,12 @@ export default async function InvitationPage({
           )}
         </section>
 
-        <p className="mt-8 text-center text-xs text-ink-muted">{base.privacy}</p>
+        <p className="vi-note">{base.privacy}</p>
 
-        <footer className="mt-10 text-center text-xs text-ink-muted">
-          <p>{base.footer.withLove}</p>
-          <p className="mt-1">{base.footer.brand}</p>
+        <footer className="vi-footer">
+          <span className="vi-footer__tagline">{isArabic ? "فنّ الدعوة" : "The Art of Inviting"}</span>
+          <p className="vi-footer__line">{base.footer.withLove}</p>
+          <p className="vi-footer__line">{base.footer.brand}</p>
         </footer>
       </main>
     </WaxSeal>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-import { BrandMark } from "@/lib/templates/brand-mark";
+import { MARK_FLIP, MARK_PATHS } from "@/lib/templates/brand-mark";
 import { crackWedges, sealPalette, waxPath } from "./seal";
 
 /**
@@ -143,91 +143,92 @@ export function WaxSeal({
             tabIndex={phase === "sealed" ? 0 : -1}
             aria-label={labels.prompt}
           >
-            <span className="envelope__body" style={{ background: envelopeColor ?? palette.ground, borderColor: wax.ring }} />
-
-            {/* The side wings, folded in: each a triangle whose hypotenuse is the fold edge. */}
-            <span className="envelope__wing envelope__wing--left" />
-            <span className="envelope__wing envelope__wing--right" />
-            <span className="envelope__front" />
-
             {/*
-              The fold edges of the wings — the *lower* arms only. The upper arms belong to the flap
-              and live inside it: they have to rotate away with it, and a copy left behind here would
-              stay on the panel after the envelope opened.
-              Drawn, not bordered: a 1px border cannot follow a diagonal. Geometry is in the
-              envelope's own coordinates (330×220) so it scales with the box.
+              The paper colour comes from the entrance palette (a scoped CSS variable) unless the
+              template explicitly sets an envelope colour. It deliberately does **not** fall back to
+              `palette.ground`: the envelope is one brand object across templates, and letting the
+              invitation's ground colour leak into it is how the flap once turned grey.
             */}
-            <span className="envelope__edges" aria-hidden="true">
-              <svg viewBox="0 0 330 220" preserveAspectRatio="none" fill="none">
-                <g strokeLinecap="round">
-                  <path d="M167.3 133.1 L330 177.1" stroke="var(--env-gold)" strokeOpacity="0.62" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                  <path d="M162.7 133.1 L0 177.1" stroke="var(--env-gold)" strokeOpacity="0.62" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                </g>
-              </svg>
+            <span
+              className="envelope__body"
+              style={envelopeColor ? ({ "--env-paper": envelopeColor } as CSSProperties) : undefined}
+            >
+              <span className="envelope__edge" aria-hidden="true" />
             </span>
 
-            {/* Directional light from the top left, and the paper's grain — no image files. */}
-            <span className="envelope__light" />
-            <span className="envelope__grain" />
-            <span className="envelope__fibres" />
+            <span className="envelope__card">
+              {/*
+                The card's face: tone-on-tone sprigs and the star on its rule. Embossing is a light
+                copy offset up-left and a dark copy offset down-right, both at low opacity — no
+                colour, which is what "tone-on-tone" means here.
+                ESTIMATED: the ornament's placement is my construction; it is not measured from the
+                references. See the note on .envelope__card.
+              */}
+              <span className="envelope__card-ornament" aria-hidden="true">
+                <svg viewBox="0 0 300 208" preserveAspectRatio="none" fill="none">
+                  <g transform="translate(58 54)">
+                    <path d="M0 62 C10 44 22 30 36 22" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+                    <path d="M0 63 C10 45 22 31 36 23" stroke="rgba(120,90,54,0.30)" strokeWidth="1" />
+                    <path d="M14 40 C4 36 0 26 6 18 C14 24 17 33 14 40 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M15 41 C5 37 1 27 7 19 C15 25 18 34 15 41 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                    <path d="M34 22 C26 14 26 4 34 -2 C40 6 40 16 34 22 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M35 23 C27 15 27 5 35 -1 C41 7 41 17 35 23 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                  </g>
+                  <g transform="translate(242 54) scale(-1 1)">
+                    <path d="M0 62 C10 44 22 30 36 22" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+                    <path d="M0 63 C10 45 22 31 36 23" stroke="rgba(120,90,54,0.30)" strokeWidth="1" />
+                    <path d="M14 40 C4 36 0 26 6 18 C14 24 17 33 14 40 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M15 41 C5 37 1 27 7 19 C15 25 18 34 15 41 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                    <path d="M34 22 C26 14 26 4 34 -2 C40 6 40 16 34 22 Z" stroke="rgba(255,255,255,0.5)" strokeWidth="0.9" />
+                    <path d="M35 23 C27 15 27 5 35 -1 C41 7 41 17 35 23 Z" stroke="rgba(120,90,54,0.28)" strokeWidth="0.9" />
+                  </g>
+                  {/* the rule, and the four-point star sitting on its top end */}
+                  <path d="M150 14 L150 122" stroke="rgba(184,145,58,0.55)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  <path d="M150 40 L154 50 L164 54 L154 58 L150 68 L146 58 L136 54 L146 50 Z"
+                        stroke="rgba(184,145,58,0.75)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                </svg>
+              </span>
+            </span>
 
             {/*
-              The mark's reveal and the wax break live in the disc, which is drawn below.
+              The flap, layer 2. Its material is the stylesheet's now: the inline gradient ended at
+              13% alpha and read grey over the ivory card. The lining is its inner face, so it lives
+              inside — clipped to the fold's shape and rotating away with it.
             */}
-
             {/*
-              The card: ivory cotton with a colourless emboss, and its own ornament — a rule with a
-              four-point star between the halves. No border is set here any more: a wax-coloured rim
-              on the card is a tinted edge, and the emboss has to be luminance-only.
+              The lower front pocket, and its two fold diagonals. The diagonals are drawn, not
+              bordered: a 1px border cannot follow 46°, and the line has to sit on the fold rather
+              than around the envelope.
             */}
-            <span className="envelope__card" style={{ background: palette.ground }}>
-              <svg className="envelope__card-rule" viewBox="0 0 160 16" aria-hidden="true">
-                <g stroke="var(--env-gold)" strokeWidth="0.9" strokeLinecap="round" fill="none">
-                  <path d="M2 8 H62" />
-                  <path d="M98 8 H158" />
-                </g>
-                {/* A four-point star, drawn as concave arcs rather than a rotated square. */}
-                <path
-                  d="M80 1 C81 5.5 82.5 7 87 8 C82.5 9 81 10.5 80 15 C79 10.5 77.5 9 73 8 C77.5 7 79 5.5 80 1 Z"
-                  fill="var(--env-gold)"
-                />
+            <span className="envelope__front" />
+            <span className="envelope__front-edges" aria-hidden="true">
+              <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                {/* The two lower fold lines, drawn where they were measured — not on a clip edge. */}
+                <path className="ent-gold" d="M0.0 218.4 L113.6 129.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                <path className="ent-gold" d="M329.6 219.8 L215.7 129.8" strokeWidth="1" vectorEffect="non-scaling-stroke" />
               </svg>
             </span>
 
             <span className="envelope__flap">
-              {/*
-                The lining is the flap's inner face, so it lives inside the flap: clipped to the
-                flap's own shape and rotating away with the fold. When the envelope is sealed it is
-                invisible and the flap's paper shows; as the fold turns past halfway it fades in.
-              */}
-              {liner === "arabesque" ? (
-                <span className="envelope__liner" aria-hidden="true">
-                  <svg viewBox="0 0 330 220" preserveAspectRatio="none" fill="none">
-                    <path
-                      d="M12 8 L318 8 L318 100 L165 145 L12 100 Z"
-                      stroke="var(--env-gold)"
-                      strokeOpacity="0.45"
-                      strokeWidth="1"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                    {/* The frame, doubled: a heavier rule with a thinner one inside it. */}
-                    <path
-                      d="M21 17 L309 17 L309 94 L165 134 L21 94 Z"
-                      stroke="var(--env-gold)"
-                      strokeOpacity="0.22"
-                      strokeWidth="1"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </svg>
-                </span>
-              ) : null}
+              {/* The lining is the flap's inner face; the entrance always has one. */}
+              <span className="envelope__liner" aria-hidden="true">
+                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                  <path
+                    d="M14 8 L316 8 L316 104 L165 158 L14 104 Z"
+                    stroke="currentColor"
+                    strokeOpacity="0.42"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+              </span>
+            
 
               <span className="envelope__flap-edges" aria-hidden="true">
-                <svg viewBox="0 0 330 220" preserveAspectRatio="none" fill="none">
-                  <g strokeLinecap="round">
-                    <path d="M-3.3 89.1 L165 135.3 L333.3 90.2" stroke="var(--env-gold)" strokeOpacity="0.7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    <path d="M-3.3 90.4 L165 136.6 L333.3 91.5" stroke="var(--env-light)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                  </g>
+                <svg viewBox="0 0 330 254" preserveAspectRatio="none" fill="none">
+                  {/* The two upper fold lines, measured the same way. */}
+                  <path className="ent-gold" d="M0.0 35.1 L113.6 129.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  <path className="ent-gold" d="M329.6 35.5 L215.7 129.8" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                 </svg>
               </span>
             </span>
@@ -283,31 +284,33 @@ export function WaxSeal({
                       <circle cx="60" cy="60" r="40" fill="none" stroke={wax.emboss} strokeWidth="1.6" strokeOpacity="0.42" />
                       <circle cx="60" cy="60" r="37.6" fill="none" stroke={wax.light} strokeWidth="0.9" strokeOpacity="0.32" />
 
-                      {/* The imprint: the brand mark, pressed. Geometry from public/brand/monogram.svg. */}
-                      <g transform="translate(37 38.5) scale(1.44)" filter={`url(#wax-press-${uid})`} opacity="0.9">
+                      {/*
+                        The imprint: the operator's mark, pressed.
+
+                        Placed so it spans 57% of the inner disc — the inner disc is r 37.6 here, so
+                        the mark is 43.2 units wide. `translate(12.67 37.67) scale(0.08268)` puts the
+                        traced ink box (523 wide) centred on (60,60); the traced ink box is 523×468.
+                        The numbers are derived, but the percentage is **measured in a browser**, per
+                        docs/INVITATION-QUALITY.md B7.
+                      */}
+                      <g transform="translate(12.67 37.67) scale(0.08268)" filter={`url(#wax-press-${uid})`}>
                         {imprint === "monogram" || imprint === "eight-star" ? (
-                          <g mask={`url(#mark-mask-${uid})`}>
-                            <g className="seal__brand">
-                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L22.96 4.67 L27.84 7.21 L17.33 27.34 L14.67 27.34 Z" fill={wax.emboss} fillOpacity="0.74" />
-                              <path d="M4.16 7.21 L9.04 4.67 L16 18 L16 27.34 L14.67 27.34 Z" fill={wax.emboss} />
+                          <g mask={`url(#mark-mask-${uid})`} className="seal__brand" fill="currentColor"
+                            style={{ color: "var(--seal-imprint, #BE925E)" }}>
+                            <g transform={MARK_FLIP}>
+                              {MARK_PATHS.map((d, i) => (
+                                <path key={i} d={d} />
+                              ))}
                             </g>
                           </g>
                         ) : (
                           <path d="M16 5l4 11 4-11 4 11-8 13-8-13z" fill={wax.emboss} />
                         )}
                       </g>
-
-                      {/*
-                        The specular highlight belongs to the wax, so it is clipped to a wedge like
-                        everything else.
-                        
-                        It used to sit outside the pieces, as a sibling of the three groups: the wax
-                        broke and left, and the highlight stayed behind on the panel as an unexplained
-                        white smudge. Found on the harness at 50% of the rise.
-                      */}
-                      <ellipse cx="44" cy="36" rx="19" ry="11" fill={`url(#wax-sheen-${uid})`} transform="rotate(-18 44 36)" />
                     </g>
                   ))}
+
+                  <ellipse cx="44" cy="36" rx="19" ry="11" fill={`url(#wax-sheen-${uid})`} transform="rotate(-18 44 36)" />
                 </g>
               </svg>
 

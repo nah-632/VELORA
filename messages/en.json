@@ -322,7 +322,7 @@
       "venuesCopy": "Copy details from the other hall",
       "venuesNameAr": "Hall name (Arabic)",
       "venuesNameEn": "Hall name (English)",
-      "venuesMapHint": "A Google Maps, Apple Maps or Waze link",
+      "venuesMapHint": "A Google Maps link starting with https:// — google.com/maps, www.google.com/maps or maps.app.goo.gl",
       "venuesOpenTest": "Open to test",
       "venuesTime": "Hall time (optional)",
       "venuesPhone": "Contact phone (optional)",

@@ -12,6 +12,10 @@ import "@/styles/tailwind.css";
 import "@/styles/base.css";
 // The entrance's keyframes, scoped to this route.
 import "@/styles/invitation.css";
+// The guest page's own palette and composition, scoped to `.vi`. Imported after `invitation.css`
+// and after the brand tokens, so its scoped custom properties are the ones the page resolves
+// against without any of them reaching `:root`.
+import "@/styles/luxe.css";
 
 /**
  * The root layout for /i/[token].
