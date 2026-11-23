@@ -52,11 +52,16 @@
   max-width: 480px;
   margin-inline: auto;
   overflow-x: clip;
-  /* The page's own gutter, stated once. Sections that paint a background pull it back out with a
-     negative margin so the colour reaches the edge of the column — otherwise the hero's gradient
-     starts inside the gutter and the "no visible content box" rule is broken by a faint rectangle
-     exactly where a card would have been. Measured on the real page before this was fixed. */
-  padding-inline: 22px;
+  /* The page's own gutter, stated once. Sections that paint a background pull it back out so the
+     colour reaches the edge of the device — otherwise the hero's gradient starts inside the gutter
+     and the "no visible content box" rule is broken by a faint rectangle exactly where a card would
+     have been. Measured on the real page before this was fixed.
+     `--vi-bleed` adds the entrance's own padding: `.seal-stage` pads this route by 1.5rem on each
+     side so the envelope can sit inside it, and the invitation runs under the gate. The two numbers
+     are written as one expression so they cannot drift apart silently. */
+  --vi-gutter: 22px;
+  --vi-bleed: calc(var(--vi-gutter) + 1.5rem);
+  padding-inline: var(--vi-gutter);
 }
 
 /* The Latin faces are for Latin text. `lang` is on this element, set from the guest's own row. */
@@ -131,8 +136,11 @@
 
 .vi-hero {
   position: relative;
-  margin-inline: -22px;
-  padding-inline: 22px;
+  margin-inline: calc(var(--vi-bleed) * -1);
+  /* The background reaches the device edge; the words keep the page's own 22px gutter, which is
+     the prototype's measure. Padding equal to the bleed would have narrowed the arch by ~48px on a
+     375px screen for no visual gain. */
+  padding-inline: var(--vi-gutter);
   /* The switch is absolutely placed in this corner, so the hero reserves its height. */
   padding-block: 70px 4px;
   text-align: center;
@@ -159,7 +167,7 @@
 
 .vi-arch {
   position: relative;
-  width: min(82%, 316px);
+  width: min(92%, 316px);
   aspect-ratio: 300 / 390;
   margin: 14px auto 6px;
   /* The names size themselves against this box, not against the viewport. */
@@ -196,8 +204,12 @@
 }
 
 .vi-names {
+  /* The heading rule above tracks Cinzel by 0.14em. On a name that tracking is what pushes a
+     30-character Latin name onto a third line — measured at 18px, 20px and 24px, with and without
+     it. The names are not a heading's letterspacing. */
+  letter-spacing: normal;
   position: absolute;
-  inset: 20% 9% 6%;
+  inset: 20% 7% 6%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -222,9 +234,15 @@
   max-width: 100%;
   font-family: "Aref Ruqaa", "Amiri", serif;
   font-weight: 400;
-  font-size: clamp(1.75rem, 16cqw, 3.25rem);
+  font-size: clamp(1.75rem, 14cqw, 3.25rem);
   line-height: 1.3;
   text-wrap: balance;
+  /* Set here, on the element, and not only on `.vi-names`: the heading rule tracks Cinzel by 0.14em
+     and inheritance carries it into the span. An explicit declaration beats inheritance whatever the
+     other rule's specificity, which is why this works and the parent's one did not. Measured on the
+     real page: 2.42px of tracking on a 30-character name is the difference between two lines and
+     three. */
+  letter-spacing: normal;
   /* Arabic is a joined script and a name is one word: a break inside it is not a wrap, it is
      damage. `break-word` is the last resort and only fires if a single word cannot fit the arch at
      the floor size. */
@@ -246,7 +264,10 @@
 .vi:lang(en) .vi-names__name {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-weight: 600;
-  font-size: clamp(1.5rem, 14cqw, 3rem);
+  /* Smaller than the Arabic on purpose. Cormorant is a wide face and a 30-character Latin name
+     needed a third line at the Arabic size — measured, clipped, and fixed here rather than by
+     letting the clamp eat the name. */
+  font-size: clamp(1.15rem, 9.2cqw, 2.6rem);
 }
 
 .vi-names__amp {
@@ -408,8 +429,8 @@
    ========================================================================================== */
 
 .vi-band {
-  margin-inline: -22px;
-  padding: 40px 22px;
+  margin-inline: calc(var(--vi-bleed) * -1);
+  padding: 40px var(--vi-gutter);
   background: linear-gradient(160deg, var(--vi-em-l) -20%, var(--vi-em) 38%, var(--vi-em-d) 130%);
   color: var(--vi-gold-light);
   text-align: center;
@@ -787,9 +808,9 @@
 
 /* The footer says what the product is, in the deepest emerald. */
 .vi-footer {
-  margin-inline: -22px;
+  margin-inline: calc(var(--vi-bleed) * -1);
   margin-block-start: 34px;
-  padding: 30px 22px;
+  padding: 30px var(--vi-gutter);
   background: var(--vi-em-d);
   color: var(--vi-on-em);
   text-align: center;
@@ -806,4 +827,40 @@
 
 .vi-footer__line {
   margin: 6px 0 0;
+}
+
+/* ==========================================================================================
+   B8 — POLISH: focus, tap targets, and the 320px floor
+   ------------------------------------------------------------------------------------------
+   Three rules that are the same rule three times: this page is used with a thumb, on a phone, by
+   somebody who may be using a keyboard or a screen reader.
+
+   - **One focus ring, everywhere in the subtree**, drawn with the text gold because it has to be
+     visible against the cream. On the emerald bands it is drawn with gold-light instead: gold-deep
+     on emerald is a dark ring on a dark ground.
+   - **48px minimum** for anything a finger has to hit. `invitation.css` said 44 for the venue cards
+     (the WCAG minimum); this order says 48, so the cards are 48 here and the "show the whole
+     programme" link — a bare text link — is padded to 48 without changing its type size.
+   - Nothing else: the layout is already single-column at every width, so 320px is a measurement
+     rather than a breakpoint.
+   ========================================================================================== */
+
+.vi :focus-visible {
+  outline: 2px solid var(--vi-gold-deep);
+  outline-offset: 3px;
+}
+
+.vi-band :focus-visible,
+.vi-footer :focus-visible {
+  outline-color: var(--vi-gold-light);
+}
+
+.vi .venue-card {
+  min-height: 48px;
+}
+
+.vi-more__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
 }
