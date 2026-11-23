@@ -22,7 +22,7 @@ import {
   venuesForGuest,
 } from "@/features/invitations/venues";
 import { mapsButtonLabel } from "@/lib/maps";
-import { getTemplateBySlug } from "@/lib/templates/registry";
+import { EMERALD_ENVELOPE, getTemplateBySlug } from "@/lib/templates/registry";
 
 /**
  * A guest's invitation.
@@ -157,23 +157,29 @@ export default async function InvitationPage({
     phone: venue.contact_phone,
   }));
 
-  /**
-   * The template, if this event uses one of the token-system designs.
-   *
-   * Since B2 the template supplies the **entrance** — the seal's imprint, the envelope's paper, the
-   * wax colour, the liner — and the palette the venue icons draw their accent from. It no longer
-   * renders its own card: the luxe hero below is the invitation for every event, and the card was
-   * what printed the couple's names, the date and the verse a second time.
-   */
   /*
-   * The template: the row's own token document wins, the code registry is the fallback.
+   * The template: the row's own token document, then the code registry, then **the attachment**.
    *
-   * The document lives in the row (`templates.token_config`, 0009) because two rows can share a
-   * palette and differ only in the seal, the envelope and the opening — which only the token document
-   * describes. The registry lookup stays for rows seeded before 0009, and for the Golden Palace row
-   * whose document has not been attached yet.
+   * The template supplies the **entrance** — the seal's imprint, the envelope's paper, the wax
+   * colour, the liner — and the palette the venue icons draw their accent from. It no longer renders
+   * its own card: the luxe hero below is the invitation for every event, and the card was what
+   * printed the couple's names, the date and the verse a second time.
+   *
+   * The last fallback is the one that matters and it was missing. `getTemplateBySlug` returns
+   * undefined for the eight presets seeded in `0003_templates.sql` — they carry a `design_config`,
+   * not a token document — so every event created from the operator's picker resolved to *no*
+   * template at all, and the entrance fell back to `sealPalette(palette.accent)`.
+   *
+   * On the deployed default that accent is a gold, so the wax came out gold and the imprint — which
+   * is `#BE925E` — was gold on gold. The mark was in the DOM the whole time and invisible: the same
+   * defect the revert `d18a88d` had already fixed once, re-entered through a different door.
+   *
+   * Falling back to `EMERALD_ENVELOPE` rather than to nothing means an unresolved slug renders the
+   * design the mockups specify — emerald paper, burgundy wax, gold imprint — instead of a generic
+   * gold entrance. It is also the template the owner chose as the default on 2026-11-23.
    */
-  const template = invitation.tokenConfig ?? getTemplateBySlug(invitation.templateSlug);
+  const template =
+    invitation.tokenConfig ?? getTemplateBySlug(invitation.templateSlug) ?? EMERALD_ENVELOPE;
 
   const initial = remaining(Date.now(), event.eventDatetime.getTime());
   const couple =

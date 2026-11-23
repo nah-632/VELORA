@@ -141,8 +141,8 @@
      the prototype's measure. Padding equal to the bleed would have narrowed the arch by ~48px on a
      375px screen for no visual gain. */
   padding-inline: var(--vi-gutter);
-  /* The switch is absolutely placed in this corner, so the hero reserves its height. */
-  padding-block: 70px 4px;
+  /* The switch is a row in the flow now, so this is breathing room rather than a reservation. */
+  padding-block: 12px 4px;
   text-align: center;
   background: linear-gradient(180deg, var(--vi-paper-2), var(--vi-paper) 55%);
 }
@@ -332,11 +332,20 @@
    finger. It is a link, not a button, because the page re-renders on the server in the other
    language and the venue sheet below stays open across the transition. */
 .vi-langrow {
-  position: absolute;
-  inset-block-start: 12px;
-  inset-inline-end: 16px;
-  /* Above the khatam layer, which is a `::before` on the hero's own stacking context. */
-  z-index: 1;
+  /*
+   * In the flow, not floating over the words.
+   *
+   * It was `position: absolute` with the hero reserving 70px of top padding for it. That reservation
+   * is a guess about a height, and on the deployed page at 390px the pill and the kicker collided —
+   * "English" sat on top of «دعوة زفاف». Absolute positioning cannot collide only if the number is
+   * right forever, and a pill whose height depends on the reader's font size makes that a promise
+   * the layout cannot keep.
+   *
+   * As a normal row it takes the space it needs and the hero's padding no longer has to predict it.
+   */
+  display: flex;
+  justify-content: flex-end;
+  margin-block-end: 4px;
 }
 
 .vi-lang {
