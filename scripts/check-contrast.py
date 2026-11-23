@@ -139,8 +139,11 @@ PAIRS: list[tuple[str, str, float, bool, str]] = [
     ("vi-on-em", "vi-em", AA_TEXT, True, "band label on the emerald"),
     ("vi-on-em", "vi-em-d", AA_TEXT, True, "footer line on the deepest emerald"),
     ("vi-gold-light", "vi-em-d", AA_TEXT, True, "footer tagline on the deepest emerald"),
-    ("vi-gold", "vi-paper", AA_LARGE, False, "DECORATION ONLY — the arch, rules and icons, never text"),
-    ("vi-gold", "vi-em", AA_LARGE, False, "DECORATION ONLY — the band's rings"),
+    # The rules went from gold (#BE925E) to brown (#5A3E2B) on the owner's instruction, 2026-11-23.
+    # Brown measures far better than the gold it replaced, but it stays a decorative pair: a rule is
+    # not a place to put a word, and marking it required would invite exactly that.
+    ("vi-rule", "vi-paper", AA_LARGE, False, "DECORATION ONLY — the arch, rules and icons, never text"),
+    ("vi-rule", "vi-paper-2", AA_LARGE, False, "DECORATION ONLY — the same rules on the recessed cream"),
 ]
 
 

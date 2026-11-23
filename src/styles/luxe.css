@@ -12,23 +12,29 @@
 
    **The colours are the owner's, exactly as sent.** Two of them are load-bearing and must not be
    reused by eye:
-     `--vi-gold` (#BE925E) is decoration only. It is 2.4:1 on this paper and can never carry text.
+     `--vi-rule` (#5A3E2B) is the brown the rules, rings, icons and the arch are drawn in — decoration
+       only, never text. It was gold (#BE925E, 2.4:1) until the owner asked for brown on 2026-11-23.
      `--vi-gold-deep` (#7A5220) is the text gold, and every label that reads as "gold" uses it.
-   `scripts/check-contrast.py` measures the first pair, and the `.vi-*` pairs are added to it.
+   `scripts/check-contrast.py` measures both, and the `.vi-*` pairs are added to it.
 
-   **Dark mode is guarded, not automatic.** `:root[data-theme="dark"]` is the explicit switch the
-   owner asks for; the media query is wrapped in `:root:not([data-theme="light"])` so a device set to
-   dark never overrides an invitation that was explicitly shown light. Both rules are scoped to
-   `.vi`, so they cannot repaint anything outside this route.
+   **There is no automatic dark mode.** An invitation is printed paper and has one appearance; the
+   reader's system theme says nothing about this card. `:root[data-theme="dark"]` remains as an
+   explicit switch, because an operator choosing a dark variant is a decision about the design.
+   Both rules are scoped to `.vi`, so they cannot repaint anything outside this route.
    ========================================================================================== */
 
 .vi {
+  /* The card is paper. Tells form controls, scrollbars and the browser's own chrome the same thing
+     the palette says, so a device in dark mode cannot paint a dark control into a cream invitation. */
+  color-scheme: light;
   --vi-paper: #f1dec6;
   --vi-paper-2: #e8cfb1;
   --vi-ink: #2b1b12;
   --vi-muted: #5c4636;
-  /* Decoration: rules, rings, icons, the arch. Never text. */
-  --vi-gold: #be925e;
+  /* Decoration: rules, rings, icons, the arch. Never text.
+     The owner asked for these in brown rather than gold on 2026-11-23 — "#5a3e2b" is the deep brown
+     from the brief. The name says what it does now; `--vi-gold` named what it used to be. */
+  --vi-rule: #5a3e2b;
   /* Text and labels. The only gold that carries words. */
   --vi-gold-deep: #7a5220;
   --vi-foil-1: #946828;
@@ -92,23 +98,31 @@
   letter-spacing: normal;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .vi {
-    --vi-paper: #17120d;
-    --vi-paper-2: #201911;
-    --vi-ink: #f0e2cc;
-    --vi-muted: #c9b79e;
-    --vi-gold-deep: #dcb27f;
-    --vi-foil-1: #f0cd97;
-    --vi-foil-2: #c99a58;
-  }
-}
+/*
+ * There is deliberately no `@media (prefers-color-scheme: dark)` here.
+ *
+ * There was, and it was wrong. A guest whose phone is in dark mode opened an invitation that was
+ * dark brown where the mockups are cream — the envelope itself stayed emerald, so the two halves of
+ * one design disagreed, and the owner saw it immediately on his own device: «لون الدعوة عندما يفتح
+ * الظرف فاتح وعندما تظهر تكون بالبني الغامق».
+ *
+ * An invitation is printed paper. It has one appearance, and that appearance is the design. The
+ * reader's system theme is information about their other apps, not about this card. So the light
+ * palette is now unconditional and `color-scheme: light` tells form controls and scrollbars the same
+ * thing — without it a dark-mode device still paints its own dark chrome inside the card.
+ *
+ * The explicit switch below is kept: `data-theme="dark"` still works, because an operator asking for
+ * a dark variant is a decision about the design. A phone being in dark mode is not.
+ */
 
 :root[data-theme="dark"] .vi {
   --vi-paper: #17120d;
   --vi-paper-2: #201911;
   --vi-ink: #f0e2cc;
   --vi-muted: #c9b79e;
+  /* The rules are brown, which is invisible on dark paper — the one place the brown cannot follow
+     the paper. It takes the light gold here, the same tone the band's digits use. */
+  --vi-rule: #dcb27f;
   --vi-gold-deep: #dcb27f;
   --vi-foil-1: #f0cd97;
   --vi-foil-2: #c99a58;
@@ -184,7 +198,7 @@
 
 .vi-arch__line {
   fill: none;
-  stroke: var(--vi-gold);
+  stroke: var(--vi-rule);
   stroke-linecap: round;
   stroke-width: 2.2;
   stroke-dasharray: 1;
@@ -275,7 +289,7 @@
   font-family: "Aref Ruqaa", "Amiri", serif;
   font-size: 1.5rem;
   line-height: 1;
-  color: var(--vi-gold);
+  color: var(--vi-rule);
 }
 
 /* Lead-in: the general sentence. Kept smaller than the couple's own sentence so it reads as a
@@ -355,7 +369,7 @@
   min-height: 48px;
   min-width: 48px;
   padding-inline: 16px;
-  border: 1px solid var(--vi-gold);
+  border: 1px solid var(--vi-rule);
   border-radius: 999px;
   color: var(--vi-ink);
   font: inherit;
@@ -391,7 +405,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cg fill='none' stroke='%23BE925E' stroke-width='.8' opacity='.5'%3E%3Crect x='18' y='18' width='28' height='28'/%3E%3Crect x='18' y='18' width='28' height='28' transform='rotate(45 32 32)'/%3E%3Ccircle cx='32' cy='32' r='4'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cg fill='none' stroke='%235A3E2B' stroke-width='.8' opacity='.5'%3E%3Crect x='18' y='18' width='28' height='28'/%3E%3Crect x='18' y='18' width='28' height='28' transform='rotate(45 32 32)'/%3E%3Ccircle cx='32' cy='32' r='4'/%3E%3C/g%3E%3C/svg%3E");
   opacity: 0.38;
   -webkit-mask-image: radial-gradient(70% 55% at 50% 40%, #000, transparent 78%);
   mask-image: radial-gradient(70% 55% at 50% 40%, #000, transparent 78%);
@@ -408,7 +422,7 @@
   height: 14px;
   width: min(88%, 380px);
   margin: 26px auto;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Cpath d='M14 1l6 6-6 6-6-6z' fill='none' stroke='%23BE925E' stroke-width='1'/%3E%3Ccircle cx='0' cy='7' r='1.6' fill='%23BE925E'/%3E%3Ccircle cx='28' cy='7' r='1.6' fill='%23BE925E'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Cpath d='M14 1l6 6-6 6-6-6z' fill='none' stroke='%235A3E2B' stroke-width='1'/%3E%3Ccircle cx='0' cy='7' r='1.6' fill='%235A3E2B'/%3E%3Ccircle cx='28' cy='7' r='1.6' fill='%235A3E2B'/%3E%3C/svg%3E");
   background-position: center;
   background-size: auto 100%;
   background-repeat: repeat-x;
@@ -529,7 +543,7 @@
   margin: 20px auto 0;
   padding: 0;
   padding-inline-start: 22px;
-  border-inline-start: 1px solid var(--vi-gold);
+  border-inline-start: 1px solid var(--vi-rule);
   width: min(88%, 350px);
   text-align: start;
   display: flex;
@@ -551,7 +565,7 @@
   inline-size: 9px;
   block-size: 9px;
   transform: rotate(45deg);
-  background: var(--vi-gold);
+  background: var(--vi-rule);
 }
 
 /* The marker span the old list rendered is not a bead any more: the bead is the ::before, so this
@@ -644,7 +658,7 @@
   gap: 0.35rem;
   max-width: none;
   padding: 0.5rem 0.25rem;
-  color: var(--vi-gold);
+  color: var(--vi-rule);
 }
 
 .vi .venue-card__icon {
@@ -756,7 +770,7 @@
   justify-content: center;
   min-height: 48px;
   padding-inline: 22px;
-  border: 1px solid var(--vi-gold);
+  border: 1px solid var(--vi-rule);
   border-radius: 999px;
   background: transparent;
   color: var(--vi-ink);
