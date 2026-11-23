@@ -98,3 +98,61 @@ are not re-implemented unless a test fails.
 | F2 | Screenshots are at 375px, in AR and EN, with the **real fonts loaded** | the page reports `document.fonts.status` and the loaded family list |
 | F3 | Anything not run is named as not run — `next build`, `verify`, `test:browser`, a physical device | a list, not a silence |
 | F4 | Nothing is called done because it renders; it is done when its row is ✅ | this table |
+
+---
+
+## Evidence log — 2026-11-23, the luxe composition (the owner's order, Part B)
+
+Run against the **real `/i/<token>` page** on the Codespace dev server (Next 14.2.35, Chromium via
+Playwright, 375×812 at 2× unless stated), fixture `khalid-noor-local` / token
+`localProbeTokenAAAAAAAAAAAA`. Screenshots and the raw JSON are in `/var/minis/workspace/g3/measure/`.
+
+Rows below are the ones this run holds evidence for. **Rows above not mentioned here remain
+UNVERIFIED** — they were written as a bar before the UI existed and have not all been re-run.
+
+| Row | State | Evidence |
+|---|---|---|
+| A1–A5, A10 | ✅ | Codespace `npm run verify`: invitations 68/68, security 36/36 |
+| A6 | ✅ | AR and EN full-page screenshots show the personal line «إلى عمّنا العزيز» rendered verbatim |
+| A9 | ⬜ | not re-run this session |
+| A11 | 🟡 | AR and EN are captured at the same viewport and both render; a rect-by-rect comparison after the switch was **not** run |
+| B1–B12 | ⬜ | the entrance was not touched by this order; carried from the previous session |
+| C1 | ✅ | `.vi-names` bounding box 250×106 inside `.vi-arch` 291×378 (AR, long-name stress test); no crossing stroke in `ar-01-hero.png` |
+| C2 | ⛔ **unmet, with reason** | measured **40.70px** at 375 (and 33.62px at 320), not 44–52. The two requirements cannot both hold at this box: at 44px the single word «عبدالرحمن» (9 glyphs, Aref Ruqaa ≈ 0.62em/glyph) is wider than the 250px name box, and the name needs a third line — measured, not estimated. Fitting the name won. Raising the arch to 92% recovered 40.7px from 35.2px; going further needs a wider arch, which the phone does not have |
+| C3 | 🟡 | khatam layer opacity **0.38**, not the 6–8% this row names. 0.38 × the tile's own 0.5 stroke opacity ≈ 0.19 effective, and it is masked to a radial fade. The row's number was written before the prototype arrived; the prototype says 0.38 and the prototype is what was asked for. Recorded as a deliberate difference, not silently re-worded |
+| C4 | ✅ | hero `.vi-hero` computed background is a gradient only; kicker/lead/body/date/verse all report ground `rgb(241, 222, 198)` (the paper) with no card between. `ar-01-hero.png` |
+| C5 | 🟡 | zellige rule present in the hero (`div.vi-zel`, 2 in the page); the band corner radius is 30px; a *muqarnas corner* element as such was not built — the prototype has none either |
+| C6 | ✅ | computed families: names Aref Ruqaa (AR) / Cormorant Garamond (EN), verse+lead Amiri, labels+band titles Reem Kufi / Cinzel, body Noto Naskh Arabic. All seven woff2 faces load from `/fonts/` |
+| C7 | 🟡 | body copy is 19.2px with line-height 1.85 (AR) ✓. `.vi-lead` is 16.8px and `.vi-more__link` 13.6px — **below 18px**, by design (a preamble and a utility link). Recorded as a deviation from this row |
+| C8 | ✅ | every gold text element resolves to `rgb(122, 82, 32)` (`--vi-gold-deep`); `--vi-gold` (#BE925E) is used only for stroke/decoration. The names' foil is a gradient sampled at `#946828`–`#7A5220` |
+| D1 | ✅ | **CLS 0** (0 layout-shift entries) for AR and EN, fresh load, observer installed before first paint, 2.5s settle. The gate's own animation included |
+| D2 | ✅ | 4 cells at 44×54.39 px, sampled across 4 consecutive ticks plus the first read: **identical every time** (`stable: true`) |
+| D3, D4 | ⬜ | not measured this session |
+| D5 | 🟡 | 320 and 375 measured: `scrollWidth 305 ≤ clientWidth 320` ✓, no overflow. 390 and 430 **not** run |
+| E1 | ✅ | `ar-00-full` / `en-00-full` plus per-section crops `ar-01-hero` … `ar-07-footer` |
+| E2–E4 | ⬜ | not re-run this session |
+| F1, F2 | ✅ | every number above comes from `measure.json`, produced by `cs-measure.mjs` in the Codespace |
+| F3 | ✅ | see "Not run" in the report |
+
+### The owner's order, part by part
+
+| Step | Evidence |
+|---|---|
+| Part A — Google Maps | measured on the real page: `mapUrl` = `https://www.google.com/maps/search/?api=1&query=…` for both halls (the Waze and Apple links in the fixture are not passed through), `mapLabel` = «افتح في خرائط Google». Unit tests cover the lookalike-host refusals |
+| B1 tokens + fonts | 16 cream pairs added to and measured by `scripts/check-contrast.py` (35/35, 0 required failures); 0 requests to any external host, 7 font requests, all `/fonts/*.woff2` |
+| B2 hero | `ar-01-hero.png`, `en-01-hero.png`; names 40.70px/26.75px, 1–2 lines, unclipped |
+| B3 ornament | khatam + zellige visible in `ar-01-hero.png`; data URIs only, no raster |
+| B4 countdown | `ar-02-countdown.png`; cells stable at 44×54.39 across ticks; band digits 5.29:1 on the worst gradient stop |
+| B5 programme | `ar-03-programme.png`, `en-03-programme.png`; three real schedule rows from the event |
+| B6 halls | `ar-04-halls.png`, `ar-05-calendar.png`; frameless, «قاعتك» as plain text, `aria-current` set, no ring element in the DOM |
+| B7 RSVP | `ar-06-rsvp.png`; real radios, real companion `<select>` from `rsvp.maxCompanions`, error colour 11.56:1 |
+| B8 polish | reduced motion: `animation-name: none`, `stroke-dashoffset: 0px`, names opacity 1. Dark mode both triggers: paper `rgb(23,18,13)`, ink 14.58:1. Focus ring on first Tab: 2px solid `rgb(122,82,32)`. 320px: no overflow |
+
+### Not run, and named as not run
+
+- **`next build`** — this sandbox cannot build Next.js, and it was not run in the Codespace either.
+- **`npm run test:browser`** (the repo's Playwright suite) — not run. Its three scripts target the
+  pre-B2 selectors; running them would have meant editing tests, which the order forbids without a
+  diff.
+- **A physical device** — nothing here was seen on a real phone.
+- **`/i/<token>` against production data** — everything below is the local fixture.

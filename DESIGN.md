@@ -378,3 +378,60 @@ stays plain CSS and SVG with our own easing and timings — smooth, not stepped.
 | **A — Pressed Wax** | **approved and being built.** Burgundy wax seal with the brand mark pressed in, the crack, the flap opening on its hinge, the arch drawing itself. |
 | **B** | recorded, not chosen |
 | **C — Palace Gate** | recorded as a **future template only**. Nothing is built, no decision depends on it, and it must not appear in the code until it is scoped as a template of its own. |
+---
+
+## 9. The cream palette, and the luxe composition (2026-11-23)
+
+### 9.1 The decision
+
+The owner's prototype `velora-invitation-luxe.html` carries its own palette, and the invitation now
+uses it **instead of** the brand tokens — for the `/i/<token>` subtree only.
+
+| Token | Value | Role |
+|---|---|---|
+| `--vi-paper` | `#F1DEC6` | the page |
+| `--vi-paper-2` | `#E8CFB1` | the hero's recessed cream |
+| `--vi-ink` | `#2B1B12` | body copy |
+| `--vi-muted` | `#5C4636` | secondary copy |
+| `--vi-gold` | `#BE925E` | **decoration only** — arch, rules, icons, rings. 2.14:1 on the paper: it can never carry words |
+| `--vi-gold-deep` | `#7A5220` | **the text gold.** 5.24:1 on the paper, 4.58:1 on the recessed cream |
+| `--vi-foil-1/2` | `#946828` → `#7A5220` | the names, through `background-clip: text` (large text: 3.75:1 / 5.24:1) |
+| `--vi-em / --vi-em-d / --vi-em-l` | `#192A21` / `#0F1913` / `#2E4539` | the two bands |
+| `--vi-gold-light` / `--vi-on-em` | `#DCB27F` / `#CDB591` | text on emerald only |
+| `--vi-error` | `#FFD9D3` | the one non-gold colour; 11.56:1 on the band |
+
+**Why it is scoped and not global.** A wedding invitation is a document, not a screen of the product.
+The studio, the catalogue and the admin console must not change colour because a guest page did, and
+the entrance gate above this subtree keeps the brand tokens it was measured against. Everything lives
+under `.vi` in `src/styles/luxe.css`; `tokens.css` is untouched.
+
+**Dark mode is guarded, as the owner wrote it:** `@media (prefers-color-scheme: dark)
+:root:not([data-theme="light"]) .vi` plus `:root[data-theme="dark"] .vi`. An invitation explicitly
+shown light is not repainted by a dark device.
+
+**Every pair is measured, not asserted.** `scripts/check-contrast.py` now reads `luxe.css` as a
+second source and measures 16 cream pairs (35/35, 0 required failures). It reads only the *light*
+`.vi` block on purpose: the file redefines seven of those values for dark mode, and a naive read
+would have measured dark ink against light paper and reported a comfortable pass.
+
+### 9.2 What the composition replaced
+
+- The hero is now the kicker, the mihrab arch, the names inside it, the lead, the couple's own
+  sentence, the real date, the personal line and the verse — from real event data and the v1 copy
+  system. **The template card is gone from the guest page.** `GoldenPalace` and `TemplateCanvas`
+  printed the names, the date and the venue a second time; that duplication was the owner's question
+  (c). The template still supplies the entrance (seal imprint, envelope paper, wax, liner) and the
+  accent the venue icons take, so nothing about the gate changed.
+- The page has **two** emerald bands (countdown, RSVP) with 30px top corners, a frameless pair of
+  halls, a programme timeline, and a footer that carries the tagline.
+- The date appears **once** in the hero and **once** as the operator's own sentence under the
+  countdown — down from three printings.
+
+### 9.3 Still open
+
+- The seam defect on the envelope is **not** part of this order and is **not** closed. It stays on
+  the list.
+- P1 in `docs/PROPOSALS.md` (`?open=1`) is still proposed, not approved.
+- The hall icons are the product's own line art at 72px in `--vi-gold`, which is deliberately faint
+  on cream. If the owner wants them read as more than ornament, that is a palette decision, not a
+  bug.
