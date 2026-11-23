@@ -55,20 +55,41 @@ That is a contrast decision that must survive any template work built on this pa
 |---|---|---|
 | Logo / mark | **DONE** | `assets/brand/velora-logo-original.jpg` + traced `velora-mark.svg`; lockups ×4 and monograms ×5 in `public/brand/`; `brand/archive/monogram.mjs` retired |
 | Palette blend gold/brown + emerald/gold | **DONE** | `src/styles/luxe.css` holds the measured attachment palette; `docs/BRAND.md` holds the brand side |
-| Emerald Envelope as a default template | **MISSING** | See the registry gap below |
-| Velora Classic as a default template | **MISSING** | Same gap |
+| Emerald Envelope as a selectable template | **PARTIAL** | Defined as a token template this session; **inert** until `public.templates` carries a matching slug. See the two-system section below |
+| Velora Classic as a selectable template | **PARTIAL** | Same |
 | Typography, Arabic first, tashkeel, no Arabic letter-spacing, Arabic line-height ≥ 1.9 | **DONE** | `docs/TEMPLATES.md` §1; `.vi` face scope; fonts self-hosted + subset + preloaded |
 
-### Templates — the largest single gap
+### Templates — two systems, and the first version of this note got it wrong
 
 `docs/TEMPLATES.md` documents **24 templates** (T1–T24) with palettes, ornament recipes, seal specs and
-motion. `src/lib/templates/registry.ts` contains **1** entry: `slug: "golden-palace"`.
+motion. There are **two** implementations of a template in the tree, with different schemas:
 
-So the brief's "at least 6" resolves to: 1 wired, 24 specified, and the one the user chose as default —
-the attachment emerald — exists as a page, not as a selectable template.
+| | Design config (database) | Template tokens (code) |
+|---|---|---|
+| File | `src/features/catalogue/design-config.ts` | `src/lib/templates/{schema,registry,css-vars}.ts` |
+| Shape | `DesignConfig` v1 — `palette {ground, ink, accent}`, `canvas.ratio`, `typography`, `ornament`, `layout` | `TemplateTokens` v1 — 5 roles `{ivory, gold, emerald, burgundy, ink}`, `fonts`, `seal`, `envelope`, `opening`, `layout` |
+| Lives in | `public.templates.design_config` (jsonb) | the file itself |
+| Seeded | **8 presets** in `0003_templates.sql`: `ivory-classic`, `emerald-royal`, `sand-editorial`, `paper-minimal`, `rose-letterpress`, `sage-botanical`, `naskh-heritage`, `ink-noir` | 1 → now 3 (this session) |
+| Consumed by | catalogue, studio, `[locale]/invitation` preview, the guest loader (`public.ts:246` → `templateSlug: row.template_slug`) | **only** `src/app/i/[token]/page.tsx:168` |
 
-**This is the first build task.** It is also the cheapest, because the tokens already exist; what is
-missing is registry entries pointing at them.
+**The first version of this note said "1 wired against 24 documented". That was wrong** — it counted only
+the code registry and missed the eight database presets. The correct statement is 8 + 3, in two schemas.
+
+**How they relate.** The guest route resolves its template by `public.templates.slug`, and its own comment
+says the template supplies the **entrance** (seal imprint, envelope paper, wax, liner) and the accent the
+venue icons draw from — "if this event uses one of the token-system designs". Verified: a database preset
+slug returns `undefined` from `getTemplateBySlug`, so the eight presets render the luxe default and the
+token designs are an overlay, not a replacement.
+
+**So the real gap is not "templates are missing". It is that the attachment's design is in neither
+system's list.** `emerald-royal` in the database is `#263E35` ground with a `#D8C49B` accent — not the
+mockups' `#192A21` / `#BE925E` / `#650E18`. That palette exists only as the hard-coded `.vi` tokens in
+`src/styles/luxe.css`. The brief's "ship at least 6 templates" is met at the database level and the two
+canonical designs the owner just chose are not selectable in either.
+
+**Left unanswered on purpose:** sealing `emerald-envelope` into the database means deciding how a
+five-role token palette becomes a three-role `DesignConfig` palette, or extending `DesignConfig`. That is
+an architecture decision, not a mechanical mapping, and mapping by eye is how the two would drift.
 
 ### Public page `/i/[token]`
 
@@ -130,15 +151,17 @@ missing is registry entries pointing at them.
 |---|---|---|---|
 | 1 | "Create a brand-new repository from scratch" | `nah-632/VELORA` exists, 35 commits of verified measurement | The brief's warning is aimed at *third-party* repos named Velora (`zyvorai/velora`, `sushilk1991/velora`). Reading it as "do not start from someone else's Velora" — satisfied. **ASSUMPTION**; correct if wrong. |
 | 2 | "Deploy on Vercel" | Live on **CranL**; `docs/CRANL.md`, deployment IDs recorded, rollbacks audited | Pick the deploy target. Both are documented in-tree. |
-| 3 | "Ship at least 6 templates" | 24 specified, 1 wired | Build the registry entries. |
+| 3 | "Ship at least 6 templates" | 24 specified, 8 seeded in the database, 3 defined as token templates | Not a template-count problem. The two designs the owner chose are in neither list — see the two-system section. |
 
 ---
 
 ## Ordered next tasks
 
-1. **Registry entries for the attachment emerald template + Velora Classic**, so the brief's "at least 6"
-   starts from the two the user just chose as canonical. Tokens already exist in `src/styles/luxe.css`.
-   Carry the `--vi-gold` decoration-only constraint with them.
+1. **Decide the design-document shape, then seed the attachment design.** The tokens exist, the two
+   registry entries exist, and neither is reachable until `public.templates` has a row with a matching
+   slug. The blocking question is the one left unanswered above: five-role tokens into a three-role
+   `DesignConfig`, or extend `DesignConfig`. Tokens already exist in `src/styles/luxe.css`; carry the
+   gold-is-decoration-only constraint with them.
 2. **Excel export verification** — confirm real `.xlsx`, print-friendly, sortable.
 3. **Open Graph leak audit** — assert no guest name, phone, or token appears in preview metadata.
 4. **C5 QR entry pass** — the only new feature with a schema dependency (`rsvps` → check-in state).
