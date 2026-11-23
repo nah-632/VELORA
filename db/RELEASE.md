@@ -47,6 +47,11 @@ file exists here and is not named below.
 | 0007 | `0007_dual_venues.sql` | `event_venues`, `guests.gender`, `guests.audience`, `events.copy_templates` | `/i/<token>` (selects the halls), the event console (`listVenues`, `saveVenues`), the WhatsApp sender | **Yes** — see below |
 
 | 0008 | `0008_theme_override.sql` | `events.theme_override` (jsonb, default `{}`), and the Golden Palace row in `templates` | the invitation page reads the slug and the override; the editor's template picker lists the row | **Yes** |
+| 0009 | `0009_token_config.sql` | `templates.token_config` (jsonb, nullable), plus the `emerald-envelope` and `velora-classic` rows and a backfill of Golden Palace's | `src/features/invitations/public.ts` selects `t.token_config` for `/i/<token>`; the catalogue and studio continue to read `design_config` from the same row | **Yes** |
+
+0009 is additive and nullable, so the previous container keeps rendering against the migrated database
+— a row without a token document falls back to `getTemplateBySlug` in the code, which is exactly what
+every row did before it.
 
 ## The 0007 case, which is why this file exists
 

@@ -44,7 +44,7 @@ export const GOLDEN_PALACE: TemplateTokens = TemplateTokensSchema.parse({
     foil_names: true,
   },
   is_active: true,
-  sort_order: 1,
+  sort_order: 5,
 });
 
 /**
@@ -93,7 +93,7 @@ export const EMERALD_ENVELOPE: TemplateTokens = TemplateTokensSchema.parse({
     foil_names: true,
   },
   is_active: true,
-  sort_order: 0,
+  sort_order: 4,
 });
 
 /**
@@ -141,7 +141,7 @@ export const VELORA_CLASSIC: TemplateTokens = TemplateTokensSchema.parse({
     foil_names: true,
   },
   is_active: true,
-  sort_order: 2,
+  sort_order: 6,
 });
 
 export const TEMPLATES: readonly TemplateTokens[] = [EMERALD_ENVELOPE, GOLDEN_PALACE, VELORA_CLASSIC];

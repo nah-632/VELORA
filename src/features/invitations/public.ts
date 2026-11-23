@@ -17,6 +17,7 @@
  */
 import { getSql } from "@/lib/db";
 import { DesignConfigSchema, type DesignConfig } from "@/features/catalogue/design-config";
+import { TemplateTokensSchema } from "@/lib/templates/schema";
 import { resolveAudience, resolveCopy } from "./messages";
 import { type InvitationBlocks } from "@/features/studio/blocks";
 
@@ -33,6 +34,11 @@ export interface PublicInvitation {
   animation: "wax_seal" | "curtain" | "none";
   /** Which template built this invitation, and what the operator changed for this event. */
   templateSlug: string | null;
+  /**
+   * The token document from the row (`templates.token_config`), parsed — or null when the row has
+   * none, in which case the caller falls back to the code registry by slug.
+   */
+  tokenConfig: import("@/lib/templates/schema").TemplateTokens | null;
   themeOverride: unknown;
   personalLine: string | null;
   blocks: InvitationBlocks;
@@ -113,6 +119,11 @@ interface Row {
   design_config: unknown;
   opening_animation_type: string | null;
   template_slug: string | null;
+  /**
+   * TemplateTokens v1, from the row itself. Null on every row seeded before 0009, and on any row an
+   * operator has not given a token document — in which case the code registry is the fallback.
+   */
+  token_config: unknown;
   theme_override: unknown;
   copy_templates: unknown;
   venues: unknown;
@@ -172,7 +183,7 @@ export async function loadInvitation(
              e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
              e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
              e.thank_you_declined_ar, e.thank_you_declined_en,
-             t.design_config, t.opening_animation_type, t.slug as template_slug,
+             t.design_config, t.token_config, t.opening_animation_type, t.slug as template_slug,
              e.theme_override
         from public.guests g
         join public.events e on e.id = g.event_id
@@ -204,7 +215,7 @@ export async function loadInvitation(
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
-           t.design_config, t.opening_animation_type, t.slug as template_slug,
+           t.design_config, t.token_config, t.opening_animation_type, t.slug as template_slug,
            e.theme_override
       from opened o
       join public.events e on e.id = o.event_id
@@ -220,6 +231,21 @@ function toInvitation(row: Row): PublicInvitation | null {
   if (!design.success) {
     // A design that cannot be parsed is a stored bug. Rendering "something close" would put a
     // stranger in front of a broken invitation; the route renders a plain apology instead.
+    return null;
+  }
+
+  /*
+   * The token document, under the same rule — with one addition, because this column is nullable.
+   *
+   * `null` is not a bug: every row seeded before 0009 has no token document and is meant to fall
+   * back to the code registry by slug. A document that is *present and unparseable* is a stored bug,
+   * and it is treated as one, so a half-applied entrance never reaches a guest.
+   */
+  const tokenConfig =
+    row.token_config === null || row.token_config === undefined
+      ? null
+      : TemplateTokensSchema.safeParse(row.token_config);
+  if (tokenConfig !== null && !tokenConfig.success) {
     return null;
   }
 
@@ -244,6 +270,7 @@ function toInvitation(row: Row): PublicInvitation | null {
     language,
     animation,
     templateSlug: row.template_slug,
+    tokenConfig: tokenConfig === null ? null : tokenConfig.data,
     themeOverride: row.theme_override,
     gender,
     audience,
@@ -338,7 +365,7 @@ export async function previewInvitationForGuest(
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
-           t.design_config, t.opening_animation_type, t.slug as template_slug,
+           t.design_config, t.token_config, t.opening_animation_type, t.slug as template_slug,
            e.theme_override
       from public.guests g
       join public.events e on e.id = g.event_id

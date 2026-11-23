@@ -165,7 +165,15 @@ export default async function InvitationPage({
    * renders its own card: the luxe hero below is the invitation for every event, and the card was
    * what printed the couple's names, the date and the verse a second time.
    */
-  const template = getTemplateBySlug(invitation.templateSlug);
+  /*
+   * The template: the row's own token document wins, the code registry is the fallback.
+   *
+   * The document lives in the row (`templates.token_config`, 0009) because two rows can share a
+   * palette and differ only in the seal, the envelope and the opening — which only the token document
+   * describes. The registry lookup stays for rows seeded before 0009, and for the Golden Palace row
+   * whose document has not been attached yet.
+   */
+  const template = invitation.tokenConfig ?? getTemplateBySlug(invitation.templateSlug);
 
   const initial = remaining(Date.now(), event.eventDatetime.getTime());
   const couple =
