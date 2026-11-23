@@ -122,6 +122,15 @@ interface Row {
   /**
    * TemplateTokens v1, from the row itself. Null on every row seeded before 0009, and on any row an
    * operator has not given a token document — in which case the code registry is the fallback.
+   *
+   * Selected as `to_jsonb(t) -> 'token_config'`, not `t.token_config`, and the difference is the point:
+   * a column reference is resolved when Postgres parses the statement, so code that names the column
+   * **cannot run against a database where 0009 has not been applied** — it is a 500 on the guest's
+   * page, which is the 0007 failure mode relearned. `to_jsonb` names no column: it serialises the row
+   * and reads a key, yielding NULL when the key is absent. So this query is correct before 0009 and
+   * after it, and the deploy no longer has to be ordered behind a migration to be safe.
+   *
+   * The cost is serialising one template row per invitation — a single join row by primary key.
    */
   token_config: unknown;
   theme_override: unknown;
@@ -183,7 +192,7 @@ export async function loadInvitation(
              e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
              e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
              e.thank_you_declined_ar, e.thank_you_declined_en,
-             t.design_config, t.token_config, t.opening_animation_type, t.slug as template_slug,
+             t.design_config, to_jsonb(t) -> 'token_config' as token_config, t.opening_animation_type, t.slug as template_slug,
              e.theme_override
         from public.guests g
         join public.events e on e.id = g.event_id
@@ -215,7 +224,7 @@ export async function loadInvitation(
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
-           t.design_config, t.token_config, t.opening_animation_type, t.slug as template_slug,
+           t.design_config, to_jsonb(t) -> 'token_config' as token_config, t.opening_animation_type, t.slug as template_slug,
            e.theme_override
       from opened o
       join public.events e on e.id = o.event_id
@@ -365,7 +374,7 @@ export async function previewInvitationForGuest(
            e.quote_ar, e.quote_en, e.notes_ar, e.notes_en, e.monogram_text,
            e.thank_you_confirmed_ar, e.thank_you_confirmed_en,
            e.thank_you_declined_ar, e.thank_you_declined_en,
-           t.design_config, t.token_config, t.opening_animation_type, t.slug as template_slug,
+           t.design_config, to_jsonb(t) -> 'token_config' as token_config, t.opening_animation_type, t.slug as template_slug,
            e.theme_override
       from public.guests g
       join public.events e on e.id = g.event_id

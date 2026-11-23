@@ -163,5 +163,43 @@ t.check(
   `${without.rows[0].n} presets rely on it`,
 );
 
+// ---------------------------------------------------------------------------------------------
+t.section("the query is correct against a database without 0009");
+
+/*
+ * The deploy must not have to be ordered behind the migration, so the select has to survive a schema
+ * where `token_config` does not exist. A bare `t.token_config` fails at parse time — the 0007 failure
+ * mode — so the query reads the key out of `to_jsonb(t)` instead. Proved here on a database built from
+ * 0001..0008 only, which is exactly what production is today.
+ */
+const pre = await PGlite.create();
+for (const name of files.filter((n) => n < "0009")) {
+  await pre.exec(readFileSync(join(DIR, name), "utf8"));
+}
+const preColumns = await pre.query(
+  `select count(*)::int as n from information_schema.columns
+    where table_schema='public' and table_name='templates' and column_name='token_config'`,
+);
+t.check("this database really has no token_config column", preColumns.rows[0].n === 0);
+
+const tolerant = await pre.query(
+  `select t.slug, to_jsonb(t) -> 'token_config' as token_config from public.templates t order by t.slug limit 1`,
+);
+t.check(
+  "and the select still returns a row, with a null document",
+  tolerant.rows.length === 1 && tolerant.rows[0].token_config === null,
+  JSON.stringify(tolerant.rows[0]),
+);
+
+let bareFailed = false;
+try {
+  await pre.query(`select t.token_config from public.templates t limit 1`);
+} catch {
+  bareFailed = true;
+}
+t.check("while naming the column directly would have failed", bareFailed);
+
+await pre.close();
+
 await db.close();
 t.finish();
